@@ -8,7 +8,7 @@ include { get_size_in_gb } from '../functions.nf'
 
 process scilpy_resample {
     memory { 2f * get_size_in_gb([image, mask]) }
-    cpus 1
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -37,7 +37,7 @@ process scilpy_resample {
 
 process scilpy_resample_on_ref {
     memory { 2f * get_size_in_gb([image, ref, mask]) }
-    cpus 1
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all

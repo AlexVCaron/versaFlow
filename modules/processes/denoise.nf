@@ -16,7 +16,7 @@ include { get_size_in_gb; swap_configurations } from '../functions.nf'
 
 process dwi_denoise {
     memory { 2f * get_size_in_gb([dwi, mask]) }
-    label params.conservative_resources ? "res_conservative" : "res_full_node"
+    label params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -45,7 +45,7 @@ process dwi_denoise {
 
 process nlmeans_denoise {
     memory { 2f * get_size_in_gb(image) }
-    label params.conservative_resources ? "res_conservative" : "res_full_node"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -68,7 +68,7 @@ process nlmeans_denoise {
 
 process ants_gaussian_denoise {
     memory { 2f * get_size_in_gb([image, mask]) }
-    label params.conservative_resources ? "res_conservative" : "res_full_node"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -95,7 +95,7 @@ process ants_gaussian_denoise {
 
 process n4_denoise {
     memory { 2f * get_size_in_gb([image, anat, mask]) }
-    label params.conservative_resources ? "res_conservative" : "res_full_node"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -140,6 +140,8 @@ process n4_denoise {
 process prepare_topup {
     errorStrategy "finish"
 
+    label "res_single_cpu"
+
     beforeScript "cp $params.config.denoise.topup config.py"
     input:
         tuple val(sid), path(b0s), path(dwi_bval), path(rev_bval), file(metadata)
@@ -155,7 +157,9 @@ process prepare_topup {
 
 process topup {
     memory { 2f * get_size_in_gb(b0) }
-    cpus 1
+
+    label "res_single_cpu"
+
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -178,6 +182,8 @@ process topup {
 
 process prepare_eddy {
     errorStrategy "finish"
+
+    label "res_single_cpu"
 
     beforeScript params.use_cuda ? "cp $params.config.denoise.eddy_cuda config.py" : "cp $params.config.denoise.eddy config.py"
     input:
@@ -221,7 +227,7 @@ process prepare_eddy {
 
 process eddy {
     memory { 2f * get_size_in_gb([dwi, mask]) }
-    label params.use_cuda ? "res_single_cpu" : "res_full_node"
+    label params.use_cuda ? "res_single_cpu" : params.on_hcp ? "res_full_node_override" : "res_max_cpu"
     label params.use_cuda ? "res_gpu" : ""
     errorStrategy "finish"
 
@@ -267,7 +273,9 @@ process eddy {
 
 process gibbs_removal {
     memory { 2f * get_size_in_gb(dwi) }
-    cpus 1
+
+    label "res_single_cpu"
+
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all

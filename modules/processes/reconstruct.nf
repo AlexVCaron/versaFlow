@@ -17,7 +17,7 @@ include { get_size_in_gb; uniformize_naming } from '../functions.nf'
 
 process diamond {
     memory { 2f * get_size_in_gb([input_dwi, mask] + (data instanceof List ? data : [data])) }
-    label "res_full_node"
+    label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -39,7 +39,7 @@ process diamond {
 
 process mrtrix_dti {
     memory { 2f * get_size_in_gb([dwi, mask]) }
-    label "res_full_node"
+    label "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -62,7 +62,7 @@ process mrtrix_dti {
 
 process response {
     memory { 2f * get_size_in_gb([dwi, mask]) }
-    cpus 1
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -85,7 +85,7 @@ process response {
 
 process csd {
     memory { 2.5 * get_size_in_gb([dwi, mask]) }
-    label "res_full_node"
+    label "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -108,6 +108,7 @@ process csd {
 
 process scilpy_response {
     memory { 2f * get_size_in_gb([dwi, mask]) }
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -131,7 +132,7 @@ process scilpy_response {
 
 process scilpy_csd {
     memory { 2.5 * get_size_in_gb([dwi, mask]) }
-    label "res_full_node"
+    label "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all

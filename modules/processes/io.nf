@@ -18,6 +18,7 @@ def metadata_from_params ( reverse ) {
 }
 
 process prepare_metadata {
+    label "res_single_cpu"
     input:
         tuple val(sid), path(image), file(metadata), val(reverse)
     output:

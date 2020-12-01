@@ -9,6 +9,7 @@ include { get_size_in_gb } from '../functions.nf'
 
 process apply_mask {
     memory { 2f * get_size_in_gb([img, mask]) }
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -29,6 +30,7 @@ process apply_mask {
 
 process bet_mask {
     memory { get_size_in_gb(img) }
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -48,7 +50,7 @@ process bet_mask {
 
 process cat_datasets {
     memory { 2f * get_size_in_gb(imgs) }
-    cpus 1
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -79,7 +81,7 @@ process cat_datasets {
 
 process split_image {
     memory { get_size_in_gb(img) }
-    cpus 1
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -100,7 +102,7 @@ process split_image {
 
 process join_images {
     memory { 2f * get_size_in_gb(imgs) }
-    cpus 1
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -121,7 +123,7 @@ process join_images {
 
 process apply_topup {
     memory { 2f * (get_size_in_gb(dwis) + get_size_in_gb(revs)) }
-    cpus 1
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -141,7 +143,7 @@ process apply_topup {
 
 process tournier2descoteaux_odf {
     memory { 2f * get_size_in_gb(odfs) }
-    label params.conservative_resources ? "res_conservative" : "res_full_node"
+    label params.conservative_resources ? "res_conservative" : "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -160,7 +162,7 @@ process tournier2descoteaux_odf {
 
 process convert_datatype {
     memory { 2f * get_size_in_gb(image) }
-    cpus 1
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -180,6 +182,7 @@ process convert_datatype {
 
 process replicate_image {
     memory { 2f * get_size_in_gb([img, ref_img]) }
+    label "res_single_cpu"
     errorStrategy "finish"
 
     input:
@@ -197,6 +200,7 @@ process replicate_image {
 }
 
 process check_dwi_conformity {
+    label "res_single_cpu"
     errorStrategy "finish"
 
     input:
@@ -213,6 +217,7 @@ process check_dwi_conformity {
 
 process crop_image {
     memory { 2f * get_size_in_gb([image, mask]) }
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -260,6 +265,7 @@ process crop_image {
 
 process fit_bounding_box {
     memory { get_size_in_gb([image]) }
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all

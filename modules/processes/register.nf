@@ -12,7 +12,7 @@ include { get_size_in_gb; swap_configurations } from '../functions.nf'
 
 process ants_register {
     memory { get_size_in_gb(moving) + get_size_in_gb(target) }
-    label params.conservative_resources ? "res_conservative" : "res_full_node"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -50,7 +50,7 @@ process ants_register {
 
 process ants_correct_motion {
     memory { get_size_in_gb(moving) + get_size_in_gb(target) }
-    label params.conservative_resources ? "res_conservative" : "res_full_node"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -76,6 +76,7 @@ process ants_correct_motion {
 
 process ants_transform {
     memory { 2f * get_size_in_gb([img, ref]) }
+    label "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
