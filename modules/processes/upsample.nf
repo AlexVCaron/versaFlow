@@ -3,12 +3,13 @@
 nextflow.enable.dsl=2
 
 params.resampling_resolution = 1
+params.force_resampling_sequential = false
 
 include { get_size_in_gb } from '../functions.nf'
 
 process scilpy_resample {
     memory { 2f * get_size_in_gb([image, mask]) }
-    label "res_single_cpu"
+    label params.force_resampling_sequential ? "res_full_cpu_override" : "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -30,14 +31,18 @@ process scilpy_resample {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         scil_resample_volume.py $image resampled.nii.gz --resolution $params.resampling_resolution --interp $interpolation
-        fslmaths resampled.nii.gz -thr 0 ${image.getSimpleName()}_resampled.nii.gz
+        fslmaths resampled.nii.gz -thr 0 ${image.simpleName}_resampled.nii.gz
+        if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}_resampled.nii.gz)" ]
+        then
+            mrconvert -force -datatype "\$(mrinfo -datatype $image)" ${image.simpleName}_resampled.nii.gz ${image.simpleName}_resampled.nii.gz
+        fi
         $after_script
         """
 }
 
 process scilpy_resample_on_ref {
     memory { 2f * get_size_in_gb([image, ref, mask]) }
-    label "res_single_cpu"
+    label params.force_resampling_sequential ? "res_full_cpu_override" : "res_single_cpu"
     errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
@@ -62,7 +67,11 @@ process scilpy_resample_on_ref {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         scil_resample_volume.py $image resampled.nii.gz --ref $ref --enforce_dimensions --interp $interpolation
-        fslmaths resampled.nii.gz -thr 0 ${image.getSimpleName()}_resampled.nii.gz
+        fslmaths resampled.nii.gz -thr 0 ${image.simpleName}_resampled.nii.gz
+        if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}_resampled.nii.gz)" ]
+        then
+            mrconvert -force -datatype "\$(mrinfo -datatype $image)" ${image.simpleName}_resampled.nii.gz ${image.simpleName}_resampled.nii.gz
+        fi
         $after_script
         """
 }

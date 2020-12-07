@@ -259,6 +259,10 @@ process crop_image {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         scil_crop_volume.py $image ${image.simpleName}_cropped.nii.gz $args
+        if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}_cropped.nii.gz)" ]
+        then
+            mrconvert -force -datatype "\$(mrinfo -datatype $image)" ${image.simpleName}_cropped.nii.gz ${image.simpleName}_cropped.nii.gz
+        fi
         ${after_script.join('\n')}
         """
 }
@@ -272,12 +276,12 @@ process fit_bounding_box {
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("cropped.nii.gz") ? f : null }, mode: params.publish_mode
 
     input:
-        tuple val(sid), file(image), file(bounding_box)
+        tuple val(sid), file(image), file(reference), file(bounding_box)
         val(caller_name)
     output:
         tuple val(sid), path("${image.simpleName}_bbox.pkl"), emit: bbox, optional: true
     script:
     """
-    magic-monkey fitbox --in $image --pbox $bounding_box --out ${image.simpleName}_bbox
+    magic-monkey fitbox --in $image --ref $reference --pbox $bounding_box --out ${image.simpleName}_bbox
     """
 }

@@ -50,7 +50,8 @@ def get_size_in_gb( files ) {
         return (files.sum{ f -> f.size() / 1073741824 }).GB
     }
     println "files was a simple file ${files}"
-    return (files.size() / 1073741824).GB
+    def fs = files.size() / 1073741824
+    return (fs < 1 ? 1 : fs).GB
 }
 
 def prevent_sci_notation ( float_number ) {

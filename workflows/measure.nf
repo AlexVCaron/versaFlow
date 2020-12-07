@@ -51,10 +51,6 @@ workflow measure_wkf {
             metadata_dti = uniformize_naming(metadata_channel, "dti_metadata", false)
             mask_dti = uniformize_naming(mask_channel, "dti_mask", false)
             prefix_dti = data_dti.map{ [it[0], "${it[0]}__dti"] }
-            prefix_dti.view()
-            mask_dti.view()
-            data_dti.view()
-            metadata_dti.view()
             dti_for_odfs_metrics(
                 prefix_dti.join(mask_dti).join(data_dti).join(metadata_dti),
                 "measure", params.config.workflow.dti_for_odf_metrics

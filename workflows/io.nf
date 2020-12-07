@@ -3,8 +3,8 @@
 nextflow.enable.dsl=2
 
 params.data_root = "data"
-params.masked = true
-params.masked_t1 = false
+params.masked_dwi = false
+params.masked_t1 = true
 params.rev_is_b0 = true
 
 include { key_from_filename } from "../modules/functions.nf"
@@ -41,7 +41,7 @@ workflow load_dataset {
 
         if ( params.masked_t1 )
             anat_channel = anat_channel.join(key_from_filename(Channel.fromPath("$root/**/*mask.nii.gz"), "_"))
-        else if ( params.masked )
+        else if ( params.masked_dwi )
             dwi_channel = dwi_channel.join(key_from_filename(Channel.fromPath("$root/**/*mask.nii.gz"), "_"))
 
         dwi_meta_channel = pmeta_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_meta_channel, remainder: true).map{ it.size() > 2 ? it[-1] ? it : [it[0], it[1], ""] : it + [""] }.map{ it + ["false"] })

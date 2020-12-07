@@ -34,6 +34,36 @@ process dti_metrics {
         """
 }
 
+process scil_compute_dti_fa {
+    memory { 3f * get_size_in_gb([dwi, mask]) }
+    label params.conservative_resources ? "res_conservative" : "res_full_node"
+    errorStrategy "finish"
+
+    input:
+        tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
+        val(processing_caller_name)
+        val(measuring_caller_name)
+    output:
+        tuple val(sid), val("${sid}__dti"), emit: prefix
+        tuple val(sid), path("${sid}__dti_dti.nii.gz"), emit: dti
+        tuple val(sid), path("${sid}__dti_fa.nii.gz"), emit: fa
+    script:
+        def avail_threads = Math.round(task.cpus / 3)
+        def remainder_threads = task.cpus - avail_threads
+        def args = "--tensor ${sid}__dti_dti.nii.gz"
+        args += " --fa ${sid}__dti_fa.nii.gz"
+        """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
+        export OMP_NUM_THREADS=$avail_threads
+        export OPENBLAS_NUM_THREADS=1
+        mrconvert -strides 1,2,3,4 -export_grad_fsl dwi4scil.bvec dwi4scil.bval -fslgrad $bvec $bval $dwi dwi4scil.nii.gz
+        mrconvert -datatype uint8 -strides 1,2,3 $mask mask4scil.nii.gz
+        scil_compute_dti_metrics.py dwi4scil.nii.gz dwi4scil.bval dwi4scil.bvec --mask mask4scil.nii.gz -f --not_all $args
+        strides="\$(mrinfo -strides $dwi)" && mrconvert -force -strides \${strides// /,} ${sid}__dti_dti.nii.gz ${sid}__dti_dti.nii.gz
+        strides=\${strides% *} && mrconvert -force -strides \${strides// /,} ${sid}__dti_fa.nii.gz ${sid}__dti_fa.nii.gz
+        """
+}
+
 process scil_dti_and_metrics {
     memory { 3f * get_size_in_gb([dwi, mask]) }
     label params.conservative_resources ? "res_conservative" : "res_max_cpu"
@@ -57,9 +87,9 @@ process scil_dti_and_metrics {
         tuple val(sid), path("${sid}__dti_non_physical.nii.gz"), path("${sid}__dti_pulsation*.nii.gz"), emit: artifacts, optional: true
         tuple val(sid), path("${sid}__dti_residuals.nii.gz"), path("${sid}__dti_residuals*.nii.gz"), emit: residuals, optional: true
     script:
-        avail_threads = task.cpus / 3
-        remainder_threads = task.cpus - avail_threads
-        args = "--tensor ${sid}__dti_dti.nii.gz --evals ${sid}__dti_evals.nii.gz --evecs ${sid}__dti_evecs.nii.gz"
+        def avail_threads = Math.round(task.cpus / 3)
+        def remainder_threads = task.cpus - avail_threads
+        def args = "--tensor ${sid}__dti_dti.nii.gz --evals ${sid}__dti_evals.nii.gz --evecs ${sid}__dti_evecs.nii.gz"
         args += " --fa ${sid}__dti_fa.nii.gz --ga ${sid}__dti_ga.nii.gz --rgb ${sid}__dti_rgb.nii.gz"
         args += " --md ${sid}__dti_md.nii.gz --ad ${sid}__dti_ad.nii.gz --rd ${sid}__dti_rd.nii.gz --mode ${sid}__dti_mode.nii.gz --norm ${sid}__dti_norm.nii.gz"
         if ( params.verbose_outputs )
@@ -70,7 +100,7 @@ process scil_dti_and_metrics {
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
         mrconvert -strides 1,2,3,4 -export_grad_fsl dwi4scil.bvec dwi4scil.bval -fslgrad $bvec $bval $dwi dwi4scil.nii.gz
-        mrconvert -datatype uint8 -strides 1,2,3,4 $mask mask4scil.nii.gz
+        mrconvert -datatype uint8 -strides 1,2,3 $mask mask4scil.nii.gz
         scil_compute_dti_metrics.py dwi4scil.nii.gz dwi4scil.bval dwi4scil.bvec --mask mask4scil.nii.gz -f $args
         """
 }

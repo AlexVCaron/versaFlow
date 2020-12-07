@@ -34,3 +34,4 @@ process prepare_metadata {
         magic-monkey metadata --in $image $args
         """
 }
+

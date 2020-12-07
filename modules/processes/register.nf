@@ -20,30 +20,34 @@ process ants_register {
 
     beforeScript "cp $params.config.register.ants_registration config.py"
     input:
-        tuple val(sid), file(moving), file(target), val(reference), path(metadata)
+        tuple val(sid), path(moving), file(target), val(reference), file(mask), path(metadata)
         val(caller_name)
         file(config_overwrite)
     output:
-        tuple val(sid), path("${sid}__registration_affine.mat"), path("${sid}__registration_rigid.nii.gz"), emit: affine
-        tuple val(sid), path("${sid}__registration_ref.nii.gz"), emit: reference
-        tuple val(sid), path("${sid}__registration_warped.nii.gz"), emit: image
-        tuple val(sid), path("${sid}__registration*syn.nii.gz"), optional: true, emit: syn
-        tuple val(sid), path("${sid}__registration_warped_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${reference.simpleName}__registration_affine.mat"), path("${reference.simpleName}__registration_rigid.nii.gz"), emit: affine
+        tuple val(sid), path("${reference.simpleName}__registration_ref.nii.gz"), emit: reference
+        tuple val(sid), path("${reference.simpleName}__registration_warped.nii.gz"), emit: image
+        tuple val(sid), path("${reference.simpleName}__registration*syn.nii.gz"), optional: true, emit: syn
+        tuple val(sid), path("${reference.simpleName}__registration_warped_metadata.*"), optional: true, emit: metadata
     script:
         config = swap_configurations("config.py", config_overwrite)
+        def mask_arg = ""
+        if ( !mask.iterator().inject(false) { c, i -> c || i.empty() } ) {
+            mask_arg = "--mask ${mask.iterator().collect{ it.name }.join(',')}"
+        }
 
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
-        magic-monkey ants_registration --moving ${moving.join(",")} --target ${target.join(",")} --out ${sid}__registration --config $config
-        cp $reference ${sid}__registration_ref.nii.gz
-        cp ${sid}__registration_warped.nii.gz ${sid}__registration_rigid.nii.gz
-        mv ${sid}__registration0GenericAffine.mat ${sid}__registration_affine.mat
-        if [ -f "${sid}__registration1Warp.nii.gz" ]
+        magic-monkey ants_registration --moving ${moving.join(",")} --target ${target.join(",")} --out ${reference.simpleName}__registration $mask_arg --config $config
+        cp $reference ${reference.simpleName}__registration_ref.nii.gz
+        cp ${reference.simpleName}__registration_warped.nii.gz ${reference.simpleName}__registration_rigid.nii.gz
+        mv ${reference.simpleName}__registration0GenericAffine.mat ${reference.simpleName}__registration_affine.mat
+        if [ -f "${reference.simpleName}__registration1Warp.nii.gz" ]
         then
-            mv ${sid}__registration1Warp.nii.gz ${sid}__registration_syn.nii.gz
-            mv ${sid}__registration1InverseWarp.nii.gz ${sid}__registration_inv_syn.nii.gz
+            mv ${reference.simpleName}__registration1Warp.nii.gz ${reference.simpleName}__registration_syn.nii.gz
+            mv ${reference.simpleName}__registration1InverseWarp.nii.gz ${reference.simpleName}__registration_inv_syn.nii.gz
         fi
         """
 }

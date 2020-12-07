@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-params.config.preprocess.extract_b0 = "$projectDir/.config/extract_b0.py"
+params.config.preprocess.extract_b0 = "$projectDir/.config/extract_b0_mean.py"
 params.config.preprocess.squash_b0 = "$projectDir/.config/squash_b0.py"
 
 include { get_size_in_gb; swap_configurations } from '../functions.nf'

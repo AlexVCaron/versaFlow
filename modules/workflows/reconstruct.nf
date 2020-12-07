@@ -60,8 +60,9 @@ workflow diamond_wkf {
         dwi_channel
         mask_channel
     main:
-        dwi_image = dwi_channel.map{ it.subList(0, 2) }
-        other_files = dwi_channel.collect{ [it[0]] + it.subList(2, 4) }.map{ [it[0], it.subList(1, it.size())] }
+        dwi_channel = dwi_channel.groupTuple()
+        dwi_image = dwi_channel.map{ [it[0], it[1]] }
+        other_files = dwi_channel.map{ [it[0], it.subList(2, it.size()).inject([]){ c, t -> c + t }] }
         diamond(dwi_image.join(mask_channel).join(other_files), "reconstruct")
     emit:
         diamond = diamond.out.diamond
