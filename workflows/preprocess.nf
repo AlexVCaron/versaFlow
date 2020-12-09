@@ -16,6 +16,7 @@ params.post_eddy_registration = true
 params.intensity_normalization = true
 params.resample_data = true
 params.register_t12b0_denoised = true
+params.register_syn_t12b0 = false
 
 // T1 preprocess workflow parameters
 params.denoise_t1 = true
@@ -23,7 +24,8 @@ params.nlmeans_t1 = true
 // params.intensity_normalization = true
 // params.resample_data = true
 
-params.config.workflow.preprocess.t12b0_registration = file("$projectDir/.config/.workflow/t12b0_registration.py")
+params.config.workflow.preprocess.t12b0_base_registration = file("$projectDir/.config/.workflow/t12b0_base_registration.py")
+params.config.workflow.preprocess.t12b0_syn_registration = file("$projectDir/.config/.workflow/t12b0_syn_registration.py")
 params.config.workflow.preprocess.t12b0mask_registration = file("$projectDir/.config/.workflow/t12b0_mask_registration.py")
 params.config.workflow.preprocess.b0_mean = file("$projectDir/.config/extract_b0_mean.py")
 params.config.workflow.preprocess.b0_batch_mean = file("$projectDir/.config/extract_b0_batch_mean.py")
@@ -34,10 +36,11 @@ include { map_optional; opt_channel; replace_dwi_file; uniformize_naming } from 
 include { extract_b0 as dwi_b0; extract_b0 as extract_b0_motion; extract_b0 as dwi_b0_for_t1_reg } from '../modules/processes/preprocess.nf'
 include { ants_correct_motion } from '../modules/processes/register.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
+include { ants_transform } from '../modules/processes/register.nf'
 include { convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; crop_image as crop_dwi; crop_image as crop_t1; fit_bounding_box } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise } from '../modules/processes/denoise.nf'
 include { scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi; scilpy_resample_on_ref as scilpy_resample_mask } from '../modules/processes/upsample.nf'
-include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; registration_wkf as t1_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
+include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; registration_wkf as t1_base_registration_wkf; registration_wkf as t1_syn_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
 
 workflow preprocess_wkf {
     take:
@@ -165,15 +168,27 @@ workflow preprocess_wkf {
             dwi_b0_for_t1_reg(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "", "preprocess", "")
             scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess")
             b0_metadata = dwi_b0_for_t1_reg.out.metadata
-            t1_registration_wkf(
-                dwi_b0_for_t1_reg.out.b0.join(scil_compute_dti_fa.out.fa).groupTuple().map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] },
+            t1_base_registration_wkf(
+                dwi_b0_for_t1_reg.out.b0.groupTuple(),
                 t1_channel.map{ [it[0], it[1]] }.groupTuple(),
                 null,
                 dwi_mask_channel.join(t1_mask_channel).map{ [it[0], [it[1], it[2]]] },
                 b0_metadata.map{ it.subList(0, 2) + [""] },
-                params.config.workflow.preprocess.t12b0_registration
+                params.config.workflow.preprocess.t12b0_base_registration
             )
-            t1_channel = t1_registration_wkf.out.image
+            ants_transform(t1_mask_channel.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess")
+            t1_mask_channel = ants_transform.out.image
+            if ( params.register_syn_t12b0 ) {
+                t1_syn_registration_wkf(
+                    dwi_b0_for_t1_reg.out.b0.join(scil_compute_dti_fa.out.fa).groupTuple().map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] },
+                    t1_base_registration_wkf.out.image.groupTuple(),
+                    null,
+                    params.register_syn_t12b0_with_mask ? dwi_mask_channel.join(t1_mask_channel).map{ [it[0], [it[1], it[2]]] } : null,
+                    b0_metadata.map{ it.subList(0, 2) + [""] },
+                    params.config.workflow.preprocess.t12b0_syn_registration
+                )
+                t1_channel = t1_syn_registration_wkf.out.image
+            }
         }
 
         crop_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).map{ it + [""] }.join(meta_channel), "preprocess")

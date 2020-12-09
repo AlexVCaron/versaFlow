@@ -124,9 +124,8 @@ process scilpy_response {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        mrconvert -strides 1,2,3,4 -export_grad_fsl dwi4scil.bvec dwi4scil.bval -fslgrad $bvec $bval $dwi dwi4scil.nii.gz
-        mrconvert -datatype uint8 -strides 1,2,3,4 $mask mask4scil.nii.gz
-        scil_compute_ssst_frf.py dwi4scil.nii.gz dwi4scil.bval dwi4scil.bvec ${sid}__response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox --roi_radii $params.frf_roi_radius
+        mrconvert -datatype uint8 $mask mask4scil.nii.gz
+        scil_compute_ssst_frf.py $dwi $bval $bvec ${sid}__response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox --roi_radii $params.frf_roi_radius
         """
 }
 
@@ -148,8 +147,7 @@ process scilpy_csd {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        mrconvert -strides 1,2,3,4 -export_grad_fsl dwi4scil.bvec dwi4scil.bval -fslgrad $bvec $bval $dwi dwi4scil.nii.gz
-        mrconvert -datatype uint8 -strides 1,2,3,4 $mask mask4scil.nii.gz
-        scil_compute_ssst_fodf.py dwi4scil.nii.gz dwi4scil.bval dwi4scil.bvec $response ${sid}__fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --processes $task.cpus
+        mrconvert -datatype uint8 $mask mask4scil.nii.gz
+        scil_compute_ssst_fodf.py $dwi $bval $bvec $response ${sid}__fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --processes $task.cpus
         """
 }

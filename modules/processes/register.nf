@@ -24,11 +24,11 @@ process ants_register {
         val(caller_name)
         file(config_overwrite)
     output:
-        tuple val(sid), path("${reference.simpleName}__registration_affine.mat"), path("${reference.simpleName}__registration_rigid.nii.gz"), emit: affine
-        tuple val(sid), path("${reference.simpleName}__registration_ref.nii.gz"), emit: reference
-        tuple val(sid), path("${reference.simpleName}__registration_warped.nii.gz"), emit: image
-        tuple val(sid), path("${reference.simpleName}__registration*syn.nii.gz"), optional: true, emit: syn
-        tuple val(sid), path("${reference.simpleName}__registration_warped_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${moving[0].simpleName}__registration_affine.mat"), path("${moving[0].simpleName}__registration_rigid.nii.gz"), optional: true, emit: affine
+        tuple val(sid), path("${moving[0].simpleName}__registration_ref.nii.gz"), emit: reference
+        tuple val(sid), path("${moving[0].simpleName}__registration_warped.nii.gz"), optional: true, emit: image
+        tuple val(sid), path("${moving[0].simpleName}__registration*syn.nii.gz"), optional: true, emit: syn
+        tuple val(sid), path("${moving[0].simpleName}__registration_warped_metadata.*"), optional: true, emit: metadata
     script:
         config = swap_configurations("config.py", config_overwrite)
         def mask_arg = ""
@@ -40,14 +40,17 @@ process ants_register {
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
-        magic-monkey ants_registration --moving ${moving.join(",")} --target ${target.join(",")} --out ${reference.simpleName}__registration $mask_arg --config $config
-        cp $reference ${reference.simpleName}__registration_ref.nii.gz
-        cp ${reference.simpleName}__registration_warped.nii.gz ${reference.simpleName}__registration_rigid.nii.gz
-        mv ${reference.simpleName}__registration0GenericAffine.mat ${reference.simpleName}__registration_affine.mat
-        if [ -f "${reference.simpleName}__registration1Warp.nii.gz" ]
+        magic-monkey ants_registration --moving ${moving.join(",")} --target ${target.join(",")} --out ${moving[0].simpleName}__registration $mask_arg --config $config
+        cp $reference ${moving[0].simpleName}__registration_ref.nii.gz
+        cp ${moving[0].simpleName}__registration_warped.nii.gz ${moving[0].simpleName}__registration_rigid.nii.gz
+        if [ -f ${moving[0].simpleName}__registration0GenericAffine.mat ]
         then
-            mv ${reference.simpleName}__registration1Warp.nii.gz ${reference.simpleName}__registration_syn.nii.gz
-            mv ${reference.simpleName}__registration1InverseWarp.nii.gz ${reference.simpleName}__registration_inv_syn.nii.gz
+            mv ${moving[0].simpleName}__registration0GenericAffine.mat ${moving[0].simpleName}__registration_affine.mat
+        fi
+        if [ -f "${moving[0].simpleName}__registration1Warp.nii.gz" ]
+        then
+            mv ${moving[0].simpleName}__registration1Warp.nii.gz ${moving[0].simpleName}__registration_syn.nii.gz
+            mv ${moving[0].simpleName}__registration1InverseWarp.nii.gz ${moving[0].simpleName}__registration_inv_syn.nii.gz
         fi
         """
 }

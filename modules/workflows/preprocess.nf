@@ -29,18 +29,18 @@ workflow registration_wkf {
     main:
         reg_metadata = metadata_channel.map{ it.subList(0, it.size() - 1)}
         trans_metadata =  metadata_channel.map{ [it[0], it[-1]] }
-        into_register = moving_channel.join(target_channel).join(target_channel.map{ [it[0], it[1][0].name] })
+        into_register = moving_channel.join(target_channel).join(target_channel.map{ [it[0], it[1][0]] })
         into_register = join_optional(into_register, mask_channel)
         ants_register(into_register.join(reg_metadata), "preprocess", parameters)
+        ants_reg = ants_register.out.affine.join(ants_register.out.syn, remainder: true).map{
+            it[-1] ? it.subList(0, it.size() - 2) + [it[-1]] : it.subList(0, it.size() - 2) + [[]]
+        }.map{
+            it[-1].empty ? it : it.subList(0, it.size() - 1) + [it[-1].findAll{
+                s -> !s.getName().contains("registration_inv_")
+            }]
+        }
 
         if ( trans_channel ) {
-            ants_reg = ants_register.out.affine.join(ants_register.out.syn, remainder: true).map{
-                it[-1] ? it.subList(0, it.size() - 2) + [it[-1]] : it.subList(0, it.size() - 2) + [[]]
-            }.map{
-                it[-1].empty ? it : it.subList(0, it.size() - 1) + [it[-1].findAll{
-                    s -> !s.getName().contains("registration_inv_")
-                }]
-            }
             ants_transform(trans_channel.join(ants_register.out.reference).join(ants_reg).join(trans_metadata), "preprocess")
             img = ants_transform.out.image
         }
@@ -50,6 +50,7 @@ workflow registration_wkf {
     emit:
         image = img
         registration = ants_register.out.image
+        transform = ants_register.out.reference.join(ants_reg)
 }
 
 // TODO : Here there is probably some metadatas from squashed process being tangled in i/o. The
