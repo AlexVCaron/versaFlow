@@ -76,7 +76,7 @@ def copy_and_rename ( fl, prefix, overwrite ) {
 def uniformize_naming ( files_channel, prefix, overwrite ) {
     return files_channel.map{ it ->
         [it[0]] + it.subList(1, it.size()).collect{ i ->
-            copy_and_rename(i, "${i.simpleName.split("_")[0..<2].join("_")}__$prefix", overwrite)
+            copy_and_rename(i, "${i.simpleName.split("__")[0]}__$prefix", overwrite)
         }
     }
 }

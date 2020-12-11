@@ -16,7 +16,7 @@ include { group_subject_reps; join_optional; map_optional; opt_channel; replace_
 include { extract_b0 as dwi_b0; extract_b0 as b0_topup; extract_b0 as b0_topup_rev; squash_b0 as squash_dwi; squash_b0 as squash_rev } from '../processes/preprocess.nf'
 include { n4_denoise; dwi_denoise; prepare_topup; topup; prepare_eddy; eddy } from '../processes/denoise.nf'
 include { ants_register; ants_transform } from '../processes/register.nf'
-include { cat_datasets as cat_topup; cat_datasets as cat_eddy; cat_datasets as cat_eddy_rev; cat_datasets as cat_eddy_on_rev; bet_mask; split_image; apply_topup; convert_datatype; replicate_image; check_dwi_conformity } from '../processes/utils.nf'
+include { cat_datasets; cat_datasets as cat_topup; cat_datasets as cat_eddy; cat_datasets as cat_eddy_rev; cat_datasets as cat_eddy_on_rev; bet_mask; split_image; apply_topup; convert_datatype; replicate_image; check_dwi_conformity } from '../processes/utils.nf'
 
 workflow registration_wkf {
     take:
@@ -122,11 +122,18 @@ workflow apply_topup_wkf {
             dwi_channel = merge_repetitions(dwi_channel, false)
             rev_channel = merge_repetitions(rev_channel, false)
         }
-        data_channel = dwi_channel.map{ it.subList(0, 2) }.join(rev_channel.map{ it.subList(0, 2) })
+        data_channel = dwi_channel.join(rev_channel.map{ it.subList(0, 2) })
         apply_topup(data_channel.join(topup_channel).join(meta_channel), "preprocess")
-    emit:
-        dwi = apply_topup.out.image
+        dwi = apply_topup.out.dwi
         metadata = apply_topup.out.metadata
+        if ( params.merge_repetitions ) {
+            cat_datasets(dwi.join(metadata), "_topup_corrected", "preprocess")
+            dwi = cat_datasets.out.image.join(cat_datasets.out.bval).join(cat_datasets.out.bvec)
+            metadata = cat_datasets.out.metadata
+        }
+    emit:
+        dwi = dwi
+        metadata = metadata
 }
 
 workflow squash_wkf {

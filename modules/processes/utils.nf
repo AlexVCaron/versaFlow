@@ -130,14 +130,14 @@ process apply_topup {
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(dwis), path(revs), path(topup_params), val(topup_prefix), path(topup_files), path(metadata)
+        tuple val(sid), path(dwis), path(bvals), path(bvecs), path(revs), path(topup_params), val(topup_prefix), path(topup_files), path(metadata)
         val(caller_name)
     output:
-        tuple val(sid), path("${sid}__topup_corrected.nii.gz"), emit: image
-        tuple val(sid), file("${sid}__topup_corrected_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${sid}__topup_corrected*.nii.gz"), path("${sid}__topup_corrected*.bval"), path("${sid}__topup_corrected*.bvec"), emit: dwi
+        tuple val(sid), file("${sid}__topup_corrected*_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey apply_topup --dwi ${dwis.join(",")} --rev ${revs.join(",")}  --acqp $topup_params --topup $topup_prefix --out ${sid}__topup_corrected
+        magic-monkey apply_topup --dwi ${dwis.join(",")} --bvals ${bvals.join(",")} --bvecs ${bvecs.join(",")} --rev ${revs.join(",")} --acqp $topup_params --topup $topup_prefix --out ${sid}__topup_corrected
         """
 }
 

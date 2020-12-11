@@ -115,22 +115,23 @@ workflow preprocess_wkf {
             if ( !params.eddy_correction ) {
                 dwi_channel = uniformize_naming(dwi_channel, "dwi_to_topup", "false")
                 rev_channel = uniformize_naming(rev_channel, "dwi_to_topup_rev", "false")
-                topup_wkf.out.in_metadata_w_topup.view()
                 meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(0..<it[1].size()).step(2)] }, "dwi_to_topup_metadata", "false")
                 rev_meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(1..<it[1].size()).step(2)] }, "dwi_to_topup_rev_metadata", "false")
                 apply_topup_wkf(dwi_channel, rev_channel, topup2eddy_channel, meta_channel.join(rev_meta_channel).map{ [it[0], it.subList(1, it.size())] })
-                dwi_channel = replace_dwi_file(dwi_channel, apply_topup_wkf.out.dwi)
-                dwi_channel = uniformize_naming(dwi_channel, "topup_corrected", "false")
+                dwi_channel.view()
+                dwi_channel = uniformize_naming(apply_topup_wkf.out.dwi, "topup_corrected", "false")
                 meta_channel = uniformize_naming(apply_topup_wkf.out.metadata, "topup_corrected_metadata", "false")
             }
         }
 
         if ( params.merge_repetitions ) {
-            cat_dwi_repetitions_wkf(dwi_channel, meta_channel, "_dwi")
-            cat_rev_repetitions_wkf(rev_channel, meta_channel, "_rev")
-            dwi_channel = cat_dwi_repetitions_wkf.out.dwi
-            rev_channel = cat_rev_repetitions_wkf.out.dwi
-            meta_channel = cat_dwi_repetitions_wkf.out.metadata.join(cat_rev_repetitions_wkf.out.metadata)
+            if ( (!params.topup_correction || params.eddy_correction) ) {
+                cat_dwi_repetitions_wkf(dwi_channel, meta_channel, "_dwi")
+                cat_rev_repetitions_wkf(rev_channel, meta_channel, "_rev")
+                dwi_channel = cat_dwi_repetitions_wkf.out.dwi
+                rev_channel = cat_rev_repetitions_wkf.out.dwi
+                meta_channel = cat_dwi_repetitions_wkf.out.metadata.join(cat_rev_repetitions_wkf.out.metadata)
+            }
             t1_channel = merge_repetitions(t1_channel, false)
             average(t1_channel.join(t1_channel.map{ [it[0], it[1][0].simpleName] }), "preprocess")
             t1_channel = average.out.image
@@ -141,6 +142,8 @@ workflow preprocess_wkf {
             }
         }
 
+        dwi_channel.view()
+        meta_channel.view()
         dwi_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "", "preprocess", "")
         b0_channel = dwi_b0.out.b0
         b0_metadata = dwi_b0.out.metadata
@@ -167,7 +170,7 @@ workflow preprocess_wkf {
         }
 
         if ( params.eddy_correction ) {
-            eddy_wkf(squash_wkf.out.dwi, dwi_mask_channel, topup2eddy_channel, b0_channel, squash_wkf.out.rev, squash_wkf.out.metadata)
+            eddy_wkf(dwi_channel, dwi_mask_channel, topup2eddy_channel, b0_channel, rev_channel, meta_channel)
 
             dwi_channel = eddy_wkf.out.dwi.join(eddy_wkf.out.bval).join(eddy_wkf.out.bvec)
             meta_channel = eddy_wkf.out.metadata
