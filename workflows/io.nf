@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-params.data_root = "data"
+params.data_root = false
 params.masked_dwi = false
 params.masked_t1 = true
 params.rev_is_b0 = true
@@ -12,6 +12,8 @@ include { prepare_metadata as pmeta_dwi; prepare_metadata as pmeta_rev } from ".
 
 workflow load_dataset {
     main:
+        if ( !params.data_root )
+            error "You must supply an input data root using --data_root"
         root = file(params.data_root)
         dwi_channel = Channel.fromFilePairs("$root/**/*dwi.{nii.gz,bval,bvec}", size: 3, flat: true).map{ [it[0], it[3], it[1], it[2]] }
         dwi_meta_channel = key_from_filename(Channel.fromPath("$root/**/*dwi.json"), "_").map{ [it[0].substring(0, it[0].lastIndexOf("_"))] + it.subList(1, it.size()) }
