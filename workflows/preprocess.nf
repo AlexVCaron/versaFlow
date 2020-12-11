@@ -113,7 +113,15 @@ workflow preprocess_wkf {
             topup2eddy_channel = topup_wkf.out.param.join(topup_wkf.out.prefix).join(topup_wkf.out.topup.map{ [it[0], it.subList(1, it.size())] })
 
             if ( !params.eddy_correction ) {
-                topup_indexed_meta_channel = topup_wkf.out.metadata
+                dwi_channel = uniformize_naming(dwi_channel, "dwi_to_topup", "false")
+                rev_channel = uniformize_naming(rev_channel, "dwi_to_topup_rev", "false")
+                topup_wkf.out.in_metadata_w_topup.view()
+                meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(0..<it[1].size()).step(2)] }, "dwi_to_topup_metadata", "false")
+                rev_meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(1..<it[1].size()).step(2)] }, "dwi_to_topup_rev_metadata", "false")
+                apply_topup_wkf(dwi_channel, rev_channel, topup2eddy_channel, meta_channel.join(rev_meta_channel).map{ [it[0], it.subList(1, it.size())] })
+                dwi_channel = replace_dwi_file(dwi_channel, apply_topup_wkf.out.dwi)
+                dwi_channel = uniformize_naming(dwi_channel, "topup_corrected", "false")
+                meta_channel = uniformize_naming(apply_topup_wkf.out.metadata, "topup_corrected_metadata", "false")
             }
         }
 
@@ -122,7 +130,7 @@ workflow preprocess_wkf {
             cat_rev_repetitions_wkf(rev_channel, meta_channel, "_rev")
             dwi_channel = cat_dwi_repetitions_wkf.out.dwi
             rev_channel = cat_rev_repetitions_wkf.out.dwi
-            meta_channel = cat_dwi_repetitions_wkf.out.metadata.join(cat_rev_repetitions_wkf.out.metadata).map{ [it[0], it.subList(1, it.size())] }
+            meta_channel = cat_dwi_repetitions_wkf.out.metadata.join(cat_rev_repetitions_wkf.out.metadata)
             t1_channel = merge_repetitions(t1_channel, false)
             average(t1_channel.join(t1_channel.map{ [it[0], it[1][0].simpleName] }), "preprocess")
             t1_channel = average.out.image
@@ -133,7 +141,7 @@ workflow preprocess_wkf {
             }
         }
 
-        dwi_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel.map{ [it[0]] + it.subList(1, it.size()) }), "", "preprocess", "")
+        dwi_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "", "preprocess", "")
         b0_channel = dwi_b0.out.b0
         b0_metadata = dwi_b0.out.metadata
 
@@ -170,16 +178,6 @@ workflow preprocess_wkf {
                 dwi_channel = replace_dwi_file(dwi_channel, ants_correct_motion.out.image)
                 meta_channel = ants_correct_motion.out.metadata
             }
-        }
-        else if ( params.topup_correction ) {
-            dwi_channel = uniformize_naming(dwi_channel, "dwi_to_topup", "false")
-            rev_channel = uniformize_naming(rev_channel, "dwi_to_topup_rev", "false")
-            meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0], it[1][0]] }, "dwi_to_topup_metadata", "false")
-            rev_meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0], it[1][1]] }, "dwi_to_topup_rev_metadata", "false")
-            apply_topup_wkf(dwi_channel, rev_channel, topup2eddy_channel, meta_channel.join(rev_meta_channel).map{ [it[0], it.subList(1, it.size())] })
-            dwi_channel = replace_dwi_file(dwi_channel, apply_topup_wkf.out.dwi)
-            dwi_channel = uniformize_naming(dwi_channel, "topup_corrected", "false")
-            meta_channel = uniformize_naming(apply_topup_wkf.out.metadata, "topup_corrected_metadata", "false")
         }
 
         if ( params.intensity_normalization ) {
@@ -232,7 +230,9 @@ workflow preprocess_wkf {
             }
         }
 
-        crop_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).map{ it + [""] }.join(meta_channel), "preprocess")
+
+        dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).map{ it + [""] }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }).view()
+        crop_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).map{ it + [""] }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "preprocess")
         dwi_bbox_channel = crop_dwi.out.bbox
         fit_bounding_box(t1_channel.join(dwi_channel.map{ it.subList(0, 2) }).join(dwi_bbox_channel), "preprocess")
         dwi_bbox_channel = fit_bounding_box.out.bbox

@@ -251,7 +251,7 @@ process crop_image {
             after_script += ["scil_image_math.py convert ${mask.simpleName}_cropped.nii.gz ${mask.simpleName}_cropped.nii.gz --data_type uint8 -f"]
         }
 
-        if ( !metadata.empty() )
+        if ( metadata instanceof nextflow.util.BlankSeparatedList ? !metadata.isEmpty() : !metadata.empty() )
             after_script += ["magic-monkey metadata --in ${image.getSimpleName()}_cropped.nii.gz --update_affine --metadata $metadata"]
 
         """

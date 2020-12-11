@@ -148,7 +148,7 @@ process prepare_topup {
     output:
         tuple val(sid), path("${b0s.simpleName}__topup_script.sh"), path("${b0s.simpleName}__topup_acqp.txt"), path("${b0s.simpleName}__topup_config.cnf"), val("${b0s.simpleName}__topup_results"), emit: config
         tuple val(sid), path("${b0s.simpleName}__topup_metadata.*"), emit: metadata
-        tuple val(sid), path("{${dwi_bval.simpleName},${rev_bval.simpleName}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_topup
+        tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_topup
     script:
         """
         magic-monkey topup --b0s $b0s --bvals ${dwi_bval.join(',')} --rev_bvals ${rev_bval.join(',')} --out ${b0s.simpleName}__topup --config config.py --verbose

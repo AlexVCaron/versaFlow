@@ -62,7 +62,6 @@ workflow topup_wkf {
         rev_channel
         metadata_channel
     main:
-        acq_channel = dwi_channel.map{ [it[0], it[2]] }.groupTuple().join(rev_channel.map{ [it[0], it[2]] }.groupTuple())
         meta_channel = metadata_channel.map{ it.subList(0, 2) }.groupTuple().join(
             metadata_channel.map{ [it[0], it[2]] }.groupTuple()
         ).map{ [it[0], it[1] + it[2]] }
@@ -87,6 +86,7 @@ workflow topup_wkf {
             b0_rev_channel = b0_rev_channel.map{ [it[0], it.subList(1, it.size())] }
         }
 
+        acq_channel = dwi_channel.map{ [it[0], it[2]] }.groupTuple().join(rev_channel.map{ [it[0], it[2]] }.groupTuple())
         b0_data_channel = b0_channel.join(b0_rev_channel).map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] }
         b0_data_channel = b0_data_channel.map{ it + [[], []] }.join(b0_metadata_channel)
 
@@ -95,7 +95,6 @@ workflow topup_wkf {
         metadata_channel = cat_topup.out.metadata.join(meta_channel).map{ [it[0], [it[1]] + it[2]] }
 
         prepare_topup(cat_topup.out.image.join(dwi_channel.map{ [it[0], it[2]] }).join(rev_channel.map{ [it[0], it[2]] }).join(metadata_channel))
-
         data_channel = prepare_topup.out.config.map{ it.subList(0, 4) }.join(cat_topup.out.image)
 
         topup(data_channel.join(prepare_topup.out.metadata), "preprocess")
@@ -118,6 +117,11 @@ workflow apply_topup_wkf {
         topup_channel
         meta_channel
     main:
+        if ( params.merge_repetitions ) {
+            // meta_channel = merge_repetitions(meta_channel, false).map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
+            dwi_channel = merge_repetitions(dwi_channel, false)
+            rev_channel = merge_repetitions(rev_channel, false)
+        }
         data_channel = dwi_channel.map{ it.subList(0, 2) }.join(rev_channel.map{ it.subList(0, 2) })
         apply_topup(data_channel.join(topup_channel).join(meta_channel), "preprocess")
     emit:
