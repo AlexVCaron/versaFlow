@@ -285,3 +285,29 @@ process fit_bounding_box {
     magic-monkey fitbox --in $image --ref $reference --pbox $bounding_box --out ${image.simpleName}_bbox
     """
 }
+
+process average {
+    input:
+        tuple val(sid), path(images), val(base_name)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${base_name}_averaged.nii.gz"), emit: image
+    script:
+    """
+    magic-monkey concatenate --in ${images.join(",")} --out cat_images --ts
+    fslmaths cat_images.nii.gz -Tmean ${base_name}_averaged.nii.gz
+    """
+}
+
+process merge_masks {
+    input:
+    tuple val(sid), path(masks), val(base_name)
+    val(caller_name)
+    output:
+    tuple val(sid), path("${base_name}_merged.nii.gz"), emit: mask
+    script:
+    """
+    magic-monkey concatenate --in ${masks.join(",")} --out cat_images --ts
+    fslmaths cat_images.nii.gz -Tmax ${base_name}_merged.nii.gz
+    """
+}

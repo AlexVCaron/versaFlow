@@ -3,7 +3,10 @@
 nextflow.enable.dsl=2
 
 def key_from_filename ( chan, split_char ) {
-    return chan.map{ [ it.getFileName().toString().substring(0, it.getFileName().toString().lastIndexOf(split_char)), it ] }
+    return chan.map{
+        def fname = it.getFileName().toString().split(split_char)
+        [ fname[0..<(fname.size() > 2 ? 2 : 1)].join(split_char), it ]
+    }
 }
 
 def group_channel_rep ( chan ) {
@@ -107,4 +110,27 @@ def sort_as_with_name ( channel, sorting_channel ) {
     ).map{
         [it[0]] + it[1].sort{ f -> f_token = file("$f").getSimpleName(); it[2].find{ pt -> f_token ==~ pt } }
     }
+}
+
+def merge_repetitions ( channel, keep_rep_key ) {
+    c = channel.map{ it ->
+        def sub_rep = it[0].split("_");
+        [sub_rep[0], sub_rep[1..<sub_rep.size()].join("_")] + it.subList(1, it.size())
+    }.groupTuple()
+    c = c.map{
+        [it[0]] + it.subList(keep_rep_key ? 1 : 2, it.size()).collect{
+            s -> s.withIndex().collect{
+                o, i -> [o: o, i: i]
+            }.sort{
+                a, b -> it[1][a.i] <=> it[1][b.i]
+            }.collect{ e -> e.o }
+        }
+    }
+    // c.view()
+    return c
+}
+
+def interleave ( l1, l2 ) {
+    def result = [l1, l2].transpose()
+    return ( result += (l1 - result*.get(0)) ?: (l2 - result*.get(1)) ).flatten()
 }

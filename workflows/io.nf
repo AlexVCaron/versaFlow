@@ -40,9 +40,9 @@ workflow load_dataset {
         }
 
         if ( params.masked_t1 )
-            anat_channel = anat_channel.join(key_from_filename(Channel.fromPath("$root/**/*mask.nii.gz"), "_"))
-        else if ( params.masked_dwi )
-            dwi_channel = dwi_channel.join(key_from_filename(Channel.fromPath("$root/**/*mask.nii.gz"), "_"))
+            anat_channel = anat_channel.join(key_from_filename(Channel.fromPath("$root/**/*t1_mask.nii.gz"), "_"))
+        if ( params.masked_dwi )
+            dwi_channel = dwi_channel.join(key_from_filename(Channel.fromPath("$root/**/*dwi_mask.nii.gz"), "_"))
 
         dwi_meta_channel = pmeta_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_meta_channel, remainder: true).map{ it.size() > 2 ? it[-1] ? it : [it[0], it[1], ""] : it + [""] }.map{ it + ["false"] })
     emit:

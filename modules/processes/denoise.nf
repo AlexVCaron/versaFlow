@@ -151,7 +151,7 @@ process prepare_topup {
         tuple val(sid), path("{${dwi_bval.simpleName},${rev_bval.simpleName}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_topup
     script:
         """
-        magic-monkey topup --b0s $b0s --bvals $dwi_bval --rev_bvals $rev_bval --out ${b0s.simpleName}__topup --config config.py --verbose
+        magic-monkey topup --b0s $b0s --bvals ${dwi_bval.join(',')} --rev_bvals ${rev_bval.join(',')} --out ${b0s.simpleName}__topup --config config.py --verbose
         """
 }
 
