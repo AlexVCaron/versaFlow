@@ -35,7 +35,7 @@ process ants_register {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         magic-monkey ants_registration --moving ${moving.join(",")} --target ${target.join(",")} --out ${moving[0].simpleName}__registration $mask_arg --config $config
-        cp $reference ${moving[0].simpleName}__registration_ref.nii.gz
+        cp ${file(reference).name} ${moving[0].simpleName}__registration_ref.nii.gz
         cp ${moving[0].simpleName}__registration_warped.nii.gz ${moving[0].simpleName}__registration_rigid.nii.gz
         if [ -f ${moving[0].simpleName}__registration0GenericAffine.mat ]
         then
