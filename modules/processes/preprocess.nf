@@ -5,9 +5,8 @@ nextflow.enable.dsl=2
 include { get_size_in_gb; swap_configurations } from '../functions.nf'
 
 process extract_b0 {
-    memory { 2f * get_size_in_gb(dwi) }
+    memory { 4f * get_size_in_gb(dwi) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -27,9 +26,8 @@ process extract_b0 {
 }
 
 process squash_b0 {
-    memory { 2f * get_size_in_gb(dwi) }
+    memory { 4f * get_size_in_gb(dwi) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode

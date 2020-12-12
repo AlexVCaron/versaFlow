@@ -6,9 +6,8 @@ include { get_size_in_gb } from '../functions.nf'
 
 
 process ants_register_dwi_repetition {
-    memory { get_size_in_gb(target_b0) + get_size_in_gb(dwi) }
+    memory { 4f * (get_size_in_gb(target_b0) + get_size_in_gb(dwi)) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -35,9 +34,8 @@ process ants_register_dwi_repetition {
 }
 
 process ants_register_t1_repetition {
-    memory { get_size_in_gb(ref_t1) + get_size_in_gb(t1) }
+    memory { 4f * (get_size_in_gb(ref_t1) + get_size_in_gb(t1)) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode

@@ -5,9 +5,8 @@ nextflow.enable.dsl=2
 include { get_size_in_gb } from '../functions.nf'
 
 process apply_mask {
-    memory { 2f * get_size_in_gb([img, mask]) }
+    memory { 4f * get_size_in_gb([img, mask]) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -26,9 +25,8 @@ process apply_mask {
 }
 
 process bet_mask {
-    memory { get_size_in_gb(img) }
+    memory { 4f * get_size_in_gb(img) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -46,9 +44,8 @@ process bet_mask {
 }
 
 process cat_datasets {
-    memory { 2f * get_size_in_gb(imgs) }
+    memory { 4f * get_size_in_gb(imgs) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -77,9 +74,8 @@ process cat_datasets {
 }
 
 process split_image {
-    memory { get_size_in_gb(img) }
+    memory { 4f * get_size_in_gb(img) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -98,9 +94,8 @@ process split_image {
 }
 
 process join_images {
-    memory { 2f * get_size_in_gb(imgs) }
+    memory { 4f * get_size_in_gb(imgs) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -119,9 +114,8 @@ process join_images {
 }
 
 process apply_topup {
-    memory { 2f * (get_size_in_gb(dwis) + get_size_in_gb(revs)) }
+    memory { 4f * (get_size_in_gb(dwis) + get_size_in_gb(revs)) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -139,9 +133,8 @@ process apply_topup {
 }
 
 process tournier2descoteaux_odf {
-    memory { 2f * get_size_in_gb(odfs) }
+    memory { 4f * get_size_in_gb(odfs) }
     label params.conservative_resources ? "res_conservative" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -158,9 +151,8 @@ process tournier2descoteaux_odf {
 }
 
 process convert_datatype {
-    memory { 2f * get_size_in_gb(image) }
+    memory { 4f * get_size_in_gb(image) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -178,9 +170,8 @@ process convert_datatype {
 }
 
 process replicate_image {
-    memory { 2f * get_size_in_gb([img, ref_img]) }
+    memory { 4f * get_size_in_gb([img, ref_img]) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     input:
         tuple val(sid), path(img), path(ref_img)
@@ -198,7 +189,6 @@ process replicate_image {
 
 process check_dwi_conformity {
     label "res_single_cpu"
-    errorStrategy "finish"
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), file(metadata)
@@ -213,9 +203,8 @@ process check_dwi_conformity {
 }
 
 process crop_image {
-    memory { 2f * get_size_in_gb([image, mask]) }
+    memory { 4f * get_size_in_gb([image, mask]) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("cropped.nii.gz") ? f : null }, mode: params.publish_mode
@@ -265,9 +254,8 @@ process crop_image {
 }
 
 process fit_bounding_box {
-    memory { get_size_in_gb([image]) }
+    memory { 4f * get_size_in_gb([image]) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("cropped.nii.gz") ? f : null }, mode: params.publish_mode

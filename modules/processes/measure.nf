@@ -8,9 +8,8 @@ params.verbose_outputs = true
 include { get_size_in_gb; swap_configurations } from '../functions.nf'
 
 process dti_metrics {
-    memory { 2f * get_size_in_gb([mask] + (data instanceof List ? data : [data])) }
+    memory { 4f * get_size_in_gb([mask] + (data instanceof List ? data : [data])) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/dti", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -29,9 +28,8 @@ process dti_metrics {
 }
 
 process scil_compute_dti_fa {
-    memory { 3f * get_size_in_gb([dwi, mask]) }
+    memory { 4f * get_size_in_gb([dwi, mask]) }
     label params.conservative_resources ? "res_conservative" : "res_full_node"
-    errorStrategy "finish"
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
@@ -56,9 +54,8 @@ process scil_compute_dti_fa {
 }
 
 process scil_dti_and_metrics {
-    memory { 3f * get_size_in_gb([dwi, mask]) }
+    memory { 4f * get_size_in_gb([dwi, mask]) }
     label params.conservative_resources ? "res_conservative" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.process}_${task.index}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/all/${sid}/$measuring_caller_name/${task.process}_${task.index}",saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f },  mode: params.publish_mode, enabled: params.publish_all
@@ -96,9 +93,8 @@ process scil_dti_and_metrics {
 }
 
 process diamond_metrics {
-    memory { 2.5 * get_size_in_gb(data + [mask]) }
+    memory { 4f * get_size_in_gb(data + [mask]) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -117,9 +113,8 @@ process diamond_metrics {
 }
 
 process odf_metrics {
-    memory { 2.5 * get_size_in_gb([odfs, fa, md, mask]) }
+    memory { 4f * get_size_in_gb([odfs, fa, md, mask]) }
     label params.conservative_resources ? "res_conservative" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode

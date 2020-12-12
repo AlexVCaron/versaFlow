@@ -8,9 +8,8 @@ params.force_resampling_sequential = false
 include { get_size_in_gb } from '../functions.nf'
 
 process scilpy_resample {
-    memory { 2f * get_size_in_gb([image, mask]) }
+    memory { 4f * get_size_in_gb([image, mask]) }
     label params.force_resampling_sequential ? "res_full_cpu_override" : "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -41,9 +40,8 @@ process scilpy_resample {
 }
 
 process scilpy_resample_on_ref {
-    memory { 2f * get_size_in_gb([image, ref, mask]) }
+    memory { 4f * get_size_in_gb([image, ref, mask]) }
     label params.force_resampling_sequential ? "res_full_cpu_override" : "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode

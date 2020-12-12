@@ -9,9 +9,8 @@ params.eddy_force_shelled = true
 include { get_size_in_gb; swap_configurations } from '../functions.nf'
 
 process dwi_denoise {
-    memory { 2f * get_size_in_gb([dwi, mask]) }
+    memory { 4f * get_size_in_gb([dwi, mask]) }
     label params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -38,9 +37,8 @@ process dwi_denoise {
 }
 
 process nlmeans_denoise {
-    memory { 2f * get_size_in_gb(image) }
+    memory { 4f * get_size_in_gb(image) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -61,9 +59,8 @@ process nlmeans_denoise {
 }
 
 process ants_gaussian_denoise {
-    memory { 2f * get_size_in_gb([image, mask]) }
+    memory { 4f * get_size_in_gb([image, mask]) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -88,9 +85,8 @@ process ants_gaussian_denoise {
 }
 
 process n4_denoise {
-    memory { 2f * get_size_in_gb([image, anat, mask]) }
+    memory { 4f * get_size_in_gb([image, anat, mask]) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -129,8 +125,6 @@ process n4_denoise {
 }
 
 process prepare_topup {
-    errorStrategy "finish"
-
     label "res_single_cpu"
 
     input:
@@ -147,11 +141,9 @@ process prepare_topup {
 }
 
 process topup {
-    memory { 2f * get_size_in_gb(b0) }
+    memory { 4f * get_size_in_gb(b0) }
 
     label "res_single_cpu"
-
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -172,8 +164,6 @@ process topup {
 }
 
 process prepare_eddy {
-    errorStrategy "finish"
-
     label "res_single_cpu"
 
     input:
@@ -215,10 +205,9 @@ process prepare_eddy {
 }
 
 process eddy {
-    memory { 2f * get_size_in_gb([dwi, mask]) }
+    memory { 4f * get_size_in_gb([dwi, mask]) }
     label params.use_cuda ? "res_single_cpu" : params.on_hcp ? "res_full_node_override" : "res_max_cpu"
     label params.use_cuda ? "res_gpu" : ""
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -261,11 +250,9 @@ process eddy {
 }
 
 process gibbs_removal {
-    memory { 2f * get_size_in_gb(dwi) }
+    memory { 4f * get_size_in_gb(dwi) }
 
     label "res_single_cpu"
-
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode

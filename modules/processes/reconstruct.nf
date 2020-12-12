@@ -11,9 +11,8 @@ params.frf_roi_radius = 10
 include { get_size_in_gb; uniformize_naming } from '../functions.nf'
 
 process diamond {
-    memory { 2f * get_size_in_gb([input_dwi, mask] + (data instanceof List ? data : [data])) }
+    memory { 4f * get_size_in_gb([input_dwi, mask] + (data instanceof List ? data : [data])) }
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -34,9 +33,8 @@ process diamond {
 }
 
 process mrtrix_dti {
-    memory { 2f * get_size_in_gb([dwi, mask]) }
+    memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/dti", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -58,9 +56,8 @@ process mrtrix_dti {
 }
 
 process response {
-    memory { 2f * get_size_in_gb([dwi, mask]) }
+    memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -82,9 +79,8 @@ process response {
 }
 
 process csd {
-    memory { 2.5 * get_size_in_gb([dwi, mask]) }
+    memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -106,9 +102,8 @@ process csd {
 }
 
 process scilpy_response {
-    memory { 2f * get_size_in_gb([dwi, mask]) }
+    memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_single_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -129,9 +124,8 @@ process scilpy_response {
 }
 
 process scilpy_csd {
-    memory { 2.5 * get_size_in_gb([dwi, mask]) }
+    memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_max_cpu"
-    errorStrategy "finish"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
