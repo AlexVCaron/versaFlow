@@ -14,7 +14,7 @@ process apply_mask {
     input:
         tuple val(sid), path(img), path(mask), path(metadata)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${img.simpleName}__masked.nii.gz"), emit: image
         tuple val(sid), path("${img.simpleName}__masked_metadata.*"), optional: true, emit: metadata
@@ -51,15 +51,15 @@ process cat_datasets {
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-        tuple val(sid), file(imgs), file(bval), file(bvec), file(metadatas)
+        tuple val(sid), path(imgs), file(bval), file(bvec), file(metadatas)
         val(suffix)
         val(caller_name)
-        file(config)
+        path(config)
     output:
-        tuple val(sid), file("${sid}__concatenated${suffix}.nii.gz"), emit: image
-        tuple val(sid), file("${sid}__concatenated${suffix}.bval"), optional: true, emit: bval
-        tuple val(sid), file("${sid}__concatenated${suffix}.bvec"), optional: true, emit: bvec
-        tuple val(sid), file("${sid}__concatenated${suffix}_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${sid}__concatenated${suffix}.nii.gz"), emit: image
+        tuple val(sid), path("${sid}__concatenated${suffix}.bval"), optional: true, emit: bval
+        tuple val(sid), path("${sid}__concatenated${suffix}.bvec"), optional: true, emit: bvec
+        tuple val(sid), path("${sid}__concatenated${suffix}_metadata.*"), optional: true, emit: metadata
     script:
         args = "--in ${imgs.join(',')}"
 
@@ -106,7 +106,7 @@ process join_images {
         val(caller_name)
     output:
         tuple val(sid), path("${sid}__joined_ax${split_axis}.nii.gz"), emit: image
-        tuple val(sid), file("${sid}__joined_ax${split_axis}_*_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${sid}__joined_ax${split_axis}_*_metadata.*"), optional: true, emit: metadata
     script:
         """
         magic-monkey split --image ${sid}__joined_ax${split_axis}.nii.gz --prefix $prefix --axis $split_axis --inverse
@@ -125,7 +125,7 @@ process apply_topup {
         val(caller_name)
     output:
         tuple val(sid), path("${sid}__topup_corrected*.nii.gz"), path("${sid}__topup_corrected*.bval"), path("${sid}__topup_corrected*.bvec"), emit: dwi
-        tuple val(sid), file("${sid}__topup_corrected*_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${sid}__topup_corrected*_metadata.*"), optional: true, emit: metadata
     script:
         """
         magic-monkey apply_topup --dwi ${dwis.join(",")} --bvals ${bvals.join(",")} --bvecs ${bvecs.join(",")} --rev ${revs.join(",")} --acqp $topup_params --topup $topup_prefix --out ${sid}__topup_corrected
@@ -261,7 +261,7 @@ process fit_bounding_box {
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("cropped.nii.gz") ? f : null }, mode: params.publish_mode
 
     input:
-        tuple val(sid), file(image), file(reference), file(bounding_box)
+        tuple val(sid), path(image), path(reference), path(bounding_box)
         val(caller_name)
     output:
         tuple val(sid), path("${image.simpleName}_bbox.pkl"), emit: bbox, optional: true

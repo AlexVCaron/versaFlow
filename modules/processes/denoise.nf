@@ -94,7 +94,7 @@ process n4_denoise {
     input:
         tuple val(sid), path(image), file(anat), file(mask), file(metadata)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
@@ -129,7 +129,7 @@ process prepare_topup {
 
     input:
         tuple val(sid), path(b0s), path(dwi_bval), path(rev_bval), file(metadata)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${b0s.simpleName}__topup_script.sh"), path("${b0s.simpleName}__topup_acqp.txt"), path("${b0s.simpleName}__topup_config.cnf"), val("${b0s.simpleName}__topup_results"), emit: config
         tuple val(sid), path("${b0s.simpleName}__topup_metadata.*"), emit: metadata
@@ -168,7 +168,7 @@ process prepare_eddy {
 
     input:
         tuple val(sid), val(prefix), file(topup_acqp), val(rev_prefix), path(data), path(metadata)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${prefix}__eddy_script.sh"), path("${prefix}__eddy_index.txt"), path("${prefix}__eddy_acqp.txt"), emit: config
         tuple val(sid), path("${prefix}__eddy_slspec.txt"), emit: slspec, optional: true

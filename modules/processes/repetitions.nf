@@ -15,8 +15,8 @@ process ants_register_dwi_repetition {
     input:
         tuple val(sid), path(target_b0), val(rep_idx), path(dwi), path(bval), path(bvec), path(metadata)
         val(caller_name)
-        file(b0_config)
-        file(reg_config)
+        path(b0_config)
+        path(reg_config)
     output:
         tuple val("${sid}_${rep_idx}"), path("${dwi.simpleName}__rep_registered.nii.gz"), path("${dwi.simpleName}__rep_registered.bval"), path("${dwi.simpleName}__rep_registered.bvec"), emit: dwi
         tuple val("${sid}_${rep_idx}"), path("${dwi.simpleName}__rep_registered_metadata.*"), emit: metadata

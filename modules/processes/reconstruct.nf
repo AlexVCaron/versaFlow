@@ -20,7 +20,7 @@ process diamond {
     input:
         tuple val(sid), path(input_dwi), path(mask), path(data)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${sid}__diamond*.nii.gz"), emit: diamond
     script:
@@ -42,7 +42,7 @@ process mrtrix_dti {
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${sid}__dti_dti.nii.gz"), emit: dti
     script:
@@ -65,7 +65,7 @@ process response {
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${sid}__response_*.txt"), emit: responses
     script:
@@ -88,7 +88,7 @@ process csd {
     input:
         tuple val(sid), path(responses), path(dwi), path(bval), path(bvec), path(mask)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${sid}__csd_*.nii.gz"), emit: odfs
     script:

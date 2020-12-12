@@ -17,7 +17,7 @@ process ants_register {
     input:
         tuple val(sid), path(moving), path(target), val(reference), file(mask), path(metadata)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${moving[0].simpleName}__registration_affine.mat"), path("${moving[0].simpleName}__registration_rigid.nii.gz"), optional: true, emit: affine
         tuple val(sid), path("${moving[0].simpleName}__registration_ref.nii.gz"), emit: reference
@@ -59,7 +59,7 @@ process ants_correct_motion {
     input:
         tuple val(sid), path(moving), path(target), path(metadata)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${sid}__motion_correct_warped.nii.gz"), emit: image
         tuple val(sid), path("${sid}__motion_correct_warped_metadata.*"), optional: true, emit: metadata
@@ -82,7 +82,7 @@ process ants_transform {
     input:
         tuple val(sid), path(img), path(ref), path(affine), file(trans), file(metadata)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), path("${img.simpleName}__transformed.nii.gz"), emit: image
         tuple val(sid), path("${img.simpleName}__transformed_metadata.*"), optional: true, emit: metadata

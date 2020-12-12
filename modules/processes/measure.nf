@@ -17,7 +17,7 @@ process dti_metrics {
     input:
         tuple val(sid), val(input_prefix), file(mask), path(data), path(metadata)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), val("${sid}__dti_metrics"), emit: prefix
         tuple val(sid), path("${sid}__dti_metrics*.nii.gz"), emit: metrics
@@ -102,7 +102,7 @@ process diamond_metrics {
     input:
         tuple val(sid), val(input_prefix), file(mask), path(data), path(metadata)
         val(caller_name)
-        file(config)
+        path(config)
     output:
         tuple val(sid), val("${sid}__diamond_metrics"), emit: prefix
         tuple val(sid), path("${sid}__diamond_metrics*.nii.gz"), emit: metrics
@@ -120,7 +120,7 @@ process odf_metrics {
     publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(odfs), path(fa), path(md), file(mask)
+        tuple val(sid), path(odfs), path(fa), path(md), path(mask)
         val(caller_name)
         val(basis)
     output:
