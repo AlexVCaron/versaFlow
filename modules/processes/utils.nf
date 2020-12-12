@@ -2,9 +2,6 @@
 
 nextflow.enable.dsl=2
 
-params.config.utils.apply_mask = "$projectDir/.config/apply_mask.py"
-params.config.utils.concatenate = "$projectDir/.config/cat.py"
-
 include { get_size_in_gb } from '../functions.nf'
 
 process apply_mask {
@@ -15,16 +12,16 @@ process apply_mask {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
-    beforeScript "cp $params.config.utils.apply_mask config.py"
     input:
         tuple val(sid), path(img), path(mask), path(metadata)
         val(caller_name)
+        file(config)
     output:
         tuple val(sid), path("${img.simpleName}__masked.nii.gz"), emit: image
         tuple val(sid), path("${img.simpleName}__masked_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey apply_mask $img $mask ${img.simpleName}__masked.nii.gz --config config.py
+        magic-monkey apply_mask $img $mask ${img.simpleName}__masked.nii.gz --config $config
         """
 }
 
@@ -56,11 +53,11 @@ process cat_datasets {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
-    beforeScript "cp $params.config.utils.concatenate config.py"
     input:
         tuple val(sid), file(imgs), file(bval), file(bvec), file(metadatas)
         val(suffix)
         val(caller_name)
+        file(config)
     output:
         tuple val(sid), file("${sid}__concatenated${suffix}.nii.gz"), emit: image
         tuple val(sid), file("${sid}__concatenated${suffix}.bval"), optional: true, emit: bval
@@ -75,7 +72,7 @@ process cat_datasets {
             args += " --bvecs ${bvec.join(',')}"
 
         """
-        magic-monkey concatenate $args --out ${sid}__concatenated${suffix} --config config.py
+        magic-monkey concatenate $args --out ${sid}__concatenated${suffix} --config $config
         """
 }
 

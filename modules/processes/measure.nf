@@ -5,9 +5,6 @@ nextflow.enable.dsl=2
 params.verbose_outputs = true
 
 
-params.config.measure.diamond = "$projectDir/.config/diamond_metrics.py"
-params.config.measure.dti = "$projectDir/.config/dti_metrics.py"
-
 include { get_size_in_gb; swap_configurations } from '../functions.nf'
 
 process dti_metrics {
@@ -18,17 +15,14 @@ process dti_metrics {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/dti", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
-    beforeScript { "cp $params.config.measure.dti config.py" }
     input:
         tuple val(sid), val(input_prefix), file(mask), path(data), path(metadata)
         val(caller_name)
-        file(config_overwrite)
+        file(config)
     output:
         tuple val(sid), val("${sid}__dti_metrics"), emit: prefix
         tuple val(sid), path("${sid}__dti_metrics*.nii.gz"), emit: metrics
     script:
-        config = swap_configurations("config.py", config_overwrite)
-
         """
         magic-monkey dti_metrics --in $input_prefix --out ${sid}__dti_metrics --config $config
         """
@@ -109,16 +103,16 @@ process diamond_metrics {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
-    beforeScript "cp $params.config.measure.diamond config.py"
     input:
         tuple val(sid), val(input_prefix), file(mask), path(data), path(metadata)
         val(caller_name)
+        file(config)
     output:
         tuple val(sid), val("${sid}__diamond_metrics"), emit: prefix
         tuple val(sid), path("${sid}__diamond_metrics*.nii.gz"), emit: metrics
     script:
         """
-        magic-monkey diamond_metrics --in $input_prefix --out ${sid}__diamond_metrics --config config.py
+        magic-monkey diamond_metrics --in $input_prefix --out ${sid}__diamond_metrics --config $config
         """
 }
 

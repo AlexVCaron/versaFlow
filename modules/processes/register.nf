@@ -4,9 +4,6 @@ import java.io.File
 
 nextflow.enable.dsl=2
 
-params.config.register.ants_registration = "$projectDir/.config/ants_registration.py"
-params.config.register.ants_motion = "$projectDir/.config/ants_motion.py"
-params.config.register.ants_transform = "$projectDir/.config/ants_transform.py"
 
 include { get_size_in_gb; swap_configurations } from '../functions.nf'
 
@@ -18,11 +15,10 @@ process ants_register {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
-    beforeScript "cp $params.config.register.ants_registration config.py"
     input:
         tuple val(sid), path(moving), file(target), val(reference), file(mask), path(metadata)
         val(caller_name)
-        file(config_overwrite)
+        file(config)
     output:
         tuple val(sid), path("${moving[0].simpleName}__registration_affine.mat"), path("${moving[0].simpleName}__registration_rigid.nii.gz"), optional: true, emit: affine
         tuple val(sid), path("${moving[0].simpleName}__registration_ref.nii.gz"), emit: reference
@@ -30,7 +26,6 @@ process ants_register {
         tuple val(sid), path("${moving[0].simpleName}__registration*syn.nii.gz"), optional: true, emit: syn
         tuple val(sid), path("${moving[0].simpleName}__registration_warped_metadata.*"), optional: true, emit: metadata
     script:
-        config = swap_configurations("config.py", config_overwrite)
         def mask_arg = ""
         if ( !mask.iterator().inject(false) { c, i -> c || i.empty() } ) {
             mask_arg = "--mask ${mask.iterator().collect{ it.name }.join(',')}"
@@ -62,17 +57,14 @@ process ants_correct_motion {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
-    beforeScript "cp $params.config.register.ants_motion config.py"
     input:
         tuple val(sid), file(moving), file(target), path(metadata)
         val(caller_name)
-        file(config_overwrite)
+        file(config)
     output:
         tuple val(sid), path("${sid}__motion_correct_warped.nii.gz"), emit: image
         tuple val(sid), path("${sid}__motion_correct_warped_metadata.*"), optional: true, emit: metadata
     script:
-        config = swap_configurations("config.py", config_overwrite)
-
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
@@ -89,10 +81,10 @@ process ants_transform {
     publishDir "${params.output_root}/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
-    beforeScript "cp $params.config.register.ants_transform config.py"
     input:
         tuple val(sid), path(img), path(ref), path(affine), file(trans), file(metadata)
         val(caller_name)
+        file(config)
     output:
         tuple val(sid), path("${img.simpleName}__transformed.nii.gz"), emit: image
         tuple val(sid), path("${img.simpleName}__transformed_metadata.*"), optional: true, emit: metadata
@@ -102,6 +94,6 @@ process ants_transform {
             args += " --trans ${trans}"
         }
         """
-        magic-monkey ants_transform $args --out ${img.simpleName}__transformed.nii.gz --config config.py
+        magic-monkey ants_transform $args --out ${img.simpleName}__transformed.nii.gz --config $config
         """
 }

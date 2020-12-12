@@ -6,12 +6,6 @@ params.eddy_on_rev = true
 params.use_cuda = false
 params.eddy_force_shelled = true
 
-
-params.config.denoise.topup = "$projectDir/.config/topup.py"
-params.config.denoise.eddy = "$projectDir/.config/eddy.py"
-params.config.denoise.eddy_cuda = "$projectDir/.config/eddy_cuda.py"
-params.config.denoise.n4 = "$projectDir/.config/n4_denoise.py"
-
 include { get_size_in_gb; swap_configurations } from '../functions.nf'
 
 process dwi_denoise {
@@ -101,17 +95,14 @@ process n4_denoise {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
-    beforeScript "cp $params.config.denoise.n4 config.py"
     input:
         tuple val(sid), path(image), file(anat), file(mask), file(metadata)
         val(caller_name)
-        file(config_overwrite)
+        file(config)
     output:
         tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
     script:
-        config = swap_configurations(file("$workDir/config.py"), config_overwrite)
-
         after_denoise = ""
         args = ""
         if ( anat.empty() )
@@ -142,16 +133,16 @@ process prepare_topup {
 
     label "res_single_cpu"
 
-    beforeScript "cp $params.config.denoise.topup config.py"
     input:
         tuple val(sid), path(b0s), path(dwi_bval), path(rev_bval), file(metadata)
+        file(config)
     output:
         tuple val(sid), path("${b0s.simpleName}__topup_script.sh"), path("${b0s.simpleName}__topup_acqp.txt"), path("${b0s.simpleName}__topup_config.cnf"), val("${b0s.simpleName}__topup_results"), emit: config
         tuple val(sid), path("${b0s.simpleName}__topup_metadata.*"), emit: metadata
         tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_topup
     script:
         """
-        magic-monkey topup --b0s $b0s --bvals ${dwi_bval.join(',')} --rev_bvals ${rev_bval.join(',')} --out ${b0s.simpleName}__topup --config config.py --verbose
+        magic-monkey topup --b0s $b0s --bvals ${dwi_bval.join(',')} --rev_bvals ${rev_bval.join(',')} --out ${b0s.simpleName}__topup --config $config --verbose
         """
 }
 
@@ -185,9 +176,9 @@ process prepare_eddy {
 
     label "res_single_cpu"
 
-    beforeScript params.use_cuda ? "cp $params.config.denoise.eddy_cuda config.py" : "cp $params.config.denoise.eddy config.py"
     input:
         tuple val(sid), val(prefix), file(topup_acqp), val(rev_prefix), path(data), path(metadata)
+        file(config)
     output:
         tuple val(sid), path("${prefix}__eddy_script.sh"), path("${prefix}__eddy_index.txt"), path("${prefix}__eddy_acqp.txt"), emit: config
         tuple val(sid), path("${prefix}__eddy_slspec.txt"), emit: slspec, optional: true
@@ -208,20 +199,18 @@ process prepare_eddy {
             args += " --rev_eddy"
 
         if ( params.use_cuda )
-            args += " --cuda --config config.py"
-        else
-            args += " --config config.py"
+            args += " --cuda"
 
         if ( params.eddy_force_shelled )
             args += " --shelled"
 
         if ( will_gen_acqp )
             """
-            magic-monkey eddy $args --out ${prefix}__eddy
+            magic-monkey eddy $args --out ${prefix}__eddy --config $config
             """
         else
             """
-            magic-monkey eddy $args --out ${prefix}__eddy && cp $topup_acqp "${prefix}__eddy_acqp.txt"
+            magic-monkey eddy $args --out ${prefix}__eddy && cp $topup_acqp "${prefix}__eddy_acqp.txt" --config $config
             """
 }
 

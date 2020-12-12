@@ -28,17 +28,20 @@ params.nlmeans_t1 = true
 params.config.workflow.preprocess.t12b0_base_registration = file("$projectDir/.config/.workflow/t12b0_base_registration.py")
 params.config.workflow.preprocess.t12b0_syn_registration = file("$projectDir/.config/.workflow/t12b0_syn_registration.py")
 params.config.workflow.preprocess.t12b0mask_registration = file("$projectDir/.config/.workflow/t12b0_mask_registration.py")
+params.config.register.ants_transform = file("$projectDir/.config/ants_transform.py")
+params.config.register.ants_motion = file("$projectDir/.config/ants_motion.py")
 params.config.workflow.preprocess.b0_mean = file("$projectDir/.config/extract_b0_mean.py")
 params.config.workflow.preprocess.b0_batch_mean = file("$projectDir/.config/extract_b0_batch_mean.py")
 params.config.workflow.preprocess.first_b0 = file("$projectDir/.config/extract_first_b0.py")
+params.config.denoise.n4_denoise = "$projectDir/.config/n4_denoise.py"
 params.config.workflow.preprocess.n4_denoise_t1 = file("$projectDir/.config/.workflow/n4_denoise_on_t1.py")
 
 include { map_optional; opt_channel; replace_dwi_file; uniformize_naming; merge_repetitions } from '../modules/functions.nf'
-include { extract_b0 as extract_rep_b0; extract_b0 as dwi_b0; extract_b0 as extract_b0_motion; extract_b0 as dwi_b0_for_t1_reg } from '../modules/processes/preprocess.nf'
+include { extract_b0 as dwi_b0; extract_b0 as extract_b0_motion; extract_b0 as dwi_b0_for_t1_reg } from '../modules/processes/preprocess.nf'
 include { ants_correct_motion } from '../modules/processes/register.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
 include { ants_transform } from '../modules/processes/register.nf'
-include { convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; crop_image as crop_dwi; crop_image as crop_t1; fit_bounding_box; cat_datasets as cat_repetitions; average; merge_masks } from '../modules/processes/utils.nf'
+include { convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; crop_image as crop_dwi; crop_image as crop_t1; fit_bounding_box; average; merge_masks } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise } from '../modules/processes/denoise.nf'
 include { scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi; scilpy_resample_on_ref as scilpy_resample_mask } from '../modules/processes/upsample.nf'
 include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; registration_wkf as t1_base_registration_wkf; registration_wkf as t1_syn_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
@@ -144,7 +147,7 @@ workflow preprocess_wkf {
 
         dwi_channel.view()
         meta_channel.view()
-        dwi_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "", "preprocess", "")
+        dwi_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "", "preprocess", params.config.workflow.preprocess.b0_mean)
         b0_channel = dwi_b0.out.b0
         b0_metadata = dwi_b0.out.metadata
 
@@ -176,15 +179,15 @@ workflow preprocess_wkf {
             meta_channel = eddy_wkf.out.metadata
 
             if ( params.post_eddy_registration ) {
-                extract_b0_motion(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "_eddy", "preprocess", "")
-                ants_correct_motion(dwi_channel.map{ it.subList(0, 2) }.groupTuple().join(extract_b0_motion.out.b0.groupTuple()).join(meta_channel), "preprocess", "")
+                extract_b0_motion(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "_eddy", "preprocess", params.config.workflow.preprocess.b0_mean)
+                ants_correct_motion(dwi_channel.map{ it.subList(0, 2) }.groupTuple().join(extract_b0_motion.out.b0.groupTuple()).join(meta_channel), "preprocess", params.config.register.ants_motion)
                 dwi_channel = replace_dwi_file(dwi_channel, ants_correct_motion.out.image)
                 meta_channel = ants_correct_motion.out.metadata
             }
         }
 
         if ( params.intensity_normalization ) {
-            n4_denoise_wkf(dwi_channel.map{ it.subList(0, 2) }, b0_channel, dwi_mask_channel, meta_channel, "")
+            n4_denoise_wkf(dwi_channel.map{ it.subList(0, 2) }, b0_channel, dwi_mask_channel, meta_channel, params.config.denoise.n4_denoise)
             dwi_channel = replace_dwi_file(dwi_channel, n4_denoise_wkf.out.image)
             meta_channel = n4_denoise_wkf.out.metadata
         }
@@ -207,7 +210,7 @@ workflow preprocess_wkf {
         t1_channel = t1_preprocess_wkf.out.t1
 
         if ( params.register_t12b0_denoised ) {
-            dwi_b0_for_t1_reg(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "", "preprocess", "")
+            dwi_b0_for_t1_reg(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "", "preprocess", params.config.workflow.preprocess.b0_mean)
             scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess")
             b0_metadata = dwi_b0_for_t1_reg.out.metadata
             t1_base_registration_wkf(
@@ -218,7 +221,7 @@ workflow preprocess_wkf {
                 b0_metadata.map{ it.subList(0, 2) + [""] },
                 params.config.workflow.preprocess.t12b0_base_registration
             )
-            ants_transform(t1_mask_channel.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess")
+            ants_transform(t1_mask_channel.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
             t1_mask_channel = ants_transform.out.image
             if ( params.register_syn_t12b0 ) {
                 t1_syn_registration_wkf(

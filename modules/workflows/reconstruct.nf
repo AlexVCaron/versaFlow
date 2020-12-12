@@ -5,6 +5,11 @@ nextflow.enable.dsl=2
 params.reconstruct_use_mrtrix = false
 params.convert_tournier2descoteaux = true
 
+params.config.reconstruct.diamond = "$projectDir/.config/diamond.py"
+params.config.reconstruct.mrtrix_dti = "$projectDir/.config/dti.py"
+params.config.reconstruct.mrtrix_csd = "$projectDir/.config/csd.py"
+params.config.reconstruct.mrtrix_response = "$projectDir/.config/response.py"
+
 include { diamond; mrtrix_dti; csd; response; scilpy_response; scilpy_csd } from '../processes/reconstruct.nf'
 include { scil_dti_and_metrics } from '../processes/measure.nf'
 include { tournier2descoteaux_odf } from '../processes/utils.nf'
@@ -17,8 +22,8 @@ workflow csd_wkf {
         response_channel = Channel.empty()
         odfs_channel = Channel.empty()
         if ( params.reconstruct_use_mrtrix ) {
-            response(dwi_channel.join(mask_channel), "reconstruct")
-            csd(response.out.responses.join(dwi_channel.join(mask_channel)), "reconstruct")
+            response(dwi_channel.join(mask_channel), "reconstruct", params.config.reconstruct.mrtrix_response)
+            csd(response.out.responses.join(dwi_channel.join(mask_channel)), "reconstruct", params.config.reconstruct.mrtrix_csd)
             response_channel = response.out.responses
             odfs_channel = csd.out.odfs
             if ( params.convert_tournier2descoteaux ) {
@@ -44,7 +49,7 @@ workflow dti_wkf {
     main:
         dti_output = Channel.empty()
         if ( params.reconstruct_use_mrtrix ) {
-            mrtrix_dti(dwi_channel.join(mask_channel), "reconstruct")
+            mrtrix_dti(dwi_channel.join(mask_channel), "reconstruct", params.config.reconstruct.mrtrix_dti)
             dti_output = mrtrix_dti.out.dti
         }
         else {
@@ -63,7 +68,7 @@ workflow diamond_wkf {
         dwi_channel = dwi_channel.groupTuple()
         dwi_image = dwi_channel.map{ [it[0], it[1]] }
         other_files = dwi_channel.map{ [it[0], it.subList(2, it.size()).inject([]){ c, t -> c + t }] }
-        diamond(dwi_image.join(mask_channel).join(other_files), "reconstruct")
+        diamond(dwi_image.join(mask_channel).join(other_files), "reconstruct", params.config.reconstruct.diamond)
     emit:
         diamond = diamond.out.diamond
 }
