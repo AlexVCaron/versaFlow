@@ -40,6 +40,7 @@ process squash_b0 {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
+    beforeScript "cp $params.config.preprocess.squash_b0 config.py"
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(metadata)
         val(suffix)
@@ -49,6 +50,6 @@ process squash_b0 {
         tuple val(sid), path("${dwi.simpleName}__b0${suffix}_squashed_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey b0 squash --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__b0${suffix}_squashed --config $params.config.preprocess.squash_b0
+        magic-monkey b0 squash --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__b0${suffix}_squashed --config config.py
         """
 }

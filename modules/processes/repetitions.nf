@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 
 params.config.workflow.preprocess.b0_repetition_registration = file("$projectDir/.config/.workflow/ants_register_repetitions_b0.py")
 params.config.workflow.preprocess.t1_repetition_registration = file("$projectDir/.config/.workflow/ants_register_repetitions_t1.py")
-params.config.preprocess.repetition_registration_extract_b0 = "$projectDir/.config/extract_b0_mean.py"
+params.config.preprocess.repetition_registration_extract_b0 = file("$projectDir/.config/extract_b0_mean.py")
 
 include { extract_b0 as extract_rep_b0 } from './preprocess.nf'
 include { merge_repetitions; get_size_in_gb } from '../functions.nf'
@@ -19,6 +19,8 @@ process ants_register_dwi_repetition {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
+    beforeScript "cp $params.config.workflow.preprocess.b0_repetition_registration reg_config.py"
+    beforeScript "cp $params.config.preprocess.repetition_registration_extract_b0 b0_config.py"
     input:
         tuple val(sid), path(target_b0), val(rep_idx), path(dwi), path(bval), path(bvec), path(metadata)
         val(caller_name)
@@ -30,8 +32,8 @@ process ants_register_dwi_repetition {
     export OMP_NUM_THREADS=$task.cpus
     export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
     export OPENBLAS_NUM_THREADS=1
-    magic-monkey b0 extract --in $dwi --bvals $bval --out rep_b0 --config ${params.config.preprocess.repetition_registration_extract_b0}
-    magic-monkey ants_registration --target ${target_b0} --moving rep_b0.nii.gz --out b0_registration --config ${params.config.workflow.preprocess.b0_repetition_registration}
+    magic-monkey b0 extract --in $dwi --bvals $bval --out rep_b0 --config b0_config.py
+    magic-monkey ants_registration --target ${target_b0} --moving rep_b0.nii.gz --out b0_registration --config reg_config.py
     magic-monkey ants_transform --in $dwi --ref ${target_b0} --mat b0_registration0GenericAffine.mat --out ${dwi.simpleName}__rep_registered.nii.gz
     cp $bval ${dwi.simpleName}__rep_registered.bval
     cp $bvec ${dwi.simpleName}__rep_registered.bvec
@@ -46,6 +48,7 @@ process ants_register_t1_repetition {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
+    beforeScript "cp $params.config.workflow.preprocess.t1_repetition_registration config.py"
     input:
         tuple val(sid), path(ref_t1), val(rep_idx), path(t1), file(mask)
         val(caller_name)
@@ -61,7 +64,7 @@ process ants_register_t1_repetition {
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
-        magic-monkey ants_registration --target $ref_t1 --moving $t1 --out t1_registration --config ${params.config.workflow.preprocess.t1_repetition_registration}
+        magic-monkey ants_registration --target $ref_t1 --moving $t1 --out t1_registration --config config.py
         magic-monkey ants_transform --in $t1 --ref $ref_t1 --mat t1_registration0GenericAffine.mat --out ${t1.simpleName}__rep_registered.nii.gz
         $command
         """

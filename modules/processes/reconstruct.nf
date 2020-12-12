@@ -23,6 +23,7 @@ process diamond {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
+    beforeScript "cp $params.config.reconstruct.diamond config.py"
     input:
         tuple val(sid), path(input_dwi), path(mask), path(data)
         val(caller_name)
@@ -33,7 +34,7 @@ process diamond {
             args += " --mask $mask"
 
         """
-        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}__diamond --config $params.config.reconstruct.diamond
+        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}__diamond --config config.py
         """
 }
 
@@ -45,6 +46,7 @@ process mrtrix_dti {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/dti", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
+    beforeScript "cp $params.config.reconstruct.dti config.py"
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
         val(caller_name)
@@ -56,7 +58,7 @@ process mrtrix_dti {
             args += " --mask $mask"
 
         """
-        magic-monkey dti $args --out ${sid}__dti --config $params.config.reconstruct.dti
+        magic-monkey dti $args --out ${sid}__dti --config config.py
         """
 }
 
@@ -68,6 +70,7 @@ process response {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
+    beforeScript "cp $params.config.reconstruct.response config.py"
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
         val(caller_name)
@@ -79,7 +82,7 @@ process response {
             args += " --mask $mask"
 
         """
-        magic-monkey response $args --out ${sid}__response --config $params.config.reconstruct.response
+        magic-monkey response $args --out ${sid}__response --config config.py
         """
 }
 
@@ -91,6 +94,7 @@ process csd {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
+    beforeScript "cp $params.config.reconstruct.csd config.py"
     input:
         tuple val(sid), path(responses), path(dwi), path(bval), path(bvec), path(mask)
         val(caller_name)
@@ -102,7 +106,7 @@ process csd {
             args += " --mask $mask"
 
         """
-        magic-monkey csd $args --out ${sid}__csd --responses ${responses.join(',')} --config $params.config.reconstruct.csd
+        magic-monkey csd $args --out ${sid}__csd --responses ${responses.join(',')} --config config.py
         """
 }
 

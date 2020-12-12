@@ -109,6 +109,7 @@ process diamond_metrics {
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
+    beforeScript "cp $params.config.measure.diamond config.py"
     input:
         tuple val(sid), val(input_prefix), file(mask), path(data), path(metadata)
         val(caller_name)
@@ -117,7 +118,7 @@ process diamond_metrics {
         tuple val(sid), path("${sid}__diamond_metrics*.nii.gz"), emit: metrics
     script:
         """
-        magic-monkey diamond_metrics --in $input_prefix --out ${sid}__diamond_metrics --config $params.config.measure.diamond
+        magic-monkey diamond_metrics --in $input_prefix --out ${sid}__diamond_metrics --config config.py
         """
 }
 
