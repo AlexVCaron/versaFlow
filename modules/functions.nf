@@ -49,10 +49,8 @@ def expand_path( short_path ) {
 
 def get_size_in_gb( files ) {
     if ( files instanceof List ) {
-        println "files was a list ${files}"
         return (files.sum{ f -> f.size() / 1073741824 }).GB
     }
-    println "files was a simple file ${files}"
     def fs = files.size() / 1073741824
     return (fs < 1 ? 1 : fs).GB
 }
@@ -67,7 +65,6 @@ def extract_extension ( f ) {
 
 def copy_and_rename ( fl, prefix, overwrite ) {
     def ext = extract_extension(fl)
-    println "I received $fl"
     if ( !file("${file(fl).getParent()}/${prefix}.${ext}").exists() || overwrite == "true" )
         file(fl).mklink("${file(fl).getParent()}/${prefix}.${ext}", overwrite: true)
     return file("${file(fl).getParent()}/${prefix}.${ext}")
@@ -126,7 +123,7 @@ def merge_repetitions ( channel, keep_rep_key ) {
             }.collect{ e -> e.o }
         }
     }
-    // c.view()
+
     return c
 }
 

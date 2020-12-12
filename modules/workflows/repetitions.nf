@@ -71,7 +71,6 @@ workflow cat_dwi_repetitions_wkf {
     main:
         dwi_channel = merge_repetitions(dwi_channel, false)
         metadata_channel = merge_repetitions(metadata_channel, false).map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] }
-        metadata_channel.view()
         cat_repetitions(dwi_channel.join(metadata_channel), suffix, "preprocess", params.config.utils.concatenate)
     emit:
         dwi = cat_repetitions.out.image.join(cat_repetitions.out.bval).join(cat_repetitions.out.bvec)

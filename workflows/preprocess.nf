@@ -121,7 +121,6 @@ workflow preprocess_wkf {
                 meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(0..<it[1].size()).step(2)] }, "dwi_to_topup_metadata", "false")
                 rev_meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(1..<it[1].size()).step(2)] }, "dwi_to_topup_rev_metadata", "false")
                 apply_topup_wkf(dwi_channel, rev_channel, topup2eddy_channel, meta_channel.join(rev_meta_channel).map{ [it[0], it.subList(1, it.size())] })
-                dwi_channel.view()
                 dwi_channel = uniformize_naming(apply_topup_wkf.out.dwi, "topup_corrected", "false")
                 meta_channel = uniformize_naming(apply_topup_wkf.out.metadata, "topup_corrected_metadata", "false")
             }
@@ -145,8 +144,6 @@ workflow preprocess_wkf {
             }
         }
 
-        dwi_channel.view()
-        meta_channel.view()
         dwi_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "", "preprocess", params.config.workflow.preprocess.b0_mean)
         b0_channel = dwi_b0.out.b0
         b0_metadata = dwi_b0.out.metadata
@@ -236,8 +233,6 @@ workflow preprocess_wkf {
             }
         }
 
-
-        dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).map{ it + [""] }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }).view()
         crop_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).map{ it + [""] }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "preprocess")
         dwi_bbox_channel = crop_dwi.out.bbox
         fit_bounding_box(t1_channel.join(dwi_channel.map{ it.subList(0, 2) }).join(dwi_bbox_channel), "preprocess")
