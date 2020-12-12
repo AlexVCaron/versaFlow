@@ -200,7 +200,7 @@ process prepare_eddy {
             """
         else
             """
-            magic-monkey eddy $args --out ${prefix}__eddy && cp $topup_acqp "${prefix}__eddy_acqp.txt" --config $config
+            magic-monkey eddy $args --out ${prefix}__eddy --config $config && cp $topup_acqp "${prefix}__eddy_acqp.txt"
             """
 }
 

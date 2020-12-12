@@ -33,7 +33,7 @@ params.config.register.ants_motion = file("$projectDir/.config/ants_motion.py")
 params.config.workflow.preprocess.b0_mean = file("$projectDir/.config/extract_b0_mean.py")
 params.config.workflow.preprocess.b0_batch_mean = file("$projectDir/.config/extract_b0_batch_mean.py")
 params.config.workflow.preprocess.first_b0 = file("$projectDir/.config/extract_first_b0.py")
-params.config.denoise.n4_denoise = "$projectDir/.config/n4_denoise.py"
+params.config.denoise.n4_denoise = file("$projectDir/.config/n4_denoise.py")
 params.config.workflow.preprocess.n4_denoise_t1 = file("$projectDir/.config/.workflow/n4_denoise_on_t1.py")
 
 include { map_optional; opt_channel; replace_dwi_file; uniformize_naming; merge_repetitions } from '../modules/functions.nf'

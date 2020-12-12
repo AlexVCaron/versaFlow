@@ -15,7 +15,7 @@ process ants_register {
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(moving), file(target), val(reference), file(mask), path(metadata)
+        tuple val(sid), path(moving), path(target), val(reference), file(mask), path(metadata)
         val(caller_name)
         file(config)
     output:
@@ -57,7 +57,7 @@ process ants_correct_motion {
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-        tuple val(sid), file(moving), file(target), path(metadata)
+        tuple val(sid), path(moving), path(target), path(metadata)
         val(caller_name)
         file(config)
     output:

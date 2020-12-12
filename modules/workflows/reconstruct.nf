@@ -5,10 +5,10 @@ nextflow.enable.dsl=2
 params.reconstruct_use_mrtrix = false
 params.convert_tournier2descoteaux = true
 
-params.config.reconstruct.diamond = "$projectDir/.config/diamond.py"
-params.config.reconstruct.mrtrix_dti = "$projectDir/.config/dti.py"
-params.config.reconstruct.mrtrix_csd = "$projectDir/.config/csd.py"
-params.config.reconstruct.mrtrix_response = "$projectDir/.config/response.py"
+params.config.reconstruct.diamond = file("$projectDir/.config/diamond.py")
+params.config.reconstruct.mrtrix_dti = file("$projectDir/.config/dti.py")
+params.config.reconstruct.mrtrix_csd = file("$projectDir/.config/csd.py")
+params.config.reconstruct.mrtrix_response = file("$projectDir/.config/response.py")
 
 include { diamond; mrtrix_dti; csd; response; scilpy_response; scilpy_csd } from '../processes/reconstruct.nf'
 include { scil_dti_and_metrics } from '../processes/measure.nf'
