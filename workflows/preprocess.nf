@@ -36,7 +36,7 @@ params.config.workflow.preprocess.first_b0 = file("$projectDir/.config/extract_f
 params.config.denoise.n4_denoise = file("$projectDir/.config/n4_denoise.py")
 params.config.workflow.preprocess.n4_denoise_t1 = file("$projectDir/.config/.workflow/n4_denoise_on_t1.py")
 
-include { map_optional; opt_channel; replace_dwi_file; uniformize_naming; merge_repetitions } from '../modules/functions.nf'
+include { merge_channels_non_blocking; map_optional; opt_channel; replace_dwi_file; uniformize_naming; merge_repetitions } from '../modules/functions.nf'
 include { extract_b0 as dwi_b0; extract_b0 as extract_b0_motion; extract_b0 as dwi_b0_for_t1_reg } from '../modules/processes/preprocess.nf'
 include { ants_correct_motion } from '../modules/processes/register.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
@@ -150,8 +150,8 @@ workflow preprocess_wkf {
 
         if ( params.masked_t1 && params.t1mask2dwi_registration ) {
             mask_registration_wkf(
-                b0_channel.groupTuple(),
-                t1_channel.map{ [it[0], it[1]] }.groupTuple(),
+                b0_channel.map{ [it[0], [it[1]]] },
+                t1_channel.map{ [it[0], [it[1]]] },
                 t1_mask_channel,
                 null,
                 b0_metadata.map{ it.subList(0, 2) + [""] },
@@ -177,7 +177,7 @@ workflow preprocess_wkf {
 
             if ( params.post_eddy_registration ) {
                 extract_b0_motion(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "_eddy", "preprocess", params.config.workflow.preprocess.b0_mean)
-                ants_correct_motion(dwi_channel.map{ it.subList(0, 2) }.groupTuple().join(extract_b0_motion.out.b0.groupTuple()).join(meta_channel), "preprocess", params.config.register.ants_motion)
+                ants_correct_motion(dwi_channel.map{ [it[0], [it[1]]] }.join(extract_b0_motion.out.b0.map{ [it[0], [it[1]]] }).join(meta_channel), "preprocess", params.config.register.ants_motion)
                 dwi_channel = replace_dwi_file(dwi_channel, ants_correct_motion.out.image)
                 meta_channel = ants_correct_motion.out.metadata
             }
@@ -191,8 +191,8 @@ workflow preprocess_wkf {
 
         if ( !params.masked_t1 ) {
             t1_mask_registration_wkf(
-                t1_channel.map{ [it[0], it[1]] }.groupTuple(),
-                dwi_b0.out.b0.groupTuple(),
+                t1_channel.map{ [it[0], [it[1]]] },
+                dwi_b0.out.b0.map{ [it[0], [it[1]]] },
                 dwi_mask_channel,
                 null,
                 b0_metadata.map{ it.subList(0, 2) + [""] },
@@ -211,8 +211,8 @@ workflow preprocess_wkf {
             scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess")
             b0_metadata = dwi_b0_for_t1_reg.out.metadata
             t1_base_registration_wkf(
-                dwi_b0_for_t1_reg.out.b0.groupTuple(),
-                t1_channel.map{ [it[0], it[1]] }.groupTuple(),
+                dwi_b0_for_t1_reg.out.b0.map{ [it[0], [it[1]]] },
+                t1_channel.map{ [it[0], [it[1]]] },
                 null,
                 dwi_mask_channel.join(t1_mask_channel).map{ [it[0], [it[1], it[2]]] },
                 b0_metadata.map{ it.subList(0, 2) + [""] },
@@ -222,8 +222,8 @@ workflow preprocess_wkf {
             t1_mask_channel = ants_transform.out.image
             if ( params.register_syn_t12b0 ) {
                 t1_syn_registration_wkf(
-                    dwi_b0_for_t1_reg.out.b0.join(scil_compute_dti_fa.out.fa).groupTuple().map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] },
-                    t1_base_registration_wkf.out.image.groupTuple(),
+                    merge_channels_non_blocking(dwi_b0_for_t1_reg.out.b0, scil_compute_dti_fa.out.fa),
+                    t1_base_registration_wkf.out.image.map{ [it[0], [it[1]]] },
                     null,
                     params.register_syn_t12b0_with_mask ? dwi_mask_channel.join(t1_mask_channel).map{ [it[0], [it[1], it[2]]] } : null,
                     b0_metadata.map{ it.subList(0, 2) + [""] },

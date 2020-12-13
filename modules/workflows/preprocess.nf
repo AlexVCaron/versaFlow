@@ -17,7 +17,7 @@ params.config.denoise.prepare_eddy = file("$projectDir/.config/eddy.py")
 params.config.denoise.prepare_eddy_cuda = file("$projectDir/.config/eddy_cuda.py")
 params.config.utils.concatenate = file("$projectDir/.config/cat.py")
 
-include { group_subject_reps; join_optional; map_optional; opt_channel; replace_dwi_file; uniformize_naming; sort_as_with_name; merge_repetitions; interleave } from '../functions.nf'
+include { merge_channels_non_blocking; group_subject_reps; join_optional; map_optional; opt_channel; replace_dwi_file; uniformize_naming; sort_as_with_name; merge_repetitions; interleave } from '../functions.nf'
 include { extract_b0 as b0_topup; extract_b0 as b0_topup_rev; squash_b0 as squash_dwi; squash_b0 as squash_rev } from '../processes/preprocess.nf'
 include { n4_denoise; dwi_denoise; prepare_topup; topup; prepare_eddy; eddy } from '../processes/denoise.nf'
 include { ants_register; ants_transform } from '../processes/register.nf'
@@ -68,8 +68,8 @@ workflow topup_wkf {
         rev_channel
         metadata_channel
     main:
-        meta_channel = metadata_channel.map{ it.subList(0, 2) }.groupTuple().join(
-            metadata_channel.map{ [it[0], it[2]] }.groupTuple()
+        meta_channel = metadata_channel.map{ [it[0], [it[1]]] }.join(
+            metadata_channel.map{ [it[0], [it[2]]] }
         ).map{ [it[0], it[1] + it[2]] }
 
         b0_topup(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "", "preprocess", params.config.workflow.preprocess.topup_b0)
@@ -92,7 +92,7 @@ workflow topup_wkf {
             b0_rev_channel = b0_rev_channel.map{ [it[0], it.subList(1, it.size())] }
         }
 
-        acq_channel = dwi_channel.map{ [it[0], it[2]] }.groupTuple().join(rev_channel.map{ [it[0], it[2]] }.groupTuple())
+        acq_channel = dwi_channel.map{ [it[0], [it[2]]] }.join(rev_channel.map{ [it[0], [it[2]]] })
         b0_data_channel = b0_channel.join(b0_rev_channel).map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] }
         b0_data_channel = b0_data_channel.map{ it + [[], []] }.join(b0_metadata_channel)
 
@@ -189,7 +189,7 @@ workflow eddy_wkf {
         rev_channel = rev_channel.map{ it.subList(0, 3)}.join(prepare_eddy.out.bvec.map{ [it[0], it[1].find{ f -> f.simpleName.indexOf("_rev") >= 0 }] })
 
         if ( params.eddy_on_rev ) {
-            cat_eddy_on_rev(dwi_channel.concat(rev_channel).groupTuple().join(metadata_channel), "_whole", "preprocess", params.config.utils.concatenate)
+            cat_eddy_on_rev(merge_channels_non_blocking(dwi_channel, rev_channel).join(metadata_channel), "_whole", "preprocess", params.config.utils.concatenate)
             dwi_channel = cat_eddy_on_rev.out.image.join( cat_eddy_on_rev.out.bval).join(cat_eddy_on_rev.out.bvec)
             metadata_channel = cat_eddy_on_rev.out.metadata.map{ [it[0], it.subList(1, it.size())] }
         }

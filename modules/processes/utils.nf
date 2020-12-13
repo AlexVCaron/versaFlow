@@ -124,8 +124,8 @@ process apply_topup {
         tuple val(sid), path(dwis), path(bvals), path(bvecs), path(revs), path(topup_params), val(topup_prefix), path(topup_files), path(metadata)
         val(caller_name)
     output:
-        tuple val(sid), path("${sid}__topup_corrected*.nii.gz"), path("${sid}__topup_corrected*.bval"), path("${sid}__topup_corrected*.bvec"), emit: dwi
-        tuple val(sid), path("${sid}__topup_corrected*_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${sid}__topup_corrected_*.nii.gz"), path("${sid}__topup_corrected_*.bval"), path("${sid}__topup_corrected_*.bvec"), emit: dwi
+        tuple val(sid), path("${sid}__topup_corrected_*_metadata.*"), optional: true, emit: metadata
     script:
         """
         magic-monkey apply_topup --dwi ${dwis.join(",")} --bvals ${bvals.join(",")} --bvecs ${bvecs.join(",")} --rev ${revs.join(",")} --acqp $topup_params --topup $topup_prefix --out ${sid}__topup_corrected
