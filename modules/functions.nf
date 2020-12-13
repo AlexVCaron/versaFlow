@@ -78,6 +78,14 @@ def uniformize_naming ( files_channel, prefix, overwrite ) {
     }
 }
 
+def rename_according_to ( file_channel, ref_channel, suffix, overwrite ) {
+    return file_channel.join(ref_channel).map{ it ->
+        [it[0]] + it.subList(1, it.size() - 1).collect{ i ->
+            copy_and_rename(i, "${it[-1].simpleName.split("__")[0]}__$suffix", overwrite)
+        }
+    }
+}
+
 def replace_naming_to_underscore ( files_channel, prefix, overwrite ) {
     return files_channel.map{ it ->
         [it[0]] + it.subList(1, it.size()).collect{ i ->
