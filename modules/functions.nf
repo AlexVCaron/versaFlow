@@ -134,5 +134,5 @@ def interleave ( l1, l2 ) {
 
 def merge_channels_non_blocking ( c1, c2 ) {
     c3 = c1.map{ [it[0], it.subList(1, it.size())] }.join(c2.map{ [it[0], it.subList(1, it.size())] })
-    return c3.map{ [it[0], it.subList(1, 2).transpose()] }
+    return c3.map{ [it[0]] + it.subList(1, 2).transpose() }
 }
