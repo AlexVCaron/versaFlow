@@ -43,11 +43,12 @@ process scil_compute_dti_fa {
         tuple val(sid), val("${sid}__dti"), emit: prefix
         tuple val(sid), path("${sid}__dti_dti.nii.gz"), emit: dti
         tuple val(sid), path("${sid}__dti_fa.nii.gz"), emit: fa
+        tuple val(sid), path("${sid}__dti_md.nii.gz"), emit: md
     script:
         def avail_threads = Math.round(task.cpus / 3)
         def remainder_threads = task.cpus - avail_threads
         def args = "--tensor ${sid}__dti_dti.nii.gz"
-        args += " --fa ${sid}__dti_fa.nii.gz"
+        args += " --fa ${sid}__dti_fa.nii.gz --md ${sid}__dti_md.nii.gz"
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
         export OMP_NUM_THREADS=$avail_threads

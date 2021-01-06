@@ -45,7 +45,7 @@ include { convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_ma
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise } from '../modules/processes/denoise.nf'
 include { scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi; scilpy_resample_on_ref as scilpy_resample_mask } from '../modules/processes/upsample.nf'
 include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; registration_wkf as t1_base_registration_wkf; registration_wkf as t1_syn_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
-include { cat_dwi_repetitions_wkf; cat_dwi_repetitions_wkf as cat_rev_repetitions_wkf; register_dwi_repetitions_wkf; register_t1_repetitions_wkf } from '../modules/workflows/repetitions.nf'
+include { cat_dwi_repetitions_wkf; cat_dwi_repetitions_wkf as cat_rev_repetitions_wkf; register_dwi_repetitions_wkf as pre_register_dwi_repetitions_wkf; register_dwi_repetitions_wkf as post_register_dwi_repetitions_wkf; register_t1_repetitions_wkf } from '../modules/workflows/repetitions.nf'
 
 workflow preprocess_wkf {
     take:
@@ -87,7 +87,7 @@ workflow preprocess_wkf {
         }
 
         if ( params.register_repetitions ) {
-            register_dwi_repetitions_wkf(
+            pre_register_dwi_repetitions_wkf(
                 dwi_channel,
                 rev_channel,
                 meta_channel,
@@ -99,10 +99,10 @@ workflow preprocess_wkf {
             )
             t1_channel = register_t1_repetitions_wkf.out.t1
             t1_mask_channel = params.masked_t1 ? register_t1_repetitions_wkf.out.mask : null
-            dwi_channel = register_dwi_repetitions_wkf.out.dwi
-            rev_channel = register_dwi_repetitions_wkf.out.rev
-            meta_channel = register_dwi_repetitions_wkf.out.metadata
-            rev_meta_channel  = register_dwi_repetitions_wkf.out.rev_metadata
+            dwi_channel = pre_register_dwi_repetitions_wkf.out.dwi
+            rev_channel = pre_register_dwi_repetitions_wkf.out.rev
+            meta_channel = pre_register_dwi_repetitions_wkf.out.metadata
+            rev_meta_channel  = pre_register_dwi_repetitions_wkf.out.rev_metadata
         }
 
         squash_wkf(dwi_channel, rev_channel, meta_channel.join(rev_meta_channel))

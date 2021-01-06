@@ -20,9 +20,11 @@ workflow register_dwi_repetitions_wkf {
         rev_metadata_channel
     main:
         dwi_channel = merge_repetitions(dwi_channel, true)
-        rev_channel = merge_repetitions(rev_channel, true).transpose()
+        if ( rev_channel ) {
+            rev_channel = merge_repetitions(rev_channel, true).transpose()
+            rev_metadata_channel = merge_repetitions(rev_metadata_channel, false)
+        }
         metadata_channel = merge_repetitions(metadata_channel, true)
-        rev_metadata_channel = merge_repetitions(rev_metadata_channel, false)
 
         extract_rep_b0(dwi_channel.map{ [it[0], it[2][0], it[3][0]] }.join(metadata_channel.map{ [it[0]] + it.subList(2, it.size()) }), "_merge_reps", "preprocess", params.config.preprocess.extract_b0_mean)
         main_b0 = extract_rep_b0.out.b0
@@ -35,17 +37,19 @@ workflow register_dwi_repetitions_wkf {
             params.config.preprocess.extract_b0_mean,
             params.config.workflow.preprocess.b0_repetition_registration
         )
-        ants_register_rev_repetition(
-            main_b0.combine(rev_channel, by: 0).combine(rev_metadata_channel, by: 0),
-            "preprocess",
-            params.config.preprocess.extract_b0_mean,
-            params.config.workflow.preprocess.b0_repetition_registration
-        )
+        if ( rev_channel ) {
+            ants_register_rev_repetition(
+                main_b0.combine(rev_channel, by: 0).combine(rev_metadata_channel, by: 0),
+                "preprocess",
+                params.config.preprocess.extract_b0_mean,
+                params.config.workflow.preprocess.b0_repetition_registration
+            )
+        }
     emit:
         dwi = ants_register_dwi_repetition.out.dwi.concat(dwi_channel.map{ ["${it[0]}_${it[1][0]}"] + it.subList(2, it.size()).collect{ i -> i[0] } })
-        rev = ants_register_rev_repetition.out.dwi
+        rev = rev_channel ? ants_register_rev_repetition.out.dwi : null
         metadata = ants_register_dwi_repetition.out.metadata.mix(metadata_channel.map{ ["${it[0]}_${it[1][0]}", it[2][0]] })
-        rev_metadata = ants_register_rev_repetition.out.metadata
+        rev_metadata = rev_channel ? ants_register_rev_repetition.out.metadata : null
 }
 
 workflow register_t1_repetitions_wkf {

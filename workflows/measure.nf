@@ -12,7 +12,7 @@ params.config.workflow.dti_for_odf_metrics = file("$projectDir/.config/.workflow
 params.config.measure.diamond = file("$projectDir/.config/diamond_metrics.py")
 params.config.measure.dti = file("$projectDir/.config/dti_metrics.py")
 
-include { dti_metrics; dti_metrics as dti_for_odfs_metrics; diamond_metrics; odf_metrics } from '../modules/processes/measure.nf'
+include { dti_metrics; dti_metrics as dti_for_odfs_metrics; diamond_metrics; odf_metrics; scil_compute_dti_fa } from '../modules/processes/measure.nf'
 include { uniformize_naming; replace_naming_to_underscore; rename_according_to } from '../modules/functions.nf'
 include { dti_wkf } from './reconstruct.nf'
 
@@ -38,26 +38,20 @@ workflow measure_wkf {
         }
 
         if ( params.recons_diamond ) {
-            data = data_channel.map{ [it[0], it[3]] }
+            data_diamond = data_channel.map{ [it[0], it[3]] }
             metadata = uniformize_naming(metadata_channel, "diamond_metadata", false)
-            mask_diamond = rename_according_to(mask_channel, data.map{ [it[0], it[1][0]] }, "diamond_mask", false)
-            prefix_channel = data.map{ [it[0], "${it[0]}__diamond"] }
-            diamond_metrics(prefix_channel.join(mask_diamond).join(data).join(metadata), "measure", params.config.measure.diamond)
+            mask_diamond = rename_according_to(mask_channel, data_diamond.map{ [it[0], it[1][0]] }, "diamond_mask", false)
+            prefix_channel = data_diamond.map{ [it[0], "${it[0]}__diamond"] }
+            diamond_metrics(prefix_channel.join(mask_diamond).join(data_diamond).join(metadata), "measure", params.config.measure.diamond)
             diamond_channel = diamond_metrics.out.metrics
         }
 
         if ( params.recons_csd ) {
-            dti_wkf(dwi_channel, mask_channel)
-            data_dti = dti_wkf.out.dti
-
-            metadata_dti = uniformize_naming(metadata_channel, "dti_metadata", false)
-            mask_dti = rename_according_to(mask_channel, data_dti, "dti_mask", false)
-            prefix_dti = data_dti.map{ [it[0], "${it[0]}__dti"] }
-            dti_for_odfs_metrics(
-                prefix_dti.join(mask_dti).join(data_dti).join(metadata_dti),
-                "measure", params.config.workflow.dti_for_odf_metrics
+            scil_compute_dti_fa(
+                dwi_channel.join(mask_channel),
+                "preprocess", "measure"
             )
-            data = data_channel.map{ [it[0], it[2]] }.join(dti_for_odfs_metrics.out.metrics).map{ it.flatten() }
+            data_odfs = data_channel.map{ [it[0], it[2]] }.join(scil_compute_dti_fa.out.fa).join(scil_compute_dti_fa.out.md)
 
             mask_odfs = uniformize_naming(mask_channel, "desc07_odf_mask", false)
             if ( !params.reconstruct_use_mrtrix )
@@ -67,7 +61,7 @@ workflow measure_wkf {
             if ( !params.reconstruct_use_mrtrix )
                 basis = "descoteaux07"
 
-            odf_metrics(data.join(mask_odfs), "measure", basis)
+            odf_metrics(data_odfs.join(mask_odfs), "measure", basis)
             odfs_channel = odf_metrics.out.metrics
         }
     emit:
