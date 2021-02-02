@@ -41,7 +41,7 @@ c.EddyConfiguration.n_voxels_hp = 2000
 
 c.EddyConfiguration.outlier_model = None
 
-c.EddyConfiguration.pre_filter_width = [2, 0, 0, 0, 0]
+c.EddyConfiguration.pre_filter_width = [0]
 
 c.EddyConfiguration.qspace_smoothing = 10
 

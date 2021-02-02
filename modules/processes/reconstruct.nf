@@ -11,11 +11,11 @@ params.frf_roi_radius = 10
 include { get_size_in_gb; uniformize_naming } from '../functions.nf'
 
 process diamond {
-    memory { 4f * get_size_in_gb([input_dwi, mask] + (data instanceof List ? data : [data])) }
+    memory { 8f * get_size_in_gb([input_dwi, mask] + (data instanceof List ? data : [data])) }
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(input_dwi), path(mask), path(data)
@@ -28,7 +28,10 @@ process diamond {
             args += " --mask $mask"
 
         """
-        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}__diamond --config $config
+        magic-monkey flip2ref --in $input_dwi --bvecs ${input_dwi.simpleName}.bvec --out flipped_bvecs
+        cp $input_dwi flipped_bvecs.nii.gz
+        cp ${input_dwi.simpleName}.bval flipped_bvecs.bval
+        magic-monkey diamond --in flipped_bvecs.nii.gz --mask $mask --out ${sid}__diamond --config $config
         """
 }
 
@@ -36,8 +39,8 @@ process mrtrix_dti {
     memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name/dti", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/dti", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
@@ -59,8 +62,8 @@ process response {
     memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
@@ -82,8 +85,8 @@ process csd {
     memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(responses), path(dwi), path(bval), path(bvec), path(mask)
@@ -102,11 +105,11 @@ process csd {
 }
 
 process scilpy_response {
-    memory { 4f * get_size_in_gb([dwi, mask]) }
+    memory { 8f * get_size_in_gb([dwi, mask]) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
@@ -119,7 +122,8 @@ process scilpy_response {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
-        magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells 1500 --keep leq --out dwi_leq_1500 --with_b0
+        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
+        magic-monkey shells --in $dwi --bvals $bval --bvecs flipped_bvecs.bvec --shells 1500 --keep leq --out dwi_leq_1500 --with_b0
         scil_compute_ssst_frf.py dwi_leq_1500.nii.gz dwi_leq_1500.bval dwi_leq_1500.bvec ${sid}__response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox --roi_radii $params.frf_roi_radius
         """
 }
@@ -128,8 +132,8 @@ process scilpy_csd {
     memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(response), path(mask)
@@ -142,6 +146,7 @@ process scilpy_csd {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
-        scil_compute_ssst_fodf.py $dwi $bval $bvec $response ${sid}__fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --processes $task.cpus
+        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
+        scil_compute_ssst_fodf.py $dwi $bval flipped_bvecs.bvec $response ${sid}__fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --processes $task.cpus
         """
 }

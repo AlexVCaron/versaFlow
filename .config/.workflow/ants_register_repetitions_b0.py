@@ -66,37 +66,6 @@ c.AntsConfiguration.passes = [{
         1,
         0
     ]
-}, {
-    "conv_eps": 1e-6,
-    "conv_max_iter": [200, 100, 50, 25],
-    "conv_win": 10,
-    "grad_step": 0.1,
-    "klass": "magic_monkey.traits.ants.AntsAffine",
-    "metrics": [
-        {
-            "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                1.0,
-                64,
-                "Regular",
-                0.5
-            ],
-            "klass": "magic_monkey.traits.ants.MetricMI"
-        }
-    ],
-    "shrinks": [
-        8,
-        4,
-        2,
-        1
-    ],
-    "smoothing": [
-        3,
-        2,
-        1,
-        0
-    ]
 }]
 
 c.AntsConfiguration.use_float = False

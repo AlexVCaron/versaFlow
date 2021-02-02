@@ -2,14 +2,14 @@
 
 nextflow.enable.dsl=2
 
-include { get_size_in_gb } from '../functions.nf'
+include { get_size_in_gb; remove_alg_suffixes; add_suffix } from '../functions.nf'
 
 process apply_mask {
     memory { 4f * get_size_in_gb([img, mask]) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_masked") }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img), path(mask), path(metadata)
@@ -28,8 +28,8 @@ process bet_mask {
     memory { 4f * get_size_in_gb(img) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_mask") }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img)
@@ -44,11 +44,10 @@ process bet_mask {
 }
 
 process cat_datasets {
-    memory { 4f * get_size_in_gb(imgs) }
+    memory { 12f * get_size_in_gb(imgs) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
 
     input:
         tuple val(sid), path(imgs), file(bval), file(bvec), file(metadatas)
@@ -77,7 +76,7 @@ process split_image {
     memory { 4f * get_size_in_gb(img) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -97,7 +96,7 @@ process join_images {
     memory { 4f * get_size_in_gb(imgs) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -117,8 +116,8 @@ process apply_topup {
     memory { 4f * (get_size_in_gb(dwis) + get_size_in_gb(revs)) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwis), path(bvals), path(bvecs), path(revs), path(topup_params), val(topup_prefix), path(topup_files), path(metadata)
@@ -136,8 +135,8 @@ process tournier2descoteaux_odf {
     memory { 4f * get_size_in_gb(odfs) }
     label params.conservative_resources ? "res_conservative" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(odfs)
@@ -154,8 +153,8 @@ process convert_datatype {
     memory { 4f * get_size_in_gb(image) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image)
@@ -190,24 +189,27 @@ process replicate_image {
 process check_dwi_conformity {
     label "res_single_cpu"
 
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), file(metadata)
         val(error_strategy)
+        val(caller_name)
     output:
-        tuple val(sid), path("${dwi.simpleName}_checked.nii.gz"), path("${dwi.simpleName}_checked.bval"), path("${dwi.simpleName}_checked.bvec"), emit: dwi
-        tuple val(sid), path("${dwi.simpleName}_checked_metadata.*"), emit: metadata, optional: true
+        tuple val(sid), path("${dwi.simpleName}__checked.nii.gz"), path("${dwi.simpleName}__checked.bval"), path("${dwi.simpleName}__checked.bvec"), emit: dwi
+        tuple val(sid), path("${dwi.simpleName}__checked_metadata.*"), emit: metadata, optional: true
     script:
         """
-        magic-monkey check --in $dwi --bvals $bval --bvecs $bvec --strat $error_strategy --out ${dwi.simpleName}_checked
+        magic-monkey check --in $dwi --bvals $bval --bvecs $bvec --strat $error_strategy --out ${dwi.simpleName}__checked
         """
 }
 
 process crop_image {
-    memory { 4f * get_size_in_gb([image, mask]) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("cropped.nii.gz") ? f : null }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(mask), file(bounding_box), file(metadata)
@@ -254,11 +256,10 @@ process crop_image {
 }
 
 process fit_bounding_box {
-    memory { 4f * get_size_in_gb([image]) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("cropped.nii.gz") ? f : null }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), path(reference), path(bounding_box)
@@ -286,10 +287,10 @@ process average {
 
 process merge_masks {
     input:
-    tuple val(sid), path(masks), val(base_name)
-    val(caller_name)
+        tuple val(sid), path(masks), val(base_name)
+        val(caller_name)
     output:
-    tuple val(sid), path("${base_name}_merged.nii.gz"), emit: mask
+        tuple val(sid), path("${base_name}_merged.nii.gz"), emit: mask
     script:
     """
     magic-monkey concatenate --in ${masks.join(",")} --out cat_images --ts

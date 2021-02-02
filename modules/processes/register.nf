@@ -5,14 +5,14 @@ import java.io.File
 nextflow.enable.dsl=2
 
 
-include { get_size_in_gb; swap_configurations } from '../functions.nf'
+include { get_size_in_gb; swap_configurations; remove_alg_suffixes } from '../functions.nf'
 
 process ants_register {
     memory { 4f * (get_size_in_gb(moving) + get_size_in_gb(target)) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : f.contains("registration_warped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(moving), path(target), val(reference), file(mask), path(metadata)
@@ -53,16 +53,16 @@ process ants_correct_motion {
     memory { 4f * (get_size_in_gb(moving) + get_size_in_gb(target)) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(moving), path(target), path(metadata)
         val(caller_name)
         path(config)
     output:
-        tuple val(sid), path("${sid}__motion_correct_warped.nii.gz"), emit: image
-        tuple val(sid), path("${sid}__motion_correct_warped_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${moving[0].simpleName}__motion_correct_warped.nii.gz"), emit: image
+        tuple val(sid), path("${moving[0].simpleName}__motion_correct_warped_metadata.*"), optional: true, emit: metadata
     script:
         """
         export OMP_NUM_THREADS=$task.cpus
@@ -73,11 +73,10 @@ process ants_correct_motion {
 }
 
 process ants_transform {
-    memory { 4f * get_size_in_gb([img, ref]) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img), path(ref), path(affine), file(trans), file(metadata)

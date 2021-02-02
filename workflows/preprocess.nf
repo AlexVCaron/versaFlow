@@ -144,7 +144,7 @@ workflow preprocess_wkf {
             }
         }
 
-        dwi_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "", "preprocess", params.config.workflow.preprocess.b0_mean)
+        dwi_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "preprocess", params.config.workflow.preprocess.b0_mean)
         b0_channel = dwi_b0.out.b0
         b0_metadata = dwi_b0.out.metadata
 
@@ -176,7 +176,7 @@ workflow preprocess_wkf {
             meta_channel = eddy_wkf.out.metadata
 
             if ( params.post_eddy_registration ) {
-                extract_b0_motion(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "_eddy", "preprocess", params.config.workflow.preprocess.b0_mean)
+                extract_b0_motion(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", params.config.workflow.preprocess.b0_mean)
                 ants_correct_motion(dwi_channel.map{ [it[0], [it[1]]] }.join(extract_b0_motion.out.b0.map{ [it[0], [it[1]]] }).join(meta_channel), "preprocess", params.config.register.ants_motion)
                 dwi_channel = replace_dwi_file(dwi_channel, ants_correct_motion.out.image)
                 meta_channel = ants_correct_motion.out.metadata
@@ -207,7 +207,7 @@ workflow preprocess_wkf {
         t1_channel = t1_preprocess_wkf.out.t1
 
         if ( params.register_t12b0_denoised ) {
-            dwi_b0_for_t1_reg(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "", "preprocess", params.config.workflow.preprocess.b0_mean)
+            dwi_b0_for_t1_reg(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", params.config.workflow.preprocess.b0_mean)
             scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess")
             b0_metadata = dwi_b0_for_t1_reg.out.metadata
             t1_base_registration_wkf(

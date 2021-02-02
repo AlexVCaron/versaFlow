@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 params.config.preprocess.extract_b0_mean = file("$projectDir/.config/extract_b0_mean.py")
 params.config.workflow.preprocess.b0_repetition_registration = file("$projectDir/.config/.workflow/ants_register_repetitions_b0.py")
+params.config.workflow.preprocess.b0_repetition_apply_registration = file("$projectDir/.config/.workflow/ants_transform_repetitions.py")
 params.config.workflow.preprocess.t1_repetition_registration = file("$projectDir/.config/.workflow/ants_register_repetitions_t1.py")
 params.config.utils.concatenate = file("$projectDir/.config/cat.py")
 
@@ -26,7 +27,7 @@ workflow register_dwi_repetitions_wkf {
         }
         metadata_channel = merge_repetitions(metadata_channel, true)
 
-        extract_rep_b0(dwi_channel.map{ [it[0], it[2][0], it[3][0]] }.join(metadata_channel.map{ [it[0]] + it.subList(2, it.size()) }), "_merge_reps", "preprocess", params.config.preprocess.extract_b0_mean)
+        extract_rep_b0(dwi_channel.map{ [it[0], it[2][0], it[3][0]] }.join(metadata_channel.map{ [it[0]] + it.subList(2, it.size()) }), "preprocess", params.config.preprocess.extract_b0_mean)
         main_b0 = extract_rep_b0.out.b0
 
         dwi_reg = dwi_channel.map{ [it[0]] + it.subList(1, it.size()).collect{ i -> i.subList(1, i.size()) } }.transpose()
@@ -35,14 +36,16 @@ workflow register_dwi_repetitions_wkf {
             main_b0.combine(dwi_reg, by: 0).combine(metadata_channel.map{ [it[0]] + it.subList(2, it.size()) }, by: 0),
             "preprocess",
             params.config.preprocess.extract_b0_mean,
-            params.config.workflow.preprocess.b0_repetition_registration
+            params.config.workflow.preprocess.b0_repetition_registration,
+            params.config.workflow.preprocess.b0_repetition_apply_registration
         )
         if ( rev_channel ) {
             ants_register_rev_repetition(
                 main_b0.combine(rev_channel, by: 0).combine(rev_metadata_channel, by: 0),
                 "preprocess",
                 params.config.preprocess.extract_b0_mean,
-                params.config.workflow.preprocess.b0_repetition_registration
+                params.config.workflow.preprocess.b0_repetition_registration,
+                params.config.workflow.preprocess.b0_repetition_apply_registration
             )
         }
     emit:

@@ -3,17 +3,18 @@
 nextflow.enable.dsl=2
 
 params.eddy_on_rev = true
+params.eddy_select_gpu = true
 params.use_cuda = false
 params.eddy_force_shelled = true
 
-include { get_size_in_gb; swap_configurations } from '../functions.nf'
+include { get_size_in_gb; swap_configurations; remove_alg_suffixes } from '../functions.nf'
 
 process dwi_denoise {
     memory { 4f * get_size_in_gb([dwi, mask]) }
     label params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), file(mask), file(metadata)
@@ -40,8 +41,8 @@ process nlmeans_denoise {
     memory { 4f * get_size_in_gb(image) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image)
@@ -62,8 +63,8 @@ process ants_gaussian_denoise {
     memory { 4f * get_size_in_gb([image, mask]) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(mask)
@@ -88,8 +89,8 @@ process n4_denoise {
     memory { 4f * get_size_in_gb([image, anat, mask]) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(anat), file(mask), file(metadata)
@@ -145,8 +146,8 @@ process topup {
 
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : f.contains("topup.nii.gz") ? remove_alg_suffixes(f): null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(topup_script), path(topup_acqp), path(topup_cnf), path(b0), path(output_metadata)
@@ -188,8 +189,12 @@ process prepare_eddy {
         if ( params.eddy_on_rev )
             args += " --rev_eddy"
 
-        if ( params.use_cuda )
+        if ( params.use_cuda ) {
             args += " --cuda"
+            if ( !params.eddy_select_gpu ) {
+                args += " --dont_gpu"
+            }
+        }
 
         if ( params.eddy_force_shelled )
             args += " --shelled"
@@ -209,8 +214,8 @@ process eddy {
     label params.use_cuda ? "res_single_cpu" : params.on_hcp ? "res_full_node_override" : "res_max_cpu"
     label params.use_cuda ? "res_gpu" : ""
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(eddy_script), path(eddy_index), path(eddy_acqp), file(eddy_slspec), path(dwi), path(bval), path(bvec), path(mask), val(topup_prefix), path(topup_package), path(metadata)
@@ -221,21 +226,31 @@ process eddy {
         tuple val(sid), path("${dwi.simpleName}__eddy_corrected.bvec"), emit: bvec
         tuple val(sid), path("${dwi.simpleName}__eddy_corrected_metadata.py"), optional: true, emit: metadata
     script:
-        after_script = ""
+        def after_script = ""
         if ( metadata )
             after_script += "cp $metadata ${dwi.simpleName}__eddy_corrected_metadata.py"
 
-        args = "$dwi $bval $bvec"
-        if ( mask )
+        def args = "$dwi $bval $bvec"
+        def qc_args = "--in eddy_corrected.nii.gz --bvals ${dwi.simpleName}__eddy_corrected.bval --bvecs ${dwi.simpleName}__eddy_corrected.bvec"
+        qc_args += " --index $eddy_index --acqp $eddy_acqp --eddy eddy_corrected --out ${dwi.simpleName}__eddy_corrected"
+        qc_args += " --ratio $params.eddy_qc_min_valid_ratio"
+
+        if ( mask ) {
             args += " $mask"
+            qc_args += " --mask $mask"
+        }
 
         args += " $eddy_acqp $eddy_index"
 
-        if ( topup_prefix )
+        if ( topup_prefix ) {
             args += " --topup $topup_prefix"
+            qc_args += " --field ${topup_prefix}_fieldcoef.nii.gz"
+        }
 
-        if ( params.use_cuda )
+        if ( params.use_cuda ) {
             args += " --slspec $eddy_slspec"
+            qc_args += " --sls $eddy_slspec"
+        }
 
         """
         export OMP_NUM_THREADS=$task.cpus
@@ -244,7 +259,9 @@ process eddy {
         ./$eddy_script $args eddy_corrected
         mv eddy_corrected.eddy_rotated_bvecs ${dwi.simpleName}__eddy_corrected.bvec
         cp $bval ${dwi.simpleName}__eddy_corrected.bval
-        fslmaths eddy_corrected.nii.gz -thr 0 ${dwi.simpleName}__eddy_corrected.nii.gz
+        cp eddy_corrected.nii.gz ${dwi.simpleName}__eddy_corrected.nii.gz
+        # magic-monkey eddy_qc $qc_args
+        fslmaths ${dwi.simpleName}__eddy_corrected.nii.gz -thr 0 ${dwi.simpleName}__eddy_corrected.nii.gz
         $after_script
         """
 }
@@ -254,8 +271,8 @@ process gibbs_removal {
 
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(metadata)

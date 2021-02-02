@@ -23,8 +23,8 @@ c.AntsTransform.base_config_file = ""
 
 c.AntsTransformConfiguration.fill_value = 0
 
-c.AntsTransformConfiguration.interpolation = "Linear"
+c.AntsTransformConfiguration.interpolation = "BSpline"
 
-c.AntsTransform.dimensionality = 3
+c.AntsTransformConfiguration.dimensionality = 3
 
 c.AntsTransformConfiguration.klass = "magic_monkey.config.ants.AntsTransformConfiguration"

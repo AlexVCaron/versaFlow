@@ -144,3 +144,11 @@ def merge_channels_non_blocking ( c1, c2 ) {
     c3 = c1.map{ [it[0], it.subList(1, it.size())] }.join(c2.map{ [it[0], it.subList(1, it.size())] })
     return c3.map{ [it[0]] + it.subList(1, 3).transpose() }
 }
+
+def remove_alg_suffixes ( f ) {
+    return [f.split("__")[0], extract_extension(f)].join(".")
+}
+
+def add_suffix ( f, suffix ) {
+    return [f.tokenize(".")[0] + suffix, extract_extension(f)].join(".")
+}

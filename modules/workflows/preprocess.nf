@@ -72,8 +72,8 @@ workflow topup_wkf {
             metadata_channel.map{ [it[0], [it[2]]] }
         ).map{ [it[0], it[1] + it[2]] }
 
-        b0_topup(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "", "preprocess", params.config.workflow.preprocess.topup_b0)
-        b0_topup_rev(rev_channel.map{ it.subList(0, 3) }.join(meta_channel), "_rev", "preprocess", params.config.workflow.preprocess.topup_b0)
+        b0_topup(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", params.config.workflow.preprocess.topup_b0)
+        b0_topup_rev(rev_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", params.config.workflow.preprocess.topup_b0)
 
         b0_channel = b0_topup.out.b0
         b0_rev_channel = b0_topup_rev.out.b0
@@ -150,11 +150,11 @@ workflow squash_wkf {
     main:
         dwi_meta_channel = metadata_channel.map{ it.subList(0, 2) }
 
-        squash_dwi(dwi_channel.join(dwi_meta_channel), "", "preprocess", params.config.preprocess.squash_b0)
+        squash_dwi(dwi_channel.join(dwi_meta_channel), "preprocess", params.config.preprocess.squash_b0)
         meta_channel = squash_dwi.out.metadata
         if ( rev_channel ) {
             rev_meta_channel = metadata_channel.map{ [it[0], it[2]] }
-            squash_rev(rev_channel.join(rev_meta_channel), "_rev", "preprocess", params.config.preprocess.squash_b0)
+            squash_rev(rev_channel.join(rev_meta_channel), "preprocess", params.config.preprocess.squash_b0)
             rev_channel = squash_rev.out.dwi
             meta_channel =meta_channel.join(squash_rev.out.metadata)
         }
@@ -210,7 +210,7 @@ workflow eddy_wkf {
             eddy_in = eddy_in.map{ it + [""] }
 
         eddy(eddy_in.join(dwi_channel).join(metadata_channel), "preprocess")
-        check_dwi_conformity(eddy.out.dwi.join(eddy.out.bval).join(eddy.out.bvec).join(eddy.out.metadata), "fix")
+        check_dwi_conformity(eddy.out.dwi.join(eddy.out.bval).join(eddy.out.bvec).join(eddy.out.metadata), "fix", "preprocess")
     emit:
         dwi = check_dwi_conformity.out.dwi.map{ [it[0], it[1]] }
         bval = check_dwi_conformity.out.dwi.map{ [it[0], it[2]] }

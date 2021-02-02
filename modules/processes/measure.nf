@@ -15,8 +15,8 @@ process dti_metrics {
     memory { 4f * get_size_in_gb([mask] + (data instanceof List ? data : [data])) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name/dti", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/dti", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), val(input_prefix), file(mask), path(data), path(metadata)
@@ -32,7 +32,7 @@ process dti_metrics {
 }
 
 process scil_compute_dti_fa {
-    memory { 4f * get_size_in_gb([dwi, mask]) }
+    memory { 8f * get_size_in_gb([dwi, mask]) }
     label params.conservative_resources ? "res_conservative" : "res_full_node"
 
     input:
@@ -54,18 +54,19 @@ process scil_compute_dti_fa {
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
-        scil_compute_dti_metrics.py $dwi $bval $bvec --mask mask4scil.nii.gz -f --not_all $args
+        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
+        scil_compute_dti_metrics.py $dwi $bval flipped_bvecs.bvec --mask mask4scil.nii.gz -f --not_all $args
         """
 }
 
 process scil_dti_and_metrics {
-    memory { 4f * get_size_in_gb([dwi, mask]) }
+    memory { 8f * get_size_in_gb([dwi, mask]) }
     label params.conservative_resources ? "res_conservative" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.process}_${task.index}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/all/${sid}/$measuring_caller_name/${task.process}_${task.index}",saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f },  mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$processing_caller_name/dti", saveAs: { f -> f.contains("dti_dti") ? f : null }, mode: params.publish_mode
-    publishDir "${params.output_root}/${sid}/$measuring_caller_name/dti", saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$measuring_caller_name/${task.index}_${task.process.replaceAll(":", "_")}",saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f },  mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/dti", saveAs: { f -> f.contains("dti_dti") ? f : null }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}/dti", saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
@@ -93,16 +94,16 @@ process scil_dti_and_metrics {
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
-        scil_compute_dti_metrics.py $dwi $bval $bvec --mask mask4scil.nii.gz -f $args
+        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
+        scil_compute_dti_metrics.py $dwi $bval flipped_bvecs.bvec --mask mask4scil.nii.gz -f $args
         """
 }
 
 process diamond_metrics {
-    memory { 4f * get_size_in_gb(data + [mask]) }
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), val(input_prefix), file(mask), path(data), path(metadata)
@@ -118,11 +119,11 @@ process diamond_metrics {
 }
 
 process odf_metrics {
-    memory { 4f * get_size_in_gb([odfs, fa, md, mask]) }
+    memory { 16f * get_size_in_gb([odfs, fa, md, mask]) }
     label params.conservative_resources ? "res_conservative" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process}_${task.index}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}/$caller_name/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(odfs), path(fa), path(md), path(mask)
