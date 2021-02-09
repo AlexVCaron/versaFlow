@@ -35,16 +35,15 @@ process bet_mask {
         tuple val(sid), path(img)
         val(caller_name)
     output:
-        tuple val(sid), path("${img.simpleName}__bet_mask.nii.gz")
+        tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz")
     script:
         """
         fslmaths $img -Tmean $img
-        bet $img "${img.simpleName}__bet.nii.gz" -m -R -f $params.bet.f
+        bet $img "${img.simpleName}_bet_mask.nii.gz" -m -R -f $params.bet.f
         """
 }
 
 process cat_datasets {
-    memory { 12f * get_size_in_gb(imgs) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -84,11 +83,11 @@ process split_image {
         val(split_axis)
         val(caller_name)
     output:
-        tuple val(sid), path("${img.simpleName}__splitted_ax${split_axis}_[0-9]*.nii.gz"), emit: images
-        tuple val(sid), path("${img.simpleName}__splitted_ax${split_axis}_*_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${img.simpleName}_splitted_ax${split_axis}_[0-9]*.nii.gz"), emit: images
+        tuple val(sid), path("${img.simpleName}_splitted_ax${split_axis}_*_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey split --image $img --prefix "${img.simpleName}__splitted" --axis $split_axis
+        magic-monkey split --image $img --prefix "${img.simpleName}_splitted" --axis $split_axis
         """
 }
 
@@ -142,10 +141,10 @@ process tournier2descoteaux_odf {
         tuple val(sid), path(odfs)
         val(caller_name)
     output:
-        tuple val(sid), path("${odfs.simpleName}__desc07_odf.nii.gz"), emit: odfs
+        tuple val(sid), path("${odfs.simpleName}_desc07_odf.nii.gz"), emit: odfs
     script:
         """
-        scil_convert_sh_basis.py $odfs ${odfs.simpleName}__desc07_odf.nii.gz tournier07
+        scil_convert_sh_basis.py $odfs ${odfs.simpleName}_desc07_odf.nii.gz tournier07
         """
 }
 
@@ -161,10 +160,10 @@ process convert_datatype {
         val(datatype)
         val(caller_name)
     output:
-        tuple val(sid), path("${image.simpleName}_dt_${datatype}.nii.gz"), emit: image
+        tuple val(sid), path("${image.simpleName}__dt_${datatype}.nii.gz"), emit: image
     script:
         """
-        magic-monkey convert --in $image --out "${image.simpleName}_dt_${datatype}.nii.gz" --dt $datatype
+        magic-monkey convert --in $image --out "${image.simpleName}__dt_${datatype}.nii.gz" --dt $datatype
         """
 }
 
@@ -215,41 +214,41 @@ process crop_image {
         tuple val(sid), path(image), file(mask), file(bounding_box), file(metadata)
         val(caller_name)
     output:
-        tuple val(sid), path("${image.simpleName}_cropped.nii.gz"), emit: image
-        tuple val(sid), path("${image.simpleName}_bbox.pkl"), emit: bbox, optional: true
-        tuple val(sid), path("${mask.simpleName}_cropped.nii.gz"), emit: mask, optional: true
+        tuple val(sid), path("${image.simpleName}__cropped.nii.gz"), emit: image
+        tuple val(sid), path("${image.simpleName}__bbox.pkl"), emit: bbox, optional: true
+        tuple val(sid), path("${mask.simpleName}__cropped.nii.gz"), emit: mask, optional: true
     script:
         args = ""
         after_script = []
 
         if ( !bounding_box.empty() ) {
             args += "--input_bbox $bounding_box"
-            after_script += ["magic-monkey fit2box --in ${image.simpleName}_cropped.nii.gz --out ${image.simpleName}_cropped.nii.gz --pbox $bounding_box"]
+            after_script += ["magic-monkey fit2box --in ${image.simpleName}__cropped.nii.gz --out ${image.simpleName}__cropped.nii.gz --pbox $bounding_box"]
         }
         else
-            args += "--output_bbox ${image.simpleName}_bbox.pkl"
+            args += "--output_bbox ${image.simpleName}__bbox.pkl"
 
         if ( !mask.empty() ) {
-            mask_script = "magic-monkey fit2box --in $mask --out ${mask.simpleName}_cropped.nii.gz"
+            mask_script = "magic-monkey fit2box --in $mask --out ${mask.simpleName}__cropped.nii.gz"
             if ( !bounding_box.empty() )
                 mask_script += " --pbox $bounding_box"
             else
-                mask_script += " --pbox ${image.simpleName}_bbox.pkl"
+                mask_script += " --pbox ${image.simpleName}__bbox.pkl"
             after_script += [mask_script]
-            after_script += ["scil_image_math.py convert ${mask.simpleName}_cropped.nii.gz ${mask.simpleName}_cropped.nii.gz --data_type uint8 -f"]
+            after_script += ["scil_image_math.py convert ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
         }
 
         if ( metadata instanceof nextflow.util.BlankSeparatedList ? !metadata.isEmpty() : !metadata.empty() )
-            after_script += ["magic-monkey metadata --in ${image.getSimpleName()}_cropped.nii.gz --update_affine --metadata $metadata"]
+            after_script += ["magic-monkey metadata --in ${image.getSimpleName()}__cropped.nii.gz --update_affine --metadata $metadata"]
 
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_crop_volume.py $image ${image.simpleName}_cropped.nii.gz $args
-        if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}_cropped.nii.gz)" ]
+        scil_crop_volume.py $image ${image.simpleName}__cropped.nii.gz $args
+        if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}__cropped.nii.gz)" ]
         then
-            mrconvert -force -datatype "\$(mrinfo -datatype $image)" ${image.simpleName}_cropped.nii.gz ${image.simpleName}_cropped.nii.gz
+            mrconvert -force -datatype "\$(mrinfo -datatype $image)" ${image.simpleName}__cropped.nii.gz ${image.simpleName}__cropped.nii.gz
         fi
         ${after_script.join('\n')}
         """
@@ -265,10 +264,10 @@ process fit_bounding_box {
         tuple val(sid), path(image), path(reference), path(bounding_box)
         val(caller_name)
     output:
-        tuple val(sid), path("${image.simpleName}_bbox.pkl"), emit: bbox, optional: true
+        tuple val(sid), path("${image.simpleName}__bbox.pkl"), emit: bbox, optional: true
     script:
     """
-    magic-monkey fitbox --in $image --ref $reference --pbox $bounding_box --out ${image.simpleName}_bbox
+    magic-monkey fitbox --in $image --ref $reference --pbox $bounding_box --out ${image.simpleName}__bbox
     """
 }
 
@@ -277,11 +276,11 @@ process average {
         tuple val(sid), path(images), val(base_name)
         val(caller_name)
     output:
-        tuple val(sid), path("${base_name}_averaged.nii.gz"), emit: image
+        tuple val(sid), path("${base_name}__averaged.nii.gz"), emit: image
     script:
     """
     magic-monkey concatenate --in ${images.join(",")} --out cat_images --ts
-    fslmaths cat_images.nii.gz -Tmean ${base_name}_averaged.nii.gz
+    fslmaths cat_images.nii.gz -Tmean ${base_name}__averaged.nii.gz
     """
 }
 
@@ -290,10 +289,10 @@ process merge_masks {
         tuple val(sid), path(masks), val(base_name)
         val(caller_name)
     output:
-        tuple val(sid), path("${base_name}_merged.nii.gz"), emit: mask
+        tuple val(sid), path("${base_name}__merged.nii.gz"), emit: mask
     script:
     """
     magic-monkey concatenate --in ${masks.join(",")} --out cat_images --ts
-    fslmaths cat_images.nii.gz -Tmax ${base_name}_merged.nii.gz
+    fslmaths cat_images.nii.gz -Tmax ${base_name}__merged.nii.gz
     """
 }

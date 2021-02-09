@@ -68,7 +68,7 @@ c.AntsConfiguration.passes = [{
     ]
 }, {
     "conv_eps": 1e-06,
-    "conv_max_iter": [100, 30, 20, 10],
+    "conv_max_iter": [300, 150, 50, 10],
     "conv_win": 10,
     "grad_step": 0.1,
     "klass": "magic_monkey.traits.ants.AntsAffine",

@@ -41,10 +41,10 @@ process ants_register {
         then
             mv ${moving[0].simpleName}__registration0GenericAffine.mat ${moving[0].simpleName}__registration_affine.mat
         fi
-        if [ -f "${moving[0].simpleName}__registration1Warp.nii.gz" ]
+        if [ -f "${moving[0].simpleName}__registration0Warp.nii.gz" ]
         then
-            mv ${moving[0].simpleName}__registration1Warp.nii.gz ${moving[0].simpleName}__registration_syn.nii.gz
-            mv ${moving[0].simpleName}__registration1InverseWarp.nii.gz ${moving[0].simpleName}__registration_inv_syn.nii.gz
+            mv ${moving[0].simpleName}__registration0Warp.nii.gz ${moving[0].simpleName}__registration_syn.nii.gz
+            mv ${moving[0].simpleName}__registration0InverseWarp.nii.gz ${moving[0].simpleName}__registration_inv_syn.nii.gz
         fi
         """
 }

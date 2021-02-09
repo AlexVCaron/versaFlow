@@ -22,7 +22,7 @@ process diamond {
         val(caller_name)
         path(config)
     output:
-        tuple val(sid), path("${sid}__diamond*.nii.gz"), emit: diamond
+        tuple val(sid), path("${sid}_diamond*.nii.gz"), emit: diamond
     script:
         if ( "${mask}" != "" )
             args += " --mask $mask"
@@ -31,7 +31,7 @@ process diamond {
         magic-monkey flip2ref --in $input_dwi --bvecs ${input_dwi.simpleName}.bvec --out flipped_bvecs
         cp $input_dwi flipped_bvecs.nii.gz
         cp ${input_dwi.simpleName}.bval flipped_bvecs.bval
-        magic-monkey diamond --in flipped_bvecs.nii.gz --mask $mask --out ${sid}__diamond --config $config
+        magic-monkey diamond --in flipped_bvecs.nii.gz --mask $mask --out ${sid}_diamond --config $config
         """
 }
 
@@ -47,14 +47,14 @@ process mrtrix_dti {
         val(caller_name)
         path(config)
     output:
-        tuple val(sid), path("${sid}__dti_dti.nii.gz"), emit: dti
+        tuple val(sid), path("${sid}_dti_dti.nii.gz"), emit: dti
     script:
         args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" != "" )
             args += " --mask $mask"
 
         """
-        magic-monkey dti $args --out ${sid}__dti --config $config
+        magic-monkey dti $args --out ${sid}_dti --config $config
         """
 }
 
@@ -70,14 +70,14 @@ process response {
         val(caller_name)
         path(config)
     output:
-        tuple val(sid), path("${sid}__response_*.txt"), emit: responses
+        tuple val(sid), path("${sid}_response_*.txt"), emit: responses
     script:
         args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" != "" )
             args += " --mask $mask"
 
         """
-        magic-monkey response $args --out ${sid}__response --config $config
+        magic-monkey response $args --out ${sid}_response --config $config
         """
 }
 
@@ -93,14 +93,14 @@ process csd {
         val(caller_name)
         path(config)
     output:
-        tuple val(sid), path("${sid}__csd_*.nii.gz"), emit: odfs
+        tuple val(sid), path("${sid}_csd_*.nii.gz"), emit: odfs
     script:
         args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" == "" )
             args += " --mask $mask"
 
         """
-        magic-monkey csd $args --out ${sid}__csd --responses ${responses.join(',')} --config $config
+        magic-monkey csd $args --out ${sid}_csd --responses ${responses.join(',')} --config $config
         """
 }
 
@@ -115,7 +115,7 @@ process scilpy_response {
         tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
         val(caller_name)
     output:
-        tuple val(sid), path("${sid}__response.txt"), emit: response
+        tuple val(sid), path("${sid}_response.txt"), emit: response
     script:
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
@@ -124,7 +124,7 @@ process scilpy_response {
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
         magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
         magic-monkey shells --in $dwi --bvals $bval --bvecs flipped_bvecs.bvec --shells 1500 --keep leq --out dwi_leq_1500 --with_b0
-        scil_compute_ssst_frf.py dwi_leq_1500.nii.gz dwi_leq_1500.bval dwi_leq_1500.bvec ${sid}__response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox --roi_radii $params.frf_roi_radius
+        scil_compute_ssst_frf.py dwi_leq_1500.nii.gz dwi_leq_1500.bval dwi_leq_1500.bvec ${sid}_response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox --roi_radii $params.frf_roi_radius
         """
 }
 
@@ -139,7 +139,7 @@ process scilpy_csd {
         tuple val(sid), path(dwi), path(bval), path(bvec), path(response), path(mask)
         val(caller_name)
     output:
-        tuple val(sid), path("${sid}__fodf.nii.gz"), emit: odfs
+        tuple val(sid), path("${sid}_fodf.nii.gz"), emit: odfs
     script:
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
@@ -147,6 +147,6 @@ process scilpy_csd {
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
         magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
-        scil_compute_ssst_fodf.py $dwi $bval flipped_bvecs.bvec $response ${sid}__fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --processes $task.cpus
+        scil_compute_ssst_fodf.py $dwi $bval flipped_bvecs.bvec $response ${sid}_fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --processes $task.cpus
         """
 }

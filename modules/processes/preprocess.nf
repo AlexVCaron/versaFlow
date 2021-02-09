@@ -16,11 +16,11 @@ process extract_b0 {
         val(caller_name)
         path(config)
     output:
-        tuple val(sid), path("${dwi.simpleName}__b0.nii.gz"), emit: b0
-        tuple val(sid), path("${dwi.simpleName}__b0*_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${dwi.simpleName}_b0.nii.gz"), emit: b0
+        tuple val(sid), path("${dwi.simpleName}_b0*_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey b0 extract --in $dwi --bvals $bval --out ${dwi.simpleName}__b0 --config $config
+        magic-monkey b0 extract --in $dwi --bvals $bval --out ${dwi.simpleName}_b0 --config $config
         """
 }
 

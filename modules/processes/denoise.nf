@@ -125,6 +125,39 @@ process n4_denoise {
         """
 }
 
+process normalize_inter_b0 {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(dwi), path(bval), file(rev_dwi), file(rev_bval), file(dwi_metadata), file(rev_metadata)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${dwi.simpleName}__inter_b0_normalized.nii.gz"), emit: dwi
+        tuple val(sid), path("${rev_dwi.simpleName}__inter_b0_normalized.nii.gz"), optional: true, emit: rev
+        tuple val(sid), path("${dwi.simpleName}*_metadata.*"), optional: true, emit: dwi_metadata
+        tuple val(sid), path("${rev_dwi.simpleName}*_metadata.*"), optional: true, emit: rev_metadata
+    script:
+        args = "--in $dwi --bvals $bval"
+        after_script = ""
+        if ( !rev_dwi.empty() )
+            args += " --rev $rev_dwi"
+        if ( !rev_bval.empty() )
+            args += " --rvals $rev_bval"
+
+        if (!dwi_metadata.empty())
+            after_script += "cp $dwi_metadata ${dwi.simpleName}__inter_b0_normalized_metadata.py\n"
+        if ( !rev_metadata.empty())
+            after_script += "cp $rev_metadata ${rev_dwi.simpleName}__inter_b0_normalized_metadata.py\n"
+
+        """
+        magic-monkey b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized
+        $after_script
+        """
+}
+
 process prepare_topup {
     label "res_single_cpu"
 
@@ -132,7 +165,7 @@ process prepare_topup {
         tuple val(sid), path(b0s), path(dwi_bval), path(rev_bval), file(metadata)
         path(config)
     output:
-        tuple val(sid), path("${b0s.simpleName}__topup_script.sh"), path("${b0s.simpleName}__topup_acqp.txt"), path("${b0s.simpleName}__topup_config.cnf"), val("${b0s.simpleName}__topup_results"), emit: config
+        tuple val(sid), path("${b0s.simpleName}__topup_script.sh"), path("${b0s.simpleName}__topup_acqp.txt"), path("${b0s.simpleName}__topup_config.cnf"), val("${sid}__topup_results"), emit: config
         tuple val(sid), path("${b0s.simpleName}__topup_metadata.*"), emit: metadata
         tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_topup
     script:
@@ -153,14 +186,15 @@ process topup {
         tuple val(sid), path(topup_script), path(topup_acqp), path(topup_cnf), path(b0), path(output_metadata)
         val(caller_name)
     output:
-        tuple val(sid), path("${b0.simpleName}__topup.nii.gz"), emit: image
-        tuple val(sid), path("${b0.simpleName}__topup_field.nii.gz"), emit: field
-        tuple val(sid), path("${b0.simpleName}__topup_results_movpar.txt"), path("${b0.simpleName}__topup_results_fieldcoef.nii.gz"), emit: transfo
-        tuple val(sid), path("${b0.simpleName}__topup.nii.gz"), path("${b0.simpleName}__topup_field.nii.gz"), path("${b0.simpleName}__topup_results_movpar.txt"), path("${b0.simpleName}__topup_results_fieldcoef.nii.gz"), emit: pkg
+        tuple val(sid), path("${sid}_b0__topup.nii.gz"), emit: image
+        tuple val(sid), path("${sid}__topup_field.nii.gz"), emit: field
+        tuple val(sid), path("${sid}__topup_results_movpar.txt"), path("${sid}__topup_results_fieldcoef.nii.gz"), emit: transfo
+        tuple val(sid), path("${sid}_b0__topup.nii.gz"), path("${sid}__topup_field.nii.gz"), path("${sid}__topup_results_movpar.txt"), path("${sid}__topup_results_fieldcoef.nii.gz"), emit: pkg
         tuple val(sid), path(output_metadata), optional: true, emit: metadata
     script:
         """
-        ./$topup_script $b0 ${b0.simpleName}__topup
+        ./$topup_script $b0 ${sid}__topup
+        mv ${sid}__topup.nii.gz ${sid}_b0__topup.nii.gz
         """
 }
 
@@ -260,7 +294,6 @@ process eddy {
         mv eddy_corrected.eddy_rotated_bvecs ${dwi.simpleName}__eddy_corrected.bvec
         cp $bval ${dwi.simpleName}__eddy_corrected.bval
         cp eddy_corrected.nii.gz ${dwi.simpleName}__eddy_corrected.nii.gz
-        # magic-monkey eddy_qc $qc_args
         fslmaths ${dwi.simpleName}__eddy_corrected.nii.gz -thr 0 ${dwi.simpleName}__eddy_corrected.nii.gz
         $after_script
         """
