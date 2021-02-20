@@ -41,10 +41,10 @@ include { extract_b0 as rev_b0; extract_b0 as dwi_b0; extract_b0 as extract_b0_m
 include { ants_correct_motion } from '../modules/processes/register.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
 include { ants_transform } from '../modules/processes/register.nf'
-include { convert_datatype; convert_datatype as rev_convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; bet_mask as rev_bet_mask; crop_image as crop_dwi; crop_image as crop_t1; fit_bounding_box; average; merge_masks; merge_masks as eddy_merge_masks } from '../modules/processes/utils.nf'
+include { convert_datatype; convert_datatype as topup_convert_datatype; convert_datatype as rev_convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; bet_mask as rev_bet_mask; crop_image as crop_dwi; crop_image as crop_t1; fit_bounding_box; average; merge_masks; merge_masks as eddy_merge_masks; timeseries_mean } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise; normalize_inter_b0 } from '../modules/processes/denoise.nf'
 include { scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi; scilpy_resample_on_ref as scilpy_resample_mask } from '../modules/processes/upsample.nf'
-include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as t1_mask_registration_wkf; registration_wkf as t1_base_registration_wkf; registration_wkf as t1_syn_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
+include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as topup_mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; registration_wkf as t1_base_registration_wkf; registration_wkf as t1_syn_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
 include { cat_dwi_repetitions_wkf; cat_dwi_repetitions_wkf as cat_rev_repetitions_wkf; register_dwi_repetitions_wkf as pre_register_dwi_repetitions_wkf; register_dwi_repetitions_wkf as post_register_dwi_repetitions_wkf; register_t1_repetitions_wkf } from '../modules/workflows/repetitions.nf'
 include { t12b0_registration as mask_registration_wkf; t12b0_registration as rev_mask_registration_wkf } from '../modules/workflows/t1_registration.nf'
 
@@ -95,14 +95,14 @@ workflow preprocess_wkf {
                 rev_to_normalize = rev_channel.map{ it.subList(0, 3) }
             }
             normalize_inter_b0(dwi_channel.map{ it.subList(0, 3) }.join(rev_to_normalize).join(meta_channel).join(rev_meta_channel), "preprocess")
-            dwi_channel = normalize_inter_b0.out.dwi.join(dwi_channel.map{ [it[0]] + it.subList(2, it.size()) })
+            dwi_channel = replace_dwi_file(dwi_channel, normalize_inter_b0.out.dwi)
             meta_channel = normalize_inter_b0.out.dwi_metadata
             rev_meta_channel = normalize_inter_b0.out.rev_metadata
             if ( params.rev_is_b0 ) {
                 rev_channel = normalize_inter_b0.out.rev
             }
             else {
-                rev_channel = normalize_inter_b0.out.rev.join(rev_channel.map{ [it[0]] + it.subList(2, it.size()) })
+                rev_channel = replace_dwi_file(rev_channel, normalize_inter_b0.out.rev)
             }
         }
 
@@ -189,7 +189,22 @@ workflow preprocess_wkf {
         }
 
         if ( params.eddy_correction ) {
-            if ( params.eddy_on_rev && !( params.masked_dwi ) && params.t1mask2dwi_registration ) {
+            if ( params.topup_correction ) {
+                timeseries_mean(topup_wkf.out.b0, "preprocess")
+                topup_mask_registration_wkf(
+                    timeseries_mean.out.image.map{ [it[0], [it[1]]] },
+                    t1_channel.map{ [it[0], [it[1]]] },
+                    t1_mask_channel,
+                    null,
+                    null,
+                    meta_channel.map{ [it[0], it[1], ""] },
+                    params.config.workflow.preprocess.t12b0mask_registration
+                )
+
+                topup_convert_datatype(topup_mask_registration_wkf.out.image, "int8", "preprocess")
+                eddy_mask = topup_convert_datatype.out.image
+            }
+            else if ( params.eddy_on_rev && !( params.masked_dwi ) && params.t1mask2dwi_registration ) {
                 if (params.eddy_pre_bet_mask || !(params.masked_t1 && params.t1mask2dwi_registration)) {
                     rev_mask_channel = rev_bet_mask(b0_channel, "preprocess")
                 }
@@ -261,6 +276,7 @@ workflow preprocess_wkf {
                 t1_channel.map{ [it[0], [it[1]]] },
                 null,
                 dwi_mask_channel.join(t1_mask_channel).map{ [it[0], [it[1], it[2]]] },
+                null,
                 b0_metadata.map{ it.subList(0, 2) + [""] },
                 params.config.workflow.preprocess.t12b0_base_registration
             )
@@ -272,6 +288,7 @@ workflow preprocess_wkf {
                     t1_base_registration_wkf.out.image.map{ [it[0], [it[1]]] },
                     null,
                     params.register_syn_t12b0_with_mask ? dwi_mask_channel.join(t1_mask_channel).map{ [it[0], [it[1], it[2]]] } : null,
+                    null,
                     b0_metadata.map{ it.subList(0, 2) + [""] },
                     params.config.workflow.preprocess.t12b0_syn_registration
                 )

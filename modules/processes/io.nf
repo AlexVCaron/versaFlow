@@ -5,12 +5,14 @@ nextflow.enable.dsl=2
 
 def metadata_from_params ( reverse ) {
     def direction = "${params.metadata.direction}"
-    if ( "$reverse" == "false" )
+    if ( "$reverse" == "true" )
         direction = direction.reverse()
 
     def margs = "--acq ${params.metadata.acquisition} --dir $direction --dwell ${params.metadata.dwell}"
     if ( params.metadata.multiband && params.metadata.multiband > 1 ) {
         margs += " --mb ${params.metadata.multiband} --sd ${params.metadata.slice_direction}"
+        if ( params.metadata.interleaved )
+            margs += " --interleaved"
     }
     args += margs
 

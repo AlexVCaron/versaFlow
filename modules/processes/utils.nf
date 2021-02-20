@@ -296,3 +296,15 @@ process merge_masks {
     fslmaths cat_images.nii.gz -Tmax ${base_name}__merged.nii.gz
     """
 }
+
+process timeseries_mean {
+    input:
+        tuple val(sid), path(image)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${image.simpleName}__mean.nii.gz"), emit: image
+    script:
+    """
+    fslmaths $image -Tmean ${image.simpleName}__mean.nii.gz
+    """
+}

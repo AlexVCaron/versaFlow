@@ -193,7 +193,8 @@ process topup {
         tuple val(sid), path(output_metadata), optional: true, emit: metadata
     script:
         """
-        ./$topup_script $b0 ${sid}__topup
+        fslmaths $b0 -thr 0 topup_in_image.nii.gz
+        ./$topup_script topup_in_image.nii.gz ${sid}__topup
         mv ${sid}__topup.nii.gz ${sid}_b0__topup.nii.gz
         """
 }
@@ -264,32 +265,27 @@ process eddy {
         if ( metadata )
             after_script += "cp $metadata ${dwi.simpleName}__eddy_corrected_metadata.py"
 
-        def args = "$dwi $bval $bvec"
-        def qc_args = "--in eddy_corrected.nii.gz --bvals ${dwi.simpleName}__eddy_corrected.bval --bvecs ${dwi.simpleName}__eddy_corrected.bvec"
-        qc_args += " --index $eddy_index --acqp $eddy_acqp --eddy eddy_corrected --out ${dwi.simpleName}__eddy_corrected"
-        qc_args += " --ratio $params.eddy_qc_min_valid_ratio"
+        def args = "eddy_in_image.nii.gz $bval $bvec"
 
         if ( mask ) {
             args += " $mask"
-            qc_args += " --mask $mask"
         }
 
         args += " $eddy_acqp $eddy_index"
 
         if ( topup_prefix ) {
             args += " --topup $topup_prefix"
-            qc_args += " --field ${topup_prefix}_fieldcoef.nii.gz"
         }
 
         if ( params.use_cuda ) {
             args += " --slspec $eddy_slspec"
-            qc_args += " --sls $eddy_slspec"
         }
 
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
+        fslmaths $dwi -thr 0 eddy_in_image.nii.gz
         ./$eddy_script $args eddy_corrected
         mv eddy_corrected.eddy_rotated_bvecs ${dwi.simpleName}__eddy_corrected.bvec
         cp $bval ${dwi.simpleName}__eddy_corrected.bval

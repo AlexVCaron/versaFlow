@@ -38,6 +38,7 @@ workflow t12b0_registration {
             t1_channel.map{ [it[0], [it[1]]] },
             null,
             mask_channel,
+            null,
             b0_metadata.map{ it.subList(0, 2) + [""] },
             params.config.workflow.preprocess.t12b0_base_registration
         )
@@ -66,6 +67,7 @@ workflow t12b0_registration {
                 t1_base_registration_wkf.out.image.map{ [it[0], [it[1]]] },
                 null,
                 syn_mask,
+                null,
                 b0_metadata.map{ it.subList(0, 2) + [""] },
                 params.config.workflow.preprocess.t12b0_syn_registration
             )

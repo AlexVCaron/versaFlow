@@ -23,7 +23,7 @@ c.AntsTransform.base_config_file = ""
 
 c.AntsTransformConfiguration.fill_value = 0
 
-c.AntsTransformConfiguration.interpolation = "BSpline"
+c.AntsTransformConfiguration.interpolation = "NearestNeighbor"
 
 c.AntsTransformConfiguration.dimensionality = 3
 

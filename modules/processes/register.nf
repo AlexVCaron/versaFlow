@@ -19,10 +19,9 @@ process ants_register {
         val(caller_name)
         path(config)
     output:
-        tuple val(sid), path("${moving[0].simpleName}__registration_affine.mat"), path("${moving[0].simpleName}__registration_rigid.nii.gz"), optional: true, emit: affine
         tuple val(sid), path("${moving[0].simpleName}__registration_ref.nii.gz"), emit: reference
+        tuple val(sid), path("${moving[0].simpleName}__[A-Z]_registration_*.*"), emit: transformation
         tuple val(sid), path("${moving[0].simpleName}__registration_warped.nii.gz"), optional: true, emit: image
-        tuple val(sid), path("${moving[0].simpleName}__registration*syn.nii.gz"), optional: true, emit: syn
         tuple val(sid), path("${moving[0].simpleName}__registration_warped_metadata.*"), optional: true, emit: metadata
     script:
         def mask_arg = ""
@@ -36,16 +35,41 @@ process ants_register {
         export OPENBLAS_NUM_THREADS=1
         magic-monkey ants_registration --moving ${moving.join(",")} --target ${target.join(",")} --out ${moving[0].simpleName}__registration $mask_arg --config $config
         cp ${file(reference).name} ${moving[0].simpleName}__registration_ref.nii.gz
-        cp ${moving[0].simpleName}__registration_warped.nii.gz ${moving[0].simpleName}__registration_rigid.nii.gz
-        if [ -f ${moving[0].simpleName}__registration0GenericAffine.mat ]
-        then
-            mv ${moving[0].simpleName}__registration0GenericAffine.mat ${moving[0].simpleName}__registration_affine.mat
-        fi
-        if [ -f "${moving[0].simpleName}__registration0Warp.nii.gz" ]
-        then
-            mv ${moving[0].simpleName}__registration0Warp.nii.gz ${moving[0].simpleName}__registration_syn.nii.gz
-            mv ${moving[0].simpleName}__registration0InverseWarp.nii.gz ${moving[0].simpleName}__registration_inv_syn.nii.gz
-        fi
+        cnt1=0
+        cnt2=1
+        while true
+        do
+            found=false
+            if [ -f ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ]
+            then
+                printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
+                (( ++cnt2 ))
+                mv ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ${moving[0].simpleName}__\${letter}_registration_rigid.mat
+                found=true
+            fi
+            if [ -f ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ]
+            then
+                printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
+                (( ++cnt2 ))
+                mv ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ${moving[0].simpleName}__\${letter}_registration_affine.mat
+                found=true
+            fi
+            if [ -f ${moving[0].simpleName}__registration\${cnt1}Warp.nii.gz ]
+            then
+                printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
+                (( ++cnt2 ))
+                mv ${moving[0].simpleName}__registration\${cnt1}Warp.nii.gz ${moving[0].simpleName}__\${letter}_registration_syn.nii.gz
+                found=true
+            fi
+            
+            if \$found
+            then
+                (( ++cnt1 ))
+            else
+                break
+            fi
+        done
+            
         """
 }
 
@@ -79,18 +103,23 @@ process ants_transform {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(img), path(ref), path(affine), file(trans), file(metadata)
+        tuple val(sid), path(img), path(ref), path(trans), file(bvec), file(metadata)
         val(caller_name)
         path(config)
     output:
         tuple val(sid), path("${img.simpleName}__transformed.nii.gz"), emit: image
+        tuple val(sid), path("${img.simpleName}__transformed.bvec"), optional: true, emit: bvec
         tuple val(sid), path("${img.simpleName}__transformed_metadata.*"), optional: true, emit: metadata
     script:
-        args = "--in $img --ref $ref --mat $affine"
-        if ( trans && !trans.empty() ) {
-            args += " --trans ${trans}"
+        args = "--in $img --ref $ref"
+        trans_str = (trans instanceof Path) ? trans : trans.join(',')
+        if ( trans && (trans instanceof Path) ? !trans.empty() : !trans.isEmpty() ) {
+            args += " --trans $trans_str"
+        }
+        if ( !bvec.empty() ) {
+            args += " --bvecs $bvec"
         }
         """
-        magic-monkey ants_transform $args --out ${img.simpleName}__transformed.nii.gz --config $config
+        magic-monkey ants_transform $args --out ${img.simpleName}__transformed --config $config
         """
 }
