@@ -12,7 +12,6 @@ params.min_md_ventricle = 0.003
 include { get_size_in_gb; swap_configurations } from '../functions.nf'
 
 process dti_metrics {
-    memory { 4f * get_size_in_gb([mask] + (data instanceof List ? data : [data])) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -32,8 +31,7 @@ process dti_metrics {
 }
 
 process scil_compute_dti_fa {
-    memory { 8f * get_size_in_gb([dwi, mask]) }
-    label params.conservative_resources ? "res_conservative" : "res_full_node"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), file(mask)
@@ -66,8 +64,7 @@ process scil_compute_dti_fa {
 }
 
 process scil_dti_and_metrics {
-    memory { 8f * get_size_in_gb([dwi, mask]) }
-    label params.conservative_resources ? "res_conservative" : "res_max_cpu"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/all/${sid}/$measuring_caller_name/${task.index}_${task.process.replaceAll(":", "_")}",saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f },  mode: params.publish_mode, enabled: params.publish_all
@@ -119,13 +116,16 @@ process diamond_metrics {
         tuple val(sid), val("${sid}_diamond_metrics"), emit: prefix
         tuple val(sid), path("${sid}_diamond_metrics*.nii.gz"), emit: metrics
     script:
+        def args = "--in $input_prefix"
+        if ( !mask.empty() ) {
+            args += " --mask $mask"
+        }
         """
-        magic-monkey diamond_metrics --in $input_prefix --out ${sid}_diamond_metrics --config $config
+        magic-monkey diamond_metrics $args --out ${sid}_diamond_metrics --config $config
         """
 }
 
 process odf_metrics {
-    memory { 16f * get_size_in_gb([odfs, fa, md, mask]) }
     label params.conservative_resources ? "res_conservative" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

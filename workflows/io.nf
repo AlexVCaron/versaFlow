@@ -22,23 +22,25 @@ workflow load_dataset {
         rev_channel = null
         rev_meta_channel = null
 
-        if ( params.rev_is_b0 )
-            rev_channel = key_from_filename(Channel.fromPath("$root/**/*rev.nii.gz"), "_")
-        else {
-            rev_channel = Channel.fromFilePairs("$root/**/*rev.{nii.gz,bval,bvec}", size: -1, flat: true).map{
-                (0..3).collect{ i -> i >= it.size() ? null : it[i] }
-            }.map{
-                [it[0], it[3], it[1], it[2]]
-            }.join(dwi_channel.map{
-                [it[0]] + it.subList(2, it.size())
-            }).map{
-                it[2] ? it.subList(0, 4) + [it[-1]] : it.subList(0, 2) + [it[4], it[3], it[5]]
-            }.map{
-                it[3] ? it.subList(0, 4) : it.subList(0, 3) + [it[-1]]
+        if ( params.has_reverse ) {
+            if (params.rev_is_b0)
+                rev_channel = key_from_filename(Channel.fromPath("$root/**/*rev.nii.gz"), "_")
+            else {
+                rev_channel = Channel.fromFilePairs("$root/**/*rev.{nii.gz,bval,bvec}", size: -1, flat: true).map {
+                    (0..3).collect { i -> i >= it.size() ? null : it[i] }
+                }.map {
+                    [it[0], it[3], it[1], it[2]]
+                }.join(dwi_channel.map {
+                    [it[0]] + it.subList(2, it.size())
+                }).map {
+                    it[2] ? it.subList(0, 4) + [it[-1]] : it.subList(0, 2) + [it[4], it[3], it[5]]
+                }.map {
+                    it[3] ? it.subList(0, 4) : it.subList(0, 3) + [it[-1]]
+                }
+                rev_json_channel = key_from_filename(Channel.fromPath("$root/**/*rev.json"), "_").map { [it[0].substring(0, it[0].lastIndexOf("_"))] + it.subList(1, it.size()) }
+                in_meta_rev = rev_channel.map { it.subList(0, 2) }.join(rev_json_channel, remainder: true).map { it.size() > 2 ? it[-1] ? it : [it[0], it[1], ""] : it + [""] }
+                rev_meta_channel = pmeta_rev(in_meta_rev.map { it + ["true"] })
             }
-            rev_json_channel = key_from_filename(Channel.fromPath("$root/**/*rev.json"), "_").map{ [it[0].substring(0, it[0].lastIndexOf("_"))] + it.subList(1, it.size()) }
-            in_meta_rev = rev_channel.map{ it.subList(0, 2) }.join(rev_json_channel, remainder: true).map{ it.size() > 2 ? it[-1] ? it : [it[0], it[1], ""] : it + [""] }
-            rev_meta_channel = pmeta_rev(in_meta_rev.map{ it + ["true"] })
         }
 
         if ( params.masked_t1 )

@@ -31,7 +31,7 @@ c.TopupConfiguration.passes = [{
     "warp_resolution": 8,
     "subsampling": 2,
     "blur_fwhm": 3.2,
-    "n_iter": 20,
+    "n_iter": 10,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 5e-3
@@ -39,7 +39,7 @@ c.TopupConfiguration.passes = [{
     "warp_resolution": 6.4,
     "subsampling": 2,
     "blur_fwhm": 2.4,
-    "n_iter": 20,
+    "n_iter": 15,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 1e-3
@@ -47,7 +47,7 @@ c.TopupConfiguration.passes = [{
     "warp_resolution": 5.6,
     "subsampling": 2,
     "blur_fwhm": 1.6,
-    "n_iter": 25,
+    "n_iter": 15,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 1e-4
@@ -55,7 +55,7 @@ c.TopupConfiguration.passes = [{
     "warp_resolution": 4.8,
     "subsampling": 2,
     "blur_fwhm": 1.2,
-    "n_iter": 30,
+    "n_iter": 40,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 1.5e-5
@@ -63,7 +63,7 @@ c.TopupConfiguration.passes = [{
     "warp_resolution": 4,
     "subsampling": 2,
     "blur_fwhm": 1.2,
-    "n_iter": 30,
+    "n_iter": 40,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 5e-6
@@ -71,7 +71,7 @@ c.TopupConfiguration.passes = [{
     "warp_resolution": 2.4,
     "subsampling": 1,
     "blur_fwhm": 0.8,
-    "n_iter": 45,
+    "n_iter": 50,
     "estimate_motion": 0,
     "minimizer": 1,
     "w_reg": 5e-7
@@ -87,7 +87,7 @@ c.TopupConfiguration.passes = [{
     "warp_resolution": 1.6,
     "subsampling": 1,
     "blur_fwhm": 0,
-    "n_iter": 150,
+    "n_iter": 100,
     "estimate_motion": 0,
     "minimizer": 1,
     "w_reg": 5e-10
@@ -95,7 +95,7 @@ c.TopupConfiguration.passes = [{
     "warp_resolution": 1.6,
     "subsampling": 1,
     "blur_fwhm": 0,
-    "n_iter": 300,
+    "n_iter": 200,
     "estimate_motion": 0,
     "minimizer": 1,
     "w_reg": 1e-11

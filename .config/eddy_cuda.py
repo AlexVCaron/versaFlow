@@ -39,14 +39,14 @@ c.EddyConfiguration.n_iter = 10
 
 c.EddyConfiguration.n_voxels_hp = 3000
 
-# c.EddyConfiguration.outlier_model = None
-c.EddyConfiguration.outlier_model = {
-    "n_std": 5,
-    "n_vox": 250,
-    "method": "both",
-    "pos_neg": False,
-    "sum_squared": False
-}
+c.EddyConfiguration.outlier_model = None
+# c.EddyConfiguration.outlier_model = {
+#     "n_std": 5,
+#     "n_vox": 250,
+#     "method": "both",
+#     "pos_neg": False,
+#     "sum_squared": False
+# }
 
 c.EddyConfiguration.pre_filter_width = [1.6, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
@@ -54,7 +54,7 @@ c.EddyConfiguration.qspace_smoothing = 10
 
 c.EddyConfiguration.resampling = "jacobian"
 
-c.EddyConfiguration.separate_subject_field = False
+c.EddyConfiguration.separate_subject_field = True
 
 c.EddyConfiguration.skip_end_alignment = False
 

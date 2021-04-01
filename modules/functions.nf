@@ -152,3 +152,9 @@ def remove_alg_suffixes ( f ) {
 def add_suffix ( f, suffix ) {
     return [f.tokenize(".")[0] + suffix, extract_extension(f)].join(".")
 }
+
+def rename( channel, name ) {
+    return channel.map{
+        [it[0], copy_and_rename(it[1], "${it[0]}_$name", false)]
+    }
+}

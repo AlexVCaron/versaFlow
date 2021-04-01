@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 params.merge_repetitions = false
 params.eddy_on_rev = true
+params.has_reverse =true
 params.use_cuda = false
 
 params.config.register.ants_registration = file("$projectDir/.config/ants_registration.py")
@@ -148,7 +149,7 @@ workflow squash_wkf {
 
         squash_dwi(dwi_channel.join(dwi_meta_channel), "preprocess", params.config.preprocess.squash_b0)
         meta_channel = squash_dwi.out.metadata
-        if ( rev_channel ) {
+        if ( params.has_reverse ) {
             rev_meta_channel = metadata_channel.map{ [it[0], it[2]] }
             squash_rev(rev_channel.join(rev_meta_channel), "preprocess", params.config.preprocess.squash_b0)
             rev_channel = squash_rev.out.dwi
@@ -171,20 +172,41 @@ workflow eddy_wkf {
     main:
 
         bval_channel = dwi_channel.map{ [it[0], "${it[2].getName()}".tokenize(".")[0]] }
-        bval_channel = join_optional(bval_channel, topup_channel.map{ [it[0], it[1]] })
-        bval_channel = join_optional(bval_channel, rev_channel.map{ [it[0], "${it[2].getName()}".tokenize(".")[0]] })
+        if ( topup_channel ) {
+            bval_channel = join_optional(bval_channel, topup_channel.map { [it[0], it[1]] })
+        }
+        else {
+            bval_channel = bval_channel.map{ it + [""] }
+        }
+        if ( params.has_reverse ) {
+            bval_channel = join_optional(bval_channel, rev_channel.map { [it[0], "${it[2].getName()}".tokenize(".")[0]] })
+        }
+        else {
+            bval_channel = bval_channel.map{ it + [""] }
+        }
 
         metadata_channel = metadata_channel.map{ [it[0], it.subList(1, it.size())] }
 
+        prep_eddy_channel = dwi_channel
+        if ( params.has_reverse ) {
+            prep_eddy_channel = dwi_channel.join(rev_channel)
+        }
+
+        in_prep = bval_channel.join(prep_eddy_channel.map{ [it[0], it.subList(1, it.size())] })
         prepare_eddy(
-            bval_channel.join(dwi_channel.join(rev_channel).map{ [it[0], it.subList(1, it.size())] }).join(metadata_channel),
+            bval_channel.join(prep_eddy_channel.map{ [it[0], it.subList(1, it.size())] }).join(metadata_channel),
             params.use_cuda ? params.config.denoise.prepare_eddy_cuda : params.config.denoise.prepare_eddy
         )
 
-        dwi_channel = dwi_channel.map{ it.subList(0, 3)}.join(prepare_eddy.out.bvec.map{ [it[0], it[1].find{ f -> f.simpleName.indexOf("_rev") == -1 }] })
-        rev_channel = rev_channel.map{ it.subList(0, 3)}.join(prepare_eddy.out.bvec.map{ [it[0], it[1].find{ f -> f.simpleName.indexOf("_rev") >= 0 }] })
+        if ( params.has_reverse ) {
+            dwi_channel = dwi_channel.map{ it.subList(0, 3)}.join(prepare_eddy.out.bvec.map{ [it[0], it[1].find{ f -> f.simpleName.indexOf("_rev") == -1 }] })
+            rev_channel = rev_channel.map { it.subList(0, 3) }.join(prepare_eddy.out.bvec.map { [it[0], it[1].find { f -> f.simpleName.indexOf("_rev") >= 0 }] })
+        }
+        else {
+            dwi_channel = dwi_channel.map{ it.subList(0, 3)}.join(prepare_eddy.out.bvec)
+        }
 
-        if ( params.eddy_on_rev ) {
+        if ( params.has_reverse && params.eddy_on_rev ) {
             cat_eddy_on_rev(merge_channels_non_blocking(dwi_channel, rev_channel).join(metadata_channel), "_whole", "preprocess", params.config.utils.concatenate)
             dwi_channel = cat_eddy_on_rev.out.image.join( cat_eddy_on_rev.out.bval).join(cat_eddy_on_rev.out.bvec)
             metadata_channel = cat_eddy_on_rev.out.metadata.map{ [it[0], it.subList(1, it.size())] }
@@ -197,7 +219,12 @@ workflow eddy_wkf {
         // }
 
         dwi_channel = join_optional(dwi_channel, mask_channel)
-        dwi_channel = join_optional(dwi_channel, topup_channel.map{ [it[0], it[2], it[3]] })
+        if ( params.has_reverse ) {
+            dwi_channel = join_optional(dwi_channel, topup_channel.map { [it[0], it[2], it[3]] })
+        }
+        else {
+            dwi_channel = dwi_channel.map{ it + ["", ""] }
+        }
 
         eddy_in = prepare_eddy.out.config
         if ( params.use_cuda )

@@ -132,7 +132,7 @@ process apply_topup {
 
 process tournier2descoteaux_odf {
     memory { 4f * get_size_in_gb(odfs) }
-    label params.conservative_resources ? "res_conservative" : "res_max_cpu"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode

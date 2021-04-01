@@ -8,8 +8,7 @@ params.force_resampling_sequential = false
 include { get_size_in_gb; remove_alg_suffixes } from '../functions.nf'
 
 process scilpy_resample {
-    memory { 4f * get_size_in_gb([image, mask]) }
-    label params.force_resampling_sequential ? "res_full_cpu_override" : "res_single_cpu"
+    label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
@@ -20,11 +19,16 @@ process scilpy_resample {
         val(interpolation)
     output:
         tuple val(sid), path("${image.getSimpleName()}__resampled.nii.gz"), emit: image
+        tuple val(sid), path("${mask.simpleName}__resampled.nii.gz"), optional: true, emit: mask
         tuple val(sid), path("${image.getSimpleName()}__resampled_metadata.py"), optional: true, emit: metadata
     script:
         after_script = ""
+        if ( !mask.empty() ) {
+            after_script += "scil_resample_volume.py $mask mask_resampled.nii.gz --ref ${image.simpleName}__resampled.nii.gz --interp nn\n"
+            after_script += "magic-monkey convert --in mask_resampled.nii.gz --out ${mask.simpleName}__resampled.nii.gz --dt int8\n"
+        }
         if ( !metadata.empty() )
-            after_script += "magic-monkey metadata --in ${image.getSimpleName()}__resampled.nii.gz --update_affine --metadata $metadata"
+            after_script += "magic-monkey metadata --in ${image.getSimpleName()}__resampled.nii.gz --update_affine --metadata $metadata\n"
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
@@ -41,7 +45,7 @@ process scilpy_resample {
 
 process scilpy_resample_on_ref {
     memory { 4f * get_size_in_gb([image, ref, mask]) }
-    label params.force_resampling_sequential ? "res_full_cpu_override" : "res_single_cpu"
+    label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode

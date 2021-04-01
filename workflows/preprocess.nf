@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 // Preprocess workflow parameters
 params.gaussian_noise_correction = true
 params.rev_is_b0 = true
+params.has_reverse = true
 params.gibbs_ringing_correction = true
 params.t1mask2dwi_registration = true
 params.masked_t1 = true
@@ -68,7 +69,7 @@ workflow preprocess_wkf {
             dwi_channel = replace_dwi_file(dwi_channel, dwi_denoise_wkf.out.image)
             meta_channel = dwi_denoise_wkf.out.metadata
 
-            if ( !params.rev_is_b0 ) {
+            if ( params.has_reverse && !params.rev_is_b0 ) {
                 rev_denoise_wkf(rev_channel.map{ it.subList(0, 2) }, dwi_mask_channel, rev_meta_channel)
                 rev_channel = replace_dwi_file(rev_channel, rev_denoise_wkf.out.image)
                 rev_meta_channel = rev_denoise_wkf.out.metadata
@@ -80,7 +81,7 @@ workflow preprocess_wkf {
             dwi_channel = replace_dwi_file(dwi_channel, dwi_gibbs_removal.out.image)
             meta_channel = dwi_gibbs_removal.out.metadata
 
-            if ( !params.rev_is_b0 ) {
+            if ( params.has_reverse && !params.rev_is_b0 ) {
                 rev_gibbs_removal(rev_channel.map{ it.subList(0, 2) }.join(rev_meta_channel), "preprocess")
                 rev_channel = replace_dwi_file(rev_channel, rev_gibbs_removal.out.image)
                 rev_meta_channel = rev_gibbs_removal.out.metadata
@@ -88,21 +89,23 @@ workflow preprocess_wkf {
         }
 
         if ( params.normalize_inter_b0 ) {
-            if ( params.rev_is_b0 ) {
-                rev_to_normalize = rev_channel.map{ it + [""] }
+            if ( !params.has_reverse ) {
+                to_normalize = dwi_channel.map{ it.subList(0, 3) + ["", ""] }.join(meta_channel.map{ it + [""] })
+            } else if ( params.rev_is_b0 ) {
+                to_normalize = dwi_channel.map{ it.subList(0, 3) }.join(rev_channel.map{ it + [""] }).join(meta_channel).join(rev_meta_channel)
+            } else {
+                to_normalize = dwi_channel.map{ it.subList(0, 3) }.join(rev_channel.map{ it.subList(0, 3) }).join(meta_channel).join(rev_meta_channel)
             }
-            else {
-                rev_to_normalize = rev_channel.map{ it.subList(0, 3) }
-            }
-            normalize_inter_b0(dwi_channel.map{ it.subList(0, 3) }.join(rev_to_normalize).join(meta_channel).join(rev_meta_channel), "preprocess")
+            normalize_inter_b0(to_normalize, "preprocess")
             dwi_channel = replace_dwi_file(dwi_channel, normalize_inter_b0.out.dwi)
             meta_channel = normalize_inter_b0.out.dwi_metadata
             rev_meta_channel = normalize_inter_b0.out.rev_metadata
-            if ( params.rev_is_b0 ) {
-                rev_channel = normalize_inter_b0.out.rev
-            }
-            else {
-                rev_channel = replace_dwi_file(rev_channel, normalize_inter_b0.out.rev)
+            if ( params.has_reverse ) {
+                if (params.rev_is_b0) {
+                    rev_channel = normalize_inter_b0.out.rev
+                } else {
+                    rev_channel = replace_dwi_file(rev_channel, normalize_inter_b0.out.rev)
+                }
             }
         }
 
@@ -125,12 +128,13 @@ workflow preprocess_wkf {
             rev_meta_channel  = pre_register_dwi_repetitions_wkf.out.rev_metadata
         }
 
-        squash_wkf(dwi_channel, rev_channel, meta_channel.join(rev_meta_channel))
+        squash_metadata = meta_channel.join(rev_meta_channel, remainder: true)
+        squash_wkf(dwi_channel, rev_channel, squash_metadata)
         dwi_channel = squash_wkf.out.dwi
         rev_channel = squash_wkf.out.rev
         meta_channel = squash_wkf.out.metadata
 
-        if ( params.topup_correction ) {
+        if ( params.has_reverse && params.topup_correction ) {
             topup_wkf(dwi_channel, rev_channel, meta_channel)
 
             topup2eddy_channel = topup_wkf.out.param.join(topup_wkf.out.prefix).join(topup_wkf.out.topup.map{ [it[0], it.subList(1, it.size())] })
@@ -149,10 +153,15 @@ workflow preprocess_wkf {
         if ( params.merge_repetitions ) {
             if ( (!params.topup_correction || params.eddy_correction) ) {
                 cat_dwi_repetitions_wkf(dwi_channel, meta_channel, "_dwi")
-                cat_rev_repetitions_wkf(rev_channel, meta_channel, "_rev")
                 dwi_channel = cat_dwi_repetitions_wkf.out.dwi
-                rev_channel = cat_rev_repetitions_wkf.out.dwi
-                meta_channel = cat_dwi_repetitions_wkf.out.metadata.join(cat_rev_repetitions_wkf.out.metadata)
+                meta_channel = cat_dwi_repetitions_wkf.out.metadata
+
+                if ( params.has_reverse ) {
+                    cat_rev_repetitions_wkf(rev_channel, meta_channel, "_rev")
+                    rev_channel = cat_rev_repetitions_wkf.out.dwi
+                    meta_channel = meta_channel.join(cat_rev_repetitions_wkf.out.metadata)
+                }
+
             }
             t1_channel = merge_repetitions(t1_channel, false)
             average(t1_channel.join(t1_channel.map{ [it[0], it[1][0].simpleName] }), "preprocess")
@@ -189,7 +198,7 @@ workflow preprocess_wkf {
         }
 
         if ( params.eddy_correction ) {
-            if ( params.topup_correction ) {
+            if ( params.has_reverse && params.topup_correction ) {
                 timeseries_mean(topup_wkf.out.b0, "preprocess")
                 topup_mask_registration_wkf(
                     timeseries_mean.out.image.map{ [it[0], [it[1]]] },
@@ -204,7 +213,7 @@ workflow preprocess_wkf {
                 topup_convert_datatype(topup_mask_registration_wkf.out.image, "int8", "preprocess")
                 eddy_mask = topup_convert_datatype.out.image
             }
-            else if ( params.eddy_on_rev && !( params.masked_dwi ) && params.t1mask2dwi_registration ) {
+            else if ( params.has_reverse && params.eddy_on_rev && !( params.masked_dwi ) && params.t1mask2dwi_registration ) {
                 if (params.eddy_pre_bet_mask || !(params.masked_t1 && params.t1mask2dwi_registration)) {
                     rev_mask_channel = rev_bet_mask(b0_channel, "preprocess")
                 }
@@ -224,11 +233,8 @@ workflow preprocess_wkf {
                 eddy_merge_masks(dwi_mask_channel.join(rev_mask_channel).map { [it[0], it.subList(1, it.size()), "eddy_mask"] }, "preprocess")
                 eddy_mask = eddy_merge_masks.out.mask
             }
-            else if ( params.masked_dwi ) {
-                eddy_mask = dwi_mask_channel
-            }
             else {
-                eddy_mask = t1_mask_channel
+                eddy_mask = dwi_mask_channel
             }
 
             eddy_wkf(dwi_channel, eddy_mask, topup2eddy_channel, b0_channel, rev_channel, meta_channel)
@@ -296,6 +302,13 @@ workflow preprocess_wkf {
             }
         }
 
+        if ( params.resample_data ) {
+            scilpy_resample_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).join(meta_channel), "preprocess", "lin")
+            dwi_channel = replace_dwi_file(dwi_channel, scilpy_resample_dwi.out.image)
+            dwi_mask_channel = scilpy_resample_dwi.out.mask
+            meta_channel = scilpy_resample_dwi.out.metadata
+        }
+
         crop_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).map{ it + [""] }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "preprocess")
         dwi_bbox_channel = crop_dwi.out.bbox
         fit_bounding_box(t1_channel.join(dwi_channel.map{ it.subList(0, 2) }).join(dwi_bbox_channel), "preprocess")
@@ -304,7 +317,7 @@ workflow preprocess_wkf {
         dwi_channel = replace_dwi_file(dwi_channel, crop_dwi.out.image)
         dwi_mask_channel = crop_dwi.out.mask
         t1_channel = crop_t1.out.image
-        t1_mask_channel = crop_t1.out.mask
+        t1_mask_channel = crop_dwi.out.mask
 
         dwi_channel = uniformize_naming(dwi_channel.map{ it.subList(0, 4) }, "dwi_preprocessed", "false")
         meta_channel = uniformize_naming(meta_channel, "dwi_preprocessed_metadata", "false")

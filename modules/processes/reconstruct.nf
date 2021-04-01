@@ -11,7 +11,6 @@ params.frf_roi_radius = 10
 include { get_size_in_gb; uniformize_naming } from '../functions.nf'
 
 process diamond {
-    memory { 8f * get_size_in_gb([input_dwi, mask] + (data instanceof List ? data : [data])) }
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -36,7 +35,6 @@ process diamond {
 }
 
 process mrtrix_dti {
-    memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -59,7 +57,6 @@ process mrtrix_dti {
 }
 
 process response {
-    memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -82,7 +79,6 @@ process response {
 }
 
 process csd {
-    memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -105,7 +101,6 @@ process csd {
 }
 
 process scilpy_response {
-    memory { 8f * get_size_in_gb([dwi, mask]) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -129,7 +124,6 @@ process scilpy_response {
 }
 
 process scilpy_csd {
-    memory { 4f * get_size_in_gb([dwi, mask]) }
     label "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -147,6 +141,6 @@ process scilpy_csd {
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
         magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
-        scil_compute_ssst_fodf.py $dwi $bval flipped_bvecs.bvec $response ${sid}_fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --processes $task.cpus
+        scil_compute_ssst_fodf.py $dwi $bval flipped_bvecs.bvec $response ${sid}_fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
         """
 }

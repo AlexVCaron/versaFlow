@@ -10,7 +10,6 @@ params.eddy_force_shelled = true
 include { get_size_in_gb; swap_configurations; remove_alg_suffixes } from '../functions.nf'
 
 process dwi_denoise {
-    memory { 4f * get_size_in_gb([dwi, mask]) }
     label params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -86,7 +85,6 @@ process ants_gaussian_denoise {
 }
 
 process n4_denoise {
-    memory { 4f * get_size_in_gb([image, anat, mask]) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -219,10 +217,9 @@ process prepare_eddy {
         }
         if ( rev_prefix ) {
             args += " --rev $rev_prefix"
+            if ( params.eddy_on_rev )
+                args += " --rev_eddy"
         }
-
-        if ( params.eddy_on_rev )
-            args += " --rev_eddy"
 
         if ( params.use_cuda ) {
             args += " --cuda"
@@ -253,7 +250,7 @@ process eddy {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(eddy_script), path(eddy_index), path(eddy_acqp), file(eddy_slspec), path(dwi), path(bval), path(bvec), path(mask), val(topup_prefix), path(topup_package), path(metadata)
+        tuple val(sid), path(eddy_script), path(eddy_index), path(eddy_acqp), file(eddy_slspec), path(dwi), path(bval), path(bvec), path(mask), val(topup_prefix), file(topup_package), path(metadata)
         val(caller_name)
     output:
         tuple val(sid), path("${dwi.simpleName}__eddy_corrected.nii.gz"), emit: dwi

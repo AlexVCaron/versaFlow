@@ -5,7 +5,6 @@ nextflow.enable.dsl=2
 include { get_size_in_gb; swap_configurations; remove_alg_suffixes; add_suffix } from '../functions.nf'
 
 process extract_b0 {
-    memory { 4f * get_size_in_gb(dwi) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -25,7 +24,6 @@ process extract_b0 {
 }
 
 process squash_b0 {
-    memory { 4f * get_size_in_gb(dwi) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
