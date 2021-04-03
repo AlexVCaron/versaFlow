@@ -15,3 +15,4 @@ c.ApplyMask.log_level = 30
 
 c.ApplyMask.base_config_file = ""
 
+c.ApplyMask.dtype = "float"

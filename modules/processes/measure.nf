@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 params.verbose_outputs = true
 params.fodf_max_absolute_factor = 2.0
 params.fodf_relative_thr = 0.1
+params.ventricles_center = false
 params.max_fa_ventricle = 0.1
 params.min_md_ventricle = 0.003
 
@@ -139,8 +140,11 @@ process odf_metrics {
         tuple val(sid), val("${sid}_fodf_metrics"), emit: prefix
         tuple val(sid), path("${sid}_fodf_metrics*.nii.gz"), emit: metrics
     script:
+        args = ""
+        if ( params.ventricles_center )
+            args += " --center ${ params.ventricles_center.join(' ') }"
         """
-        scil_compute_fodf_max_in_ventricles.py $odfs $fa $md --max_value_output vmax.txt --sh_basis descoteaux07 --fa_t $params.max_fa_ventricle --md_t $params.min_md_ventricle -f
+        scil_compute_fodf_max_in_ventricles.py $odfs $fa $md --max_value_output vmax.txt --sh_basis descoteaux07 --fa_t $params.max_fa_ventricle --md_t $params.min_md_ventricle --mask_output vmask.nii.gz -f $args
         abs_threshold=\$(echo $params.fodf_max_absolute_factor*\$(cat vmax.txt)|bc)
         scil_compute_fodf_metrics.py --rt $params.fodf_relative_thr --at \${abs_threshold} --sh_basis $basis --mask $mask --afd_max ${sid}_fodf_metrics_afd.nii.gz --afd_total ${sid}_fodf_metrics_afdt.nii.gz --afd_sum ${sid}_fodf_metrics_afds.nii.gz --nufo ${sid}_fodf_metrics_nufo.nii.gz --peaks ${sid}_fodf_metrics_peaks.nii.gz --rgb ${sid}_fodf_metrics_rgb.nii.gz --peak_values ${sid}_fodf_metrics_peaks_values.nii.gz --peak_indices ${sid}_fodf_metrics_peaks_indices.nii.gz $odfs
         """

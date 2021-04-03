@@ -219,6 +219,8 @@ process crop_image {
         tuple val(sid), path("${mask.simpleName}__cropped.nii.gz"), emit: mask, optional: true
     script:
         args = ""
+        img = "$image"
+        before_script = []
         after_script = []
 
         if ( !bounding_box.empty() ) {
@@ -229,11 +231,19 @@ process crop_image {
             args += "--output_bbox ${image.simpleName}__bbox.pkl"
 
         if ( !mask.empty() ) {
+            before_script = "magic-monkey apply_mask --in $image --mask $mask --out masked_image.nii.gz"
+            img = "masked_image.nii.gz"
             mask_script = "magic-monkey fit2box --in $mask --out ${mask.simpleName}__cropped.nii.gz"
-            if ( !bounding_box.empty() )
+            img_script = "magic-monkey fit2box --in $image --out ${image.simpleName}__cropped.nii.gz"
+            if ( !bounding_box.empty() ) {
                 mask_script += " --pbox $bounding_box"
-            else
+                img_script += " --pbox $bounding_box"
+            }
+            else {
                 mask_script += " --pbox ${image.simpleName}__bbox.pkl"
+                img_script += " --pbox ${image.simpleName}__bbox.pkl"
+            }
+            after_script += [img_script]
             after_script += [mask_script]
             after_script += ["scil_image_math.py convert ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
         }
@@ -245,12 +255,13 @@ process crop_image {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_crop_volume.py $image ${image.simpleName}__cropped.nii.gz $args
+        $before_script
+        scil_crop_volume.py $img ${image.simpleName}__cropped.nii.gz $args
+        ${after_script.join('\n')}
         if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}__cropped.nii.gz)" ]
         then
             mrconvert -force -datatype "\$(mrinfo -datatype $image)" ${image.simpleName}__cropped.nii.gz ${image.simpleName}__cropped.nii.gz
         fi
-        ${after_script.join('\n')}
         """
 }
 
