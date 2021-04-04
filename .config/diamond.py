@@ -33,7 +33,7 @@ c.DiamondConfiguration.estimate_restriction = False
 
 c.DiamondConfiguration.estimate_water = True
 
-c.DiamondConfiguration.fa_lower_bound = 0.8
+c.DiamondConfiguration.fa_lower_bound = 0.6
 
 c.DiamondConfiguration.fascicle = "diamondNCcyl"
 
@@ -43,7 +43,7 @@ c.DiamondConfiguration.gen_error_iters = 0
 
 c.DiamondConfiguration.initial_stick = None
 
-c.DiamondConfiguration.iso_no_fascicle = False
+c.DiamondConfiguration.iso_no_fascicle = True
 
 c.DiamondConfiguration.klass = "magic_monkey.config.diamond.DiamondConfiguration"
 
@@ -53,7 +53,7 @@ c.DiamondConfiguration.max_evals = 600
 
 c.DiamondConfiguration.max_passes = 10
 
-c.DiamondConfiguration.md_higher_bound = 0.0005
+c.DiamondConfiguration.md_higher_bound = 0.0001
 
 c.DiamondConfiguration.mose_iter = 30
 
@@ -75,7 +75,7 @@ c.DiamondConfiguration.regularization = 1.0
 
 c.DiamondConfiguration.restriction_tensor = False
 
-c.DiamondConfiguration.splits = 4
+c.DiamondConfiguration.splits = 8
 
 c.DiamondConfiguration.sum_fractions_to_1 = True
 

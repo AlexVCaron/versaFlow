@@ -30,7 +30,7 @@ workflow measure_wkf {
 
         if ( params.recons_dti && params.reconstruct_use_mrtrix ) {
             data_dti = data_channel.map{ [it[0], it[1]] }
-            metadata_dti = uniformize_naming(metadata_channel, "dti_metadata", false)
+            metadata_dti = uniformize_naming(metadata_channel, "dti_metadata", "false", "false")
             mask_dti = rename_according_to(mask_channel, data_dti.map{ it.subList(0, 2) }, "dti_mask", false)
             prefix_dti = data_dti.map{ [it[0], "${it[0]}__dti"] }
             dti_metrics(prefix_dti.join(mask_dti).join(data_dti).join(metadata_dti), "measure", params.config.measure.dti)
@@ -53,9 +53,9 @@ workflow measure_wkf {
             )
             data_odfs = data_channel.map{ [it[0], it[2]] }.join(scil_compute_dti_fa.out.fa).join(scil_compute_dti_fa.out.md)
 
-            mask_odfs = uniformize_naming(mask_channel, "desc07_odf_mask", false)
+            mask_odfs = uniformize_naming(mask_channel, "desc07_odf_mask", "false", "false")
             if ( !params.reconstruct_use_mrtrix )
-                mask_odfs = uniformize_naming(mask_channel, "fodf_mask", false)
+                mask_odfs = uniformize_naming(mask_channel, "fodf_mask", "false", "false")
 
             basis = "tournier07"
             if ( !params.reconstruct_use_mrtrix )

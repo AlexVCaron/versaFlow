@@ -5,7 +5,8 @@ nextflow.enable.dsl=2
 params.frf_fa = 0.7
 params.frf_min_fa = 0.5
 params.frf_min_nvox = 300
-params.frf_roi_radius = 10
+params.frf_radii = false
+params.frf_center = false
 
 
 include { get_size_in_gb; uniformize_naming } from '../functions.nf'
@@ -112,6 +113,11 @@ process scilpy_response {
     output:
         tuple val(sid), path("${sid}_response.txt"), emit: response
     script:
+        args = ""
+        if (params.frf_radii)
+            args += " --roi_radii $params.frf_radii"
+        if (params.frf_center)
+            args += " --roi_center ${params.frf_center.join(" ")}"
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
@@ -119,7 +125,7 @@ process scilpy_response {
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
         magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
         magic-monkey shells --in $dwi --bvals $bval --bvecs flipped_bvecs.bvec --shells 1500 --keep leq --out dwi_leq_1500 --with_b0
-        scil_compute_ssst_frf.py dwi_leq_1500.nii.gz dwi_leq_1500.bval dwi_leq_1500.bvec ${sid}_response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox --roi_radii $params.frf_roi_radius
+        scil_compute_ssst_frf.py dwi_leq_1500.nii.gz dwi_leq_1500.bval dwi_leq_1500.bvec ${sid}_response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox $args
         """
 }
 

@@ -79,5 +79,5 @@ workflow t12b0_registration {
     emit:
         t1 = t1_channel
         mask = t1_mask_channel
-        transform = t1_base_registration_wkf.out.transform.join(t1_syn_registration_wkf.out.transform)
+        transform = params.register_syn_t12b0 ? t1_base_registration_wkf.out.transform.join(t1_syn_registration_wkf.out.transform) : t1_base_registration_wkf.out.transform
 }

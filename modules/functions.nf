@@ -63,17 +63,20 @@ def extract_extension ( f ) {
     return "$f".tokenize(".").subList(1, "$f".tokenize(".").size()).join(".")
 }
 
-def copy_and_rename ( fl, prefix, overwrite ) {
+def copy_and_rename ( fl, prefix, overwrite, copy ) {
     def ext = extract_extension(fl)
     if ( !file("${file(fl).getParent()}/${prefix}.${ext}").exists() || overwrite == "true" )
-        file(fl).mklink("${file(fl).getParent()}/${prefix}.${ext}", overwrite: true)
+        if ( copy == "true" )
+            file(fl).copyTo("${file(fl).getParent()}/${prefix}.${ext}")
+        else
+            file(fl).mklink("${file(fl).getParent()}/${prefix}.${ext}", overwrite: true)
     return file("${file(fl).getParent()}/${prefix}.${ext}")
 }
 
-def uniformize_naming ( files_channel, prefix, overwrite ) {
+def uniformize_naming ( files_channel, prefix, overwrite, copy ) {
     return files_channel.map{ it ->
         [it[0]] + it.subList(1, it.size()).collect{ i ->
-            copy_and_rename(i, "${i.simpleName.split("__")[0]}__$prefix", overwrite)
+            copy_and_rename(i, "${i.simpleName.split("__")[0]}__$prefix", overwrite, copy)
         }
     }
 }

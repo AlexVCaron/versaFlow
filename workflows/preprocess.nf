@@ -41,7 +41,7 @@ include { merge_channels_non_blocking; map_optional; opt_channel; replace_dwi_fi
 include { extract_b0 as rev_b0; extract_b0 as dwi_b0; extract_b0 as extract_b0_motion; extract_b0 as dwi_b0_for_t1_reg } from '../modules/processes/preprocess.nf'
 include { ants_correct_motion } from '../modules/processes/register.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
-include { ants_transform } from '../modules/processes/register.nf'
+include { ants_transform as ants_transform_base_t1; ants_transform as ants_transform_base_dwi; ants_transform as ants_transform_syn_t1; ants_transform as ants_transform_syn_dwi } from '../modules/processes/register.nf'
 include { convert_datatype; convert_datatype as topup_convert_datatype; convert_datatype as rev_convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; bet_mask as rev_bet_mask; crop_image as crop_dwi; crop_image as crop_t1; fit_bounding_box; average; merge_masks; merge_masks as eddy_merge_masks; timeseries_mean } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise; normalize_inter_b0 } from '../modules/processes/denoise.nf'
 include { scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi; scilpy_resample_on_ref as scilpy_resample_mask } from '../modules/processes/upsample.nf'
@@ -140,13 +140,13 @@ workflow preprocess_wkf {
             topup2eddy_channel = topup_wkf.out.param.join(topup_wkf.out.prefix).join(topup_wkf.out.topup.map{ [it[0], it.subList(1, it.size())] })
 
             if ( !params.eddy_correction ) {
-                dwi_channel = uniformize_naming(dwi_channel, "dwi_to_topup", "false")
-                rev_channel = uniformize_naming(rev_channel, "dwi_to_topup_rev", "false")
-                meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(0..<it[1].size()).step(2)] }, "dwi_to_topup_metadata", "false")
-                rev_meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(1..<it[1].size()).step(2)] }, "dwi_to_topup_rev_metadata", "false")
+                dwi_channel = uniformize_naming(dwi_channel, "dwi_to_topup", "false", "false")
+                rev_channel = uniformize_naming(rev_channel, "dwi_to_topup_rev", "false", "false")
+                meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(0..<it[1].size()).step(2)] }, "dwi_to_topup_metadata", "false", "false")
+                rev_meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(1..<it[1].size()).step(2)] }, "dwi_to_topup_rev_metadata", "false", "false")
                 apply_topup_wkf(dwi_channel, rev_channel, topup2eddy_channel, meta_channel.join(rev_meta_channel).map{ [it[0], it.subList(1, it.size())] })
-                dwi_channel = uniformize_naming(apply_topup_wkf.out.dwi, "topup_corrected", "false")
-                meta_channel = uniformize_naming(apply_topup_wkf.out.metadata, "topup_corrected_metadata", "false")
+                dwi_channel = uniformize_naming(apply_topup_wkf.out.dwi, "topup_corrected", "false", "false")
+                meta_channel = uniformize_naming(apply_topup_wkf.out.metadata, "topup_corrected_metadata", "false", "false")
             }
         }
 
@@ -227,7 +227,7 @@ workflow preprocess_wkf {
                     )
 
                     rev_convert_datatype(rev_mask_registration_wkf.out.mask, "int8", "preprocess")
-                    rev_mask_channel = uniformize_naming(rev_convert_datatype.out.image, "rev_mask", "false")
+                    rev_mask_channel = uniformize_naming(rev_convert_datatype.out.image, "rev_mask", "false", "false")
                 }
 
                 eddy_merge_masks(dwi_mask_channel.join(rev_mask_channel).map { [it[0], it.subList(1, it.size()), "eddy_mask"] }, "preprocess")
@@ -270,8 +270,16 @@ workflow preprocess_wkf {
             t1_mask_channel = t1_mask_convert_datatype.out.image
         }
 
-        t1_preprocess_wkf(t1_channel.map{ it.subList(0, 2) }, t1_channel.map{ [it[0], it[2]] })
+        t1_preprocess_wkf(t1_channel.map{ it.subList(0, 2) }, t1_mask_channel)
         t1_channel = t1_preprocess_wkf.out.t1
+        t1_mask_channel = t1_preprocess_wkf.out.mask
+
+        if ( params.resample_data ) {
+            scilpy_resample_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).join(meta_channel), "preprocess", "lin")
+            dwi_channel = replace_dwi_file(dwi_channel, scilpy_resample_dwi.out.image)
+            dwi_mask_channel = scilpy_resample_dwi.out.mask
+            meta_channel = scilpy_resample_dwi.out.metadata
+        }
 
         if ( params.register_t12b0_denoised ) {
             dwi_b0_for_t1_reg(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", params.config.workflow.preprocess.b0_mean)
@@ -286,8 +294,12 @@ workflow preprocess_wkf {
                 b0_metadata.map{ it.subList(0, 2) + [""] },
                 params.config.workflow.preprocess.t12b0_base_registration
             )
-            ants_transform(t1_mask_channel.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
-            t1_mask_channel = ants_transform.out.image
+            t1_channel = t1_base_registration_wkf.out.image
+            ants_transform_base_t1(t1_mask_channel.join(t1_channel).join(t1_base_registration_wkf.out.transform.map{ [it[0], it[2]] }).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+            ants_transform_base_dwi(t1_mask_channel.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+            t1_mask_channel = ants_transform_base_t1.out.image
+            dwi_mask_channel = uniformize_naming(ants_transform_base_dwi.out.image, "dwi_mask", "false", "true")
+
             if ( params.register_syn_t12b0 ) {
                 t1_syn_registration_wkf(
                     merge_channels_non_blocking(dwi_b0_for_t1_reg.out.b0, scil_compute_dti_fa.out.fa),
@@ -299,14 +311,11 @@ workflow preprocess_wkf {
                     params.config.workflow.preprocess.t12b0_syn_registration
                 )
                 t1_channel = t1_syn_registration_wkf.out.image
+                ants_transform_syn_t1(t1_mask_channel.join(t1_channel).join(t1_syn_registration_wkf.out.transform.map{ [it[0], it[2]] }).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+                ants_transform_syn_dwi(t1_mask_channel.join(t1_syn_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+                t1_mask_channel = ants_transform_syn_t1.out.image
+                dwi_mask_channel = uniformize_naming(ants_transform_syn_dwi.out.image, "dwi_mask", "false", "true")
             }
-        }
-
-        if ( params.resample_data ) {
-            scilpy_resample_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).join(meta_channel), "preprocess", "lin")
-            dwi_channel = replace_dwi_file(dwi_channel, scilpy_resample_dwi.out.image)
-            dwi_mask_channel = scilpy_resample_dwi.out.mask
-            meta_channel = scilpy_resample_dwi.out.metadata
         }
 
         crop_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).map{ it + [""] }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "preprocess")
@@ -319,9 +328,9 @@ workflow preprocess_wkf {
         t1_channel = crop_t1.out.image
         t1_mask_channel = crop_dwi.out.mask
 
-        dwi_channel = uniformize_naming(dwi_channel.map{ it.subList(0, 4) }, "dwi_preprocessed", "false")
-        meta_channel = uniformize_naming(meta_channel, "dwi_preprocessed_metadata", "false")
-        dwi_mask_channel = uniformize_naming(dwi_mask_channel, "mask_preprocessed", "false")
+        dwi_channel = uniformize_naming(dwi_channel.map{ it.subList(0, 4) }, "dwi_preprocessed", "false", "false")
+        meta_channel = uniformize_naming(meta_channel, "dwi_preprocessed_metadata", "false", "false")
+        dwi_mask_channel = uniformize_naming(dwi_mask_channel, "mask_preprocessed", "false", "false")
     emit:
         t1 = t1_channel
         dwi = dwi_channel
@@ -351,9 +360,11 @@ workflow t1_preprocess_wkf {
         }
 
         if ( params.resample_data ) {
-            scilpy_resample_t1(t1_channel.map{ it + ["", ""] }, "preprocess", "lin")
+            scilpy_resample_t1(t1_channel.join(mask_channel).map{ it + [""] }, "preprocess", "lin")
             t1_channel = scilpy_resample_t1.out.image
+            mask_channel = scilpy_resample_t1.out.mask
         }
     emit:
         t1 = t1_channel
+        mask = mask_channel
 }
