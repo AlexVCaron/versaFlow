@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 
 params.reconstruct_use_mrtrix = false
 params.convert_tournier2descoteaux = true
-params.msmt = false
+params.msmt_odf = false
 
 params.config.reconstruct.diamond = file("$projectDir/.config/diamond.py")
 params.config.reconstruct.mrtrix_dti = file("$projectDir/.config/dti.py")
@@ -24,7 +24,7 @@ workflow csd_wkf {
     main:
         response_channel = Channel.empty()
         odfs_channel = Channel.empty()
-        if ( params.reconstruct_use_mrtrix && !params.msmt ) {
+        if ( params.reconstruct_use_mrtrix && !params.msmt_odf ) {
             response(dwi_channel.join(mask_channel), "reconstruct", params.config.reconstruct.mrtrix_response)
             csd(response.out.responses.join(dwi_channel.join(mask_channel)), "reconstruct", params.config.reconstruct.mrtrix_csd)
             response_channel = response.out.responses
@@ -35,7 +35,7 @@ workflow csd_wkf {
             }
         }
         else {
-            if ( params.msmt ) {
+            if ( params.msmt_odf ) {
                 dwi_channel = extract_shells(dwi_channel, "reconstruct", params.config.extract_cnt_gt_zero)
                 scilpy_msmt_response(dwi_channel.join(mask_channel).join(seg_channel), "reconstruct")
                 scilpy_msmt_csd(dwi_channel.join(scilpy_msmt_response.out.response).join(mask_channel), "reconstruct")

@@ -19,7 +19,7 @@ params.resample_data = true
 params.register_repetitions = true
 params.register_t12b0_denoised = true
 params.register_syn_t12b0 = false
-params.msmt = false
+params.msmt_odf = false
 params.seg_on_t1 = true
 
 // T1 preprocess workflow parameters
@@ -279,7 +279,7 @@ workflow preprocess_wkf {
 
         if ( params.resample_data ) {
             scilpy_resample_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).join(meta_channel), "preprocess", "lin")
-            if ( params.msmt && params.seg_on_t1 ) {
+            if ( params.msmt_odf && params.seg_on_t1 ) {
                 scilpy_resample_wm(seg_channel.map{ [it[0], it[1][0]] }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "nn")
                 scilpy_resample_gm(seg_channel.map{ [it[0], it[1][1]] }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "nn")
                 scilpy_resample_csf(seg_channel.map{ [it[0], it[1][2]] }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "nn")
@@ -309,7 +309,7 @@ workflow preprocess_wkf {
             t1_mask_channel = ants_transform_base_t1.out.image
             dwi_mask_channel = uniformize_naming(ants_transform_base_dwi.out.image, "dwi_mask", "false", "true")
 
-            if ( params.msmt && params.seg_on_t1 ) {
+            if ( params.msmt_odf && params.seg_on_t1 ) {
                 ants_transform_base_wm(seg_channel.map{ [it[0], it[1][0]] }.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
                 ants_transform_base_gm(seg_channel.map{ [it[0], it[1][1]] }.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
                 ants_transform_base_csf(seg_channel.map{ [it[0], it[1][2]] }.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
@@ -332,7 +332,7 @@ workflow preprocess_wkf {
                 t1_mask_channel = ants_transform_syn_t1.out.image
                 dwi_mask_channel = uniformize_naming(ants_transform_syn_dwi.out.image, "dwi_mask", "false", "true")
 
-                if ( params.msmt && params.seg_on_t1 ) {
+                if ( params.msmt_odf && params.seg_on_t1 ) {
                     ants_transform_syn_wm(seg_channel.map{ [it[0], it[1][0]] }.join(t1_syn_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
                     ants_transform_syn_gm(seg_channel.map{ [it[0], it[1][1]] }.join(t1_syn_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
                     ants_transform_syn_csf(seg_channel.map{ [it[0], it[1][2]] }.join(t1_syn_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
@@ -347,7 +347,7 @@ workflow preprocess_wkf {
         dwi_bbox_channel = fit_bounding_box.out.bbox
         crop_t1(t1_channel.join(t1_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
 
-        if ( params.msmt && params.seg_on_t1 ) {
+        if ( params.msmt_odf && params.seg_on_t1 ) {
             crop_wm(seg_channel.map{ [it[0], it[1][0]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
             crop_gm(seg_channel.map{ [it[0], it[1][1]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
             crop_csf(seg_channel.map{ [it[0], it[1][2]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")

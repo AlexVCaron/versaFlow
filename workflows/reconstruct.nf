@@ -26,7 +26,7 @@ workflow reconstruct_wkf {
 
         if ( params.recons_csd  ) {
             csd_wkf(dwi_channel, mask_channel, seg_channel)
-            out_channels += [csd_wkf.out.odfs]
+            out_channels += [csd_wkf.out.odfs.map{ [it[0], it.subList(1, it.size())] }]
         }
         else
             out_channels += [null]

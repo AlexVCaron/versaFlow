@@ -51,7 +51,14 @@ workflow measure_wkf {
                 dwi_channel.join(mask_channel),
                 "preprocess", "measure"
             )
-            data_odfs = data_channel.map{ [it[0], it[2]] }.join(scil_compute_dti_fa.out.fa).join(scil_compute_dti_fa.out.md)
+
+            data_channel.view()
+            if ( params.msmt_odf )
+                data_odfs = data_channel.map{ [it[0], it[2][0], it[2][2]] }
+            else
+                data_odfs = data_channel.map{ [it[0], it[2][0], ""] }
+
+            data_odfs = data_odfs.join(scil_compute_dti_fa.out.fa).join(scil_compute_dti_fa.out.md)
 
             mask_odfs = uniformize_naming(mask_channel, "desc07_odf_mask", "false", "false")
             if ( !params.reconstruct_use_mrtrix )
@@ -61,8 +68,7 @@ workflow measure_wkf {
             if ( !params.reconstruct_use_mrtrix )
                 basis = "descoteaux07"
 
-            if ( params.msmt_odf )
-                data_odfs = data_odfs.map{ it.subList(0, 2) }
+
 
             odf_metrics(data_odfs.join(mask_odfs).filter{ !it.contains(null) }, "measure", basis)
             odfs_channel = odf_metrics.out.metrics
