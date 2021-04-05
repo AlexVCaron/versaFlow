@@ -6,13 +6,13 @@ params.recons_dti = true
 params.recons_csd = true
 params.recons_diamond = true
 
-
 include { diamond_wkf; dti_wkf; csd_wkf } from '../modules/workflows/reconstruct.nf'
 
 workflow reconstruct_wkf {
     take:
         dwi_channel
         mask_channel
+        seg_channel
         metadata_channel
     main:
         out_channels = []
@@ -25,7 +25,7 @@ workflow reconstruct_wkf {
             out_channels += [null]
 
         if ( params.recons_csd  ) {
-            csd_wkf(dwi_channel, mask_channel)
+            csd_wkf(dwi_channel, mask_channel, seg_channel)
             out_channels += [csd_wkf.out.odfs]
         }
         else

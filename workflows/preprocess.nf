@@ -19,6 +19,8 @@ params.resample_data = true
 params.register_repetitions = true
 params.register_t12b0_denoised = true
 params.register_syn_t12b0 = false
+params.msmt = false
+params.seg_on_t1 = true
 
 // T1 preprocess workflow parameters
 params.denoise_t1 = true
@@ -41,10 +43,10 @@ include { merge_channels_non_blocking; map_optional; opt_channel; replace_dwi_fi
 include { extract_b0 as rev_b0; extract_b0 as dwi_b0; extract_b0 as extract_b0_motion; extract_b0 as dwi_b0_for_t1_reg } from '../modules/processes/preprocess.nf'
 include { ants_correct_motion } from '../modules/processes/register.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
-include { ants_transform as ants_transform_base_t1; ants_transform as ants_transform_base_dwi; ants_transform as ants_transform_syn_t1; ants_transform as ants_transform_syn_dwi } from '../modules/processes/register.nf'
-include { convert_datatype; convert_datatype as topup_convert_datatype; convert_datatype as rev_convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; bet_mask as rev_bet_mask; crop_image as crop_dwi; crop_image as crop_t1; fit_bounding_box; average; merge_masks; merge_masks as eddy_merge_masks; timeseries_mean } from '../modules/processes/utils.nf'
+include { ants_transform as ants_transform_base_t1; ants_transform as ants_transform_base_dwi; ants_transform as ants_transform_syn_t1; ants_transform as ants_transform_syn_dwi; ants_transform as ants_transform_base_wm; ants_transform as ants_transform_base_gm; ants_transform as ants_transform_base_csf; ants_transform as ants_transform_syn_wm; ants_transform as ants_transform_syn_gm; ants_transform as ants_transform_syn_csf } from '../modules/processes/register.nf'
+include { convert_datatype; convert_datatype as convert_wm_segmentation; convert_datatype as convert_gm_segmentation; convert_datatype as convert_csf_segmentation; convert_datatype as topup_convert_datatype; convert_datatype as rev_convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; bet_mask as rev_bet_mask; crop_image as crop_dwi; crop_image as crop_t1; crop_image as crop_wm; crop_image as crop_gm; crop_image as crop_csf; fit_bounding_box; average; merge_masks; merge_masks as eddy_merge_masks; timeseries_mean } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise; normalize_inter_b0 } from '../modules/processes/denoise.nf'
-include { scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi; scilpy_resample_on_ref as scilpy_resample_mask } from '../modules/processes/upsample.nf'
+include { scilpy_resample as scilpy_resample_wm; scilpy_resample as scilpy_resample_gm; scilpy_resample as scilpy_resample_csf; scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi; scilpy_resample_on_ref as scilpy_resample_mask } from '../modules/processes/upsample.nf'
 include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as topup_mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; registration_wkf as t1_base_registration_wkf; registration_wkf as t1_syn_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
 include { cat_dwi_repetitions_wkf; cat_dwi_repetitions_wkf as cat_rev_repetitions_wkf; register_dwi_repetitions_wkf as pre_register_dwi_repetitions_wkf; register_dwi_repetitions_wkf as post_register_dwi_repetitions_wkf; register_t1_repetitions_wkf } from '../modules/workflows/repetitions.nf'
 include { t12b0_registration as mask_registration_wkf; t12b0_registration as rev_mask_registration_wkf } from '../modules/workflows/t1_registration.nf'
@@ -54,6 +56,7 @@ workflow preprocess_wkf {
         dwi_channel
         rev_channel
         t1_channel
+        seg_channel
         meta_channel
         rev_meta_channel
     main:
@@ -276,6 +279,12 @@ workflow preprocess_wkf {
 
         if ( params.resample_data ) {
             scilpy_resample_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).join(meta_channel), "preprocess", "lin")
+            if ( params.msmt && params.seg_on_t1 ) {
+                scilpy_resample_wm(seg_channel.map{ [it[0], it[1][0]] }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "nn")
+                scilpy_resample_gm(seg_channel.map{ [it[0], it[1][1]] }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "nn")
+                scilpy_resample_csf(seg_channel.map{ [it[0], it[1][2]] }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "nn")
+                seg_channel = scilpy_resample_wm.out.image.join(scilpy_resample_gm.out.image).join(scilpy_resample_csf.out.image).map{ [it[0], it.subList(1, it.size())] }
+            }
             dwi_channel = replace_dwi_file(dwi_channel, scilpy_resample_dwi.out.image)
             dwi_mask_channel = scilpy_resample_dwi.out.mask
             meta_channel = scilpy_resample_dwi.out.metadata
@@ -300,6 +309,13 @@ workflow preprocess_wkf {
             t1_mask_channel = ants_transform_base_t1.out.image
             dwi_mask_channel = uniformize_naming(ants_transform_base_dwi.out.image, "dwi_mask", "false", "true")
 
+            if ( params.msmt && params.seg_on_t1 ) {
+                ants_transform_base_wm(seg_channel.map{ [it[0], it[1][0]] }.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+                ants_transform_base_gm(seg_channel.map{ [it[0], it[1][1]] }.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+                ants_transform_base_csf(seg_channel.map{ [it[0], it[1][2]] }.join(t1_base_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+                seg_channel = ants_transform_base_wm.out.image.join(ants_transform_base_gm.out.image).join(ants_transform_base_csf.out.image).map{ [it[0], it.subList(1, it.size())] }
+            }
+
             if ( params.register_syn_t12b0 ) {
                 t1_syn_registration_wkf(
                     merge_channels_non_blocking(dwi_b0_for_t1_reg.out.b0, scil_compute_dti_fa.out.fa),
@@ -315,6 +331,13 @@ workflow preprocess_wkf {
                 ants_transform_syn_dwi(t1_mask_channel.join(t1_syn_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
                 t1_mask_channel = ants_transform_syn_t1.out.image
                 dwi_mask_channel = uniformize_naming(ants_transform_syn_dwi.out.image, "dwi_mask", "false", "true")
+
+                if ( params.msmt && params.seg_on_t1 ) {
+                    ants_transform_syn_wm(seg_channel.map{ [it[0], it[1][0]] }.join(t1_syn_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+                    ants_transform_syn_gm(seg_channel.map{ [it[0], it[1][1]] }.join(t1_syn_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+                    ants_transform_syn_csf(seg_channel.map{ [it[0], it[1][2]] }.join(t1_syn_registration_wkf.out.transform).map{ it + [""] }, "preprocess", params.config.register.ants_transform)
+                    seg_channel = ants_transform_syn_wm.out.image.join(ants_transform_syn_gm.out.image).join(ants_transform_syn_csf.out.image).map{ [it[0], it.subList(1, it.size())] }
+                }
             }
         }
 
@@ -323,6 +346,17 @@ workflow preprocess_wkf {
         fit_bounding_box(t1_channel.join(dwi_channel.map{ it.subList(0, 2) }).join(dwi_bbox_channel), "preprocess")
         dwi_bbox_channel = fit_bounding_box.out.bbox
         crop_t1(t1_channel.join(t1_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
+
+        if ( params.msmt && params.seg_on_t1 ) {
+            crop_wm(seg_channel.map{ [it[0], it[1][0]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
+            crop_gm(seg_channel.map{ [it[0], it[1][1]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
+            crop_csf(seg_channel.map{ [it[0], it[1][2]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
+            convert_wm_segmentation(crop_wm.out.image, "int8", "preprocess")
+            convert_gm_segmentation(crop_gm.out.image, "int8", "preprocess")
+            convert_csf_segmentation(crop_csf.out.image, "int8", "preprocess")
+            seg_channel = convert_wm_segmentation.out.image.join(convert_gm_segmentation.out.image).join(convert_csf_segmentation.out.image).map{ [it[0], it.subList(1, it.size())] }
+        }
+
         dwi_channel = replace_dwi_file(dwi_channel, crop_dwi.out.image)
         dwi_mask_channel = crop_dwi.out.mask
         t1_channel = crop_t1.out.image
@@ -335,6 +369,7 @@ workflow preprocess_wkf {
         t1 = t1_channel
         dwi = dwi_channel
         mask = dwi_mask_channel
+        seg = seg_channel
         metadata = meta_channel
 }
 

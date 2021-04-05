@@ -6,7 +6,7 @@ params.reconstruct_use_mrtrix = false
 params.recons_dti = true
 params.recons_csd = true
 params.recons_diamond = true
-
+params.msmt_odf = false
 
 params.config.workflow.dti_for_odf_metrics = file("$projectDir/.config/.workflow/dti_for_odf_metrics.py")
 params.config.measure.diamond = file("$projectDir/.config/diamond_metrics.py")
@@ -60,6 +60,9 @@ workflow measure_wkf {
             basis = "tournier07"
             if ( !params.reconstruct_use_mrtrix )
                 basis = "descoteaux07"
+
+            if ( params.msmt_odf )
+                data_odfs = data_odfs.map{ it.subList(0, 2) }
 
             odf_metrics(data_odfs.join(mask_odfs).filter{ !it.contains(null) }, "measure", basis)
             odfs_channel = odf_metrics.out.metrics

@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 params.data_root = false
 params.masked_dwi = false
+params.msmt = false
 params.masked_t1 = true
 params.rev_is_b0 = true
 
@@ -19,6 +20,9 @@ workflow load_dataset {
         dwi_meta_channel = key_from_filename(Channel.fromPath("$root/**/*dwi.json"), "_").map{ [it[0].substring(0, it[0].lastIndexOf("_"))] + it.subList(1, it.size()) }
         affine_channel = key_from_filename(Channel.fromPath("$root/**/*.affine"), ".")
         anat_channel = key_from_filename(Channel.fromPath("$root/**/*t1.nii.gz"), "_")
+        seg_channel = null
+        if ( params.msmt )
+            seg_channel = Channel.fromFilePairs("$root/**/*{wm,gm,csf}_mask.nii.gz", size: 3, flat: true).map{ [it[0], [it[3], it[2], it[1]]] }
         rev_channel = null
         rev_meta_channel = null
 
@@ -54,6 +58,7 @@ workflow load_dataset {
         affine = affine_channel
         anat = anat_channel
         rev = rev_channel
+        seg = seg_channel
         metadata = dwi_meta_channel
         rev_metadata = rev_meta_channel
 }

@@ -8,7 +8,6 @@ nextflow.enable.dsl=2
 include { get_size_in_gb; swap_configurations; remove_alg_suffixes } from '../functions.nf'
 
 process ants_register {
-    memory { 4f * (get_size_in_gb(moving) + get_size_in_gb(target)) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -74,7 +73,6 @@ process ants_register {
 }
 
 process ants_correct_motion {
-    memory { 4f * (get_size_in_gb(moving) + get_size_in_gb(target)) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

@@ -129,6 +129,33 @@ process scilpy_response {
         """
 }
 
+process scilpy_msmt_response {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+
+    input:
+    tuple val(sid), path(dwi), path(bval), path(bvec), path(mask), path(seg)
+    val(caller_name)
+    output:
+    tuple val(sid), path("${sid}_wm_response.txt"), path("${sid}_gm_response.txt"), path("${sid}_csf_response.txt"), emit: response
+    script:
+    args = ""
+    if (params.frf_radii)
+        args += " --roi_radii $params.frf_radii"
+    if (params.frf_center)
+        args += " --roi_center ${params.frf_center.join(" ")}"
+    """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
+        mrconvert -datatype uint8 $mask mask4scil.nii.gz
+        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
+        scil_compute_msmt_frf.py $dwi $bval flipped_bvecs.bvec ${sid}_wm_response.txt ${sid}_gm_response.txt ${sid}_csf_response.txt --mask mask4scil.nii.gz --mask_wm ${seg[0]} --mask_gm ${seg[1]} --mask_csf ${seg[2]} --fa_thr_wm $params.frf_fa --min_nvox $params.frf_min_nvox $args
+        """
+}
+
 process scilpy_csd {
     label "res_max_cpu"
 
@@ -148,5 +175,28 @@ process scilpy_csd {
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
         magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
         scil_compute_ssst_fodf.py $dwi $bval flipped_bvecs.bvec $response ${sid}_fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
+        """
+}
+
+process scilpy_msmt_csd {
+    label "res_max_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+
+    input:
+    tuple val(sid), path(dwi), path(bval), path(bvec), path(wm_response), path(gm_response), path(csf_response), path(mask)
+    val(caller_name)
+    output:
+    tuple val(sid), path("${sid}_wm_fodf.nii.gz"), path("${sid}_gm_fodf.nii.gz"), path("${sid}_csf_fodf.nii.gz"), emit: odfs
+    tuple val(sid), path("${sid}_vf.nii.gz"), emit: vf
+    script:
+    """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
+        mrconvert -datatype uint8 $mask mask4scil.nii.gz
+        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
+        scil_compute_msmt_fodf.py $dwi $bval flipped_bvecs.bvec $wm_response $gm_response $csf_response --wm_out_fODF ${sid}_wm_fodf.nii.gz --gm_out_fODF ${sid}_gm_fodf.nii.gz --csf_out_fODF ${sid}_csf_fodf.nii.gz --vf ${sid}_vf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
         """
 }

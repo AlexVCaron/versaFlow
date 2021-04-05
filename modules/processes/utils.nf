@@ -319,3 +319,20 @@ process timeseries_mean {
     fslmaths $image -Tmean ${image.simpleName}__mean.nii.gz
     """
 }
+
+process extract_shells {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+
+    input:
+        tuple val(sid), path(dwi), path(bval), path(bvec)
+        val(caller_name)
+        path(config)
+    output:
+        tuple val(sid), path("${dwi.simpleName}__extracted_shells.nii.gz"), path("${dwi.simpleName}__extracted_shells.bval"), path("${dwi.simpleName}__extracted_shells.bvec"), emit: dwi
+    script:
+    """
+    magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config
+    """
+}
