@@ -2,13 +2,6 @@
 
 nextflow.enable.dsl=2
 
-def key_from_filename ( chan, split_char ) {
-    return chan.map{
-        def fname = it.getFileName().toString().split(split_char)
-        [ fname[0..<(fname.size() > 2 ? 2 : 1)].join(split_char), it ]
-    }
-}
-
 def group_channel_rep ( chan ) {
     return chan.groupTuple().map{
         [it[0]] + it.subList(1, it.size()).inject((1..it.size()).collect{ [] }) { sub, rep ->
@@ -158,6 +151,6 @@ def add_suffix ( f, suffix ) {
 
 def rename( channel, name ) {
     return channel.map{
-        [it[0], copy_and_rename(it[1], "${it[0]}_$name", false)]
+        [it[0], copy_and_rename(it[1], "${it[0]}_$name", false, true)]
     }
 }

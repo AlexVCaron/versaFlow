@@ -274,9 +274,8 @@ process eddy {
             args += " --topup $topup_prefix"
         }
 
-        if ( params.use_cuda ) {
+        if ( !eddy_slspec.empty() )
             args += " --slspec $eddy_slspec"
-        }
 
         """
         export OMP_NUM_THREADS=$task.cpus

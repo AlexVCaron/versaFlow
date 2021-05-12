@@ -8,9 +8,8 @@ params.recons_csd = true
 params.recons_diamond = true
 params.msmt_odf = false
 
-params.config.workflow.dti_for_odf_metrics = file("$projectDir/.config/.workflow/dti_for_odf_metrics.py")
-params.config.measure.diamond = file("$projectDir/.config/diamond_metrics.py")
-params.config.measure.dti = file("$projectDir/.config/dti_metrics.py")
+params.measures_on_diamond_config = file("$projectDir/.config/measures_on_diamond_config.py")
+params.measures_on_dti_config = file("$projectDir/.config/measures_on_dti_config.py")
 
 include { dti_metrics; dti_metrics as dti_for_odfs_metrics; diamond_metrics; odf_metrics; scil_compute_dti_fa } from '../modules/processes/measure.nf'
 include { uniformize_naming; replace_naming_to_underscore; rename_according_to; rename } from '../modules/functions.nf'
@@ -33,7 +32,7 @@ workflow measure_wkf {
             metadata_dti = uniformize_naming(metadata_channel, "dti_metadata", "false", "false")
             mask_dti = rename_according_to(mask_channel, data_dti.map{ it.subList(0, 2) }, "dti_mask", false)
             prefix_dti = data_dti.map{ [it[0], "${it[0]}__dti"] }
-            dti_metrics(prefix_dti.join(mask_dti).join(data_dti).join(metadata_dti), "measure", params.config.measure.dti)
+            dti_metrics(prefix_dti.join(mask_dti).join(data_dti).join(metadata_dti), "measure", params.measures_on_dti_config)
             dti_channel = dti_metrics.out.metrics
         }
 
@@ -42,7 +41,7 @@ workflow measure_wkf {
             metadata = rename(metadata_channel, "diamond_metadata")
             mask_diamond = rename(mask_channel, "diamond_mask")
             prefix_channel = data_diamond.map{ [it[0], "${it[0]}_diamond"] }
-            diamond_metrics(prefix_channel.join(mask_diamond).join(data_diamond).join(metadata), "measure", params.config.measure.diamond)
+            diamond_metrics(prefix_channel.join(mask_diamond).join(data_diamond).join(metadata), "measure", params.measures_on_diamond_config)
             diamond_channel = diamond_metrics.out.metrics
         }
 
@@ -52,7 +51,6 @@ workflow measure_wkf {
                 "preprocess", "measure"
             )
 
-            data_channel.view()
             if ( params.msmt_odf )
                 data_odfs = data_channel.map{ [it[0], it[2][0], it[2][2]] }
             else

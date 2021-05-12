@@ -123,8 +123,7 @@ process scilpy_response {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
-        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
-        magic-monkey shells --in $dwi --bvals $bval --bvecs flipped_bvecs.bvec --shells 1500 --keep leq --out dwi_leq_1500 --with_b0
+        magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells 1500 --keep leq --out dwi_leq_1500 --with_b0
         scil_compute_ssst_frf.py dwi_leq_1500.nii.gz dwi_leq_1500.bval dwi_leq_1500.bvec ${sid}_response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox $args
         """
 }
@@ -151,8 +150,7 @@ process scilpy_msmt_response {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
-        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
-        scil_compute_msmt_frf.py $dwi $bval flipped_bvecs.bvec ${sid}_wm_response.txt ${sid}_gm_response.txt ${sid}_csf_response.txt --mask mask4scil.nii.gz --mask_wm ${seg[0]} --mask_gm ${seg[1]} --mask_csf ${seg[2]} --fa_thr_wm $params.frf_fa --min_nvox $params.frf_min_nvox $args
+        scil_compute_msmt_frf.py $dwi $bval $bvec ${sid}_wm_response.txt ${sid}_gm_response.txt ${sid}_csf_response.txt --mask mask4scil.nii.gz --mask_wm ${seg[0]} --mask_gm ${seg[1]} --mask_csf ${seg[2]} --fa_thr_wm $params.frf_fa --min_nvox $params.frf_min_nvox $args
         """
 }
 
@@ -173,8 +171,7 @@ process scilpy_csd {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
-        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
-        scil_compute_ssst_fodf.py $dwi $bval flipped_bvecs.bvec $response ${sid}_fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
+        scil_compute_ssst_fodf.py $dwi $bval $bvec $response ${sid}_fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
         """
 }
 
@@ -196,7 +193,6 @@ process scilpy_msmt_csd {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
-        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
-        scil_compute_msmt_fodf.py $dwi $bval flipped_bvecs.bvec $wm_response $gm_response $csf_response --wm_out_fODF ${sid}_wm_fodf.nii.gz --gm_out_fODF ${sid}_gm_fodf.nii.gz --csf_out_fODF ${sid}_csf_fodf.nii.gz --vf ${sid}_vf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
+        scil_compute_msmt_fodf.py $dwi $bval $bvec $wm_response $gm_response $csf_response --wm_out_fODF ${sid}_wm_fodf.nii.gz --gm_out_fODF ${sid}_gm_fodf.nii.gz --csf_out_fODF ${sid}_csf_fodf.nii.gz --vf ${sid}_vf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
         """
 }

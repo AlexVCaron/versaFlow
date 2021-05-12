@@ -25,7 +25,7 @@ c.AntsConfiguration.accross_modalities = True
 
 c.AntsConfiguration.dimension = 3
 
-c.AntsConfiguration.init_transform = [0, 0, 0]
+c.AntsConfiguration.init_transform = None
 
 c.AntsConfiguration.inlier_range = [0.005, 0.995]
 

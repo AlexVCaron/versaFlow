@@ -6,11 +6,11 @@ params.reconstruct_use_mrtrix = false
 params.convert_tournier2descoteaux = true
 params.msmt_odf = false
 
-params.config.reconstruct.diamond = file("$projectDir/.config/diamond.py")
-params.config.reconstruct.mrtrix_dti = file("$projectDir/.config/dti.py")
-params.config.reconstruct.mrtrix_csd = file("$projectDir/.config/csd.py")
-params.config.reconstruct.mrtrix_response = file("$projectDir/.config/response.py")
-params.config.extract_cnt_gt_zero = file("$projectDir/.config/extract_cnt_gt_one.py")
+params.reconstruct_diamond_config = file("$projectDir/.config/reconstruct_diamond_config.py")
+params.reconstruct_mrtrix_dti_config = file("$projectDir/.config/reconstruct_mrtrix_dti_config.py")
+params.reconstruct_mrtrix_csd_config = file("$projectDir/.config/reconstruct_mrtrix_csd_config.py")
+params.reconstruct_mrtrix_frf_config = file("$projectDir/.config/reconstruct_mrtrix_frf_config.py")
+params.extract_shell_greater_than_one_config = file("$projectDir/.config/extract_shell_greater_than_one_config.py")
 
 include { diamond; mrtrix_dti; csd; response; scilpy_response; scilpy_msmt_response; scilpy_csd; scilpy_msmt_csd } from '../processes/reconstruct.nf'
 include { scil_dti_and_metrics } from '../processes/measure.nf'
@@ -25,8 +25,8 @@ workflow csd_wkf {
         response_channel = Channel.empty()
         odfs_channel = Channel.empty()
         if ( params.reconstruct_use_mrtrix && !params.msmt_odf ) {
-            response(dwi_channel.join(mask_channel), "reconstruct", params.config.reconstruct.mrtrix_response)
-            csd(response.out.responses.join(dwi_channel.join(mask_channel)), "reconstruct", params.config.reconstruct.mrtrix_csd)
+            response(dwi_channel.join(mask_channel), "reconstruct", params.reconstruct_mrtrix_frf_config)
+            csd(response.out.responses.join(dwi_channel.join(mask_channel)), "reconstruct", params.reconstruct_mrtrix_csd_config)
             response_channel = response.out.responses
             odfs_channel = csd.out.odfs
             if ( params.convert_tournier2descoteaux ) {
@@ -36,7 +36,7 @@ workflow csd_wkf {
         }
         else {
             if ( params.msmt_odf ) {
-                dwi_channel = extract_shells(dwi_channel, "reconstruct", params.config.extract_cnt_gt_zero)
+                dwi_channel = extract_shells(dwi_channel, "reconstruct", params.extract_shell_greater_than_one_config)
                 scilpy_msmt_response(dwi_channel.join(mask_channel).join(seg_channel), "reconstruct")
                 scilpy_msmt_csd(dwi_channel.join(scilpy_msmt_response.out.response).join(mask_channel), "reconstruct")
                 response_channel = scilpy_msmt_response.out.response
@@ -61,7 +61,7 @@ workflow dti_wkf {
     main:
         dti_output = Channel.empty()
         if ( params.reconstruct_use_mrtrix ) {
-            mrtrix_dti(dwi_channel.join(mask_channel), "reconstruct", params.config.reconstruct.mrtrix_dti)
+            mrtrix_dti(dwi_channel.join(mask_channel), "reconstruct", params.reconstruct_mrtrix_dti_config)
             dti_output = mrtrix_dti.out.dti
         }
         else {
@@ -80,7 +80,7 @@ workflow diamond_wkf {
         dwi_channel = dwi_channel.groupTuple()
         dwi_image = dwi_channel.map{ [it[0], it[1]] }
         other_files = dwi_channel.map{ [it[0], it.subList(2, it.size()).inject([]){ c, t -> c + t }] }
-        diamond(dwi_image.join(mask_channel).join(other_files), "reconstruct", params.config.reconstruct.diamond)
+        diamond(dwi_image.join(mask_channel).join(other_files), "reconstruct", params.reconstruct_diamond_config)
     emit:
         diamond = diamond.out.diamond
 }

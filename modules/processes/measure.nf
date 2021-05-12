@@ -98,8 +98,7 @@ process scil_dti_and_metrics {
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
         mrconvert -datatype uint8 $mask mask4scil.nii.gz
-        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
-        scil_compute_dti_metrics.py $dwi $bval flipped_bvecs.bvec --mask mask4scil.nii.gz -f --not_all $args
+        scil_compute_dti_metrics.py $dwi $bval $bvec --mask mask4scil.nii.gz -f --not_all $args
         """
 }
 

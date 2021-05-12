@@ -52,6 +52,15 @@ c.AntsConfiguration.passes = [{
                 0.25
             ],
             "klass": "magic_monkey.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 1,
+            "moving_index": 0,
+            "args": [
+                1.0,
+                4
+            ],
+            "klass": "magic_monkey.traits.ants.MetricCC"
         }
     ],
     "shrinks": [
