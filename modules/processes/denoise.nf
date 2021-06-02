@@ -6,6 +6,7 @@ params.eddy_on_rev = true
 params.eddy_select_gpu = true
 params.use_cuda = false
 params.eddy_force_shelled = true
+params.b0_threshold = false
 
 include { get_size_in_gb; swap_configurations; remove_alg_suffixes } from '../functions.nf'
 
@@ -132,7 +133,6 @@ process normalize_inter_b0 {
     input:
         tuple val(sid), path(dwi), path(bval), file(rev_dwi), file(rev_bval), file(dwi_metadata), file(rev_metadata)
         val(caller_name)
-        path(config)
     output:
         tuple val(sid), path("${dwi.simpleName}__inter_b0_normalized.nii.gz"), emit: dwi
         tuple val(sid), path("${rev_dwi.simpleName}__inter_b0_normalized.nii.gz"), optional: true, emit: rev
@@ -151,8 +151,11 @@ process normalize_inter_b0 {
         if ( !rev_metadata.empty())
             after_script += "cp $rev_metadata ${rev_dwi.simpleName}__inter_b0_normalized_metadata.py\n"
 
+        if (params.b0_threshold)
+            args += " --ceil ${params.b0_threshold}"
+
         """
-        magic-monkey b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized --config $config
+        magic-monkey b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized
         $after_script
         """
 }

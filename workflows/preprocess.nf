@@ -29,7 +29,6 @@ params.nlmeans_t1 = true
 
 params.pre_denoise_mask_registration_config = file("$projectDir/.config/pre_denoise_mask_registration_config.py")
 params.ants_transform_base_config = file("$projectDir/.config/ants_transform_base_config.py")
-params.inter_b0_normalization_config = file("$projectDir/.config/inter_b0_normalization_config.py")
 params.extract_mean_b0_base_config = file("$projectDir/.config/extract_mean_b0_base_config.py")
 params.dwi_n4_normalization_config = file("$projectDir/.config/dwi_n4_normalization_config.py")
 params.t1_n4_normalization_config = file("$projectDir/.config/t1_n4_normalization_config.py")
@@ -94,7 +93,7 @@ workflow preprocess_wkf {
             } else {
                 to_normalize = dwi_channel.map{ it.subList(0, 3) }.join(rev_channel.map{ it.subList(0, 3) }).join(meta_channel).join(rev_meta_channel)
             }
-            normalize_inter_b0(to_normalize, "preprocess", params.inter_b0_normalization_config)
+            normalize_inter_b0(to_normalize, "preprocess")
             dwi_channel = replace_dwi_file(dwi_channel, normalize_inter_b0.out.dwi)
             meta_channel = normalize_inter_b0.out.dwi_metadata
             rev_meta_channel = normalize_inter_b0.out.rev_metadata

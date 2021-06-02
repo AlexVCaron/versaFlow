@@ -2,6 +2,8 @@
 
 nextflow.enable.dsl=2
 
+params.b0_threshold = false
+
 include { get_size_in_gb; swap_configurations; remove_alg_suffixes; add_suffix } from '../functions.nf'
 
 process extract_b0 {
@@ -18,8 +20,9 @@ process extract_b0 {
         tuple val(sid), path("${dwi.simpleName}_b0.nii.gz"), emit: b0
         tuple val(sid), path("${dwi.simpleName}_b0*_metadata.*"), optional: true, emit: metadata
     script:
+        def extra_args = params.b0_threshold ? "--ceil ${params.b0_threshold}" : ""
         """
-        magic-monkey b0 extract --in $dwi --bvals $bval --out ${dwi.simpleName}_b0 --config $config
+        magic-monkey b0 extract --in $dwi --bvals $bval --out ${dwi.simpleName}_b0 --config $config $extra_args
         """
 }
 
@@ -37,7 +40,8 @@ process squash_b0 {
         tuple val(sid), path("${dwi.simpleName}__b0_squashed.nii.gz"), path("${dwi.simpleName}__b0_squashed.bval"), path("${dwi.simpleName}__b0_squashed.bvec"), emit: dwi
         tuple val(sid), path("${dwi.simpleName}__b0_squashed_metadata.*"), optional: true, emit: metadata
     script:
+        def extra_args = params.b0_threshold ? "--ceil ${params.b0_threshold}" : ""
         """
-        magic-monkey b0 squash --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__b0_squashed --config $config
+        magic-monkey b0 squash --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__b0_squashed --config $config $extra_args
         """
 }
