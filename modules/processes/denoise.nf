@@ -132,6 +132,7 @@ process normalize_inter_b0 {
     input:
         tuple val(sid), path(dwi), path(bval), file(rev_dwi), file(rev_bval), file(dwi_metadata), file(rev_metadata)
         val(caller_name)
+        path(config)
     output:
         tuple val(sid), path("${dwi.simpleName}__inter_b0_normalized.nii.gz"), emit: dwi
         tuple val(sid), path("${rev_dwi.simpleName}__inter_b0_normalized.nii.gz"), optional: true, emit: rev
@@ -151,7 +152,7 @@ process normalize_inter_b0 {
             after_script += "cp $rev_metadata ${rev_dwi.simpleName}__inter_b0_normalized_metadata.py\n"
 
         """
-        magic-monkey b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized
+        magic-monkey b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized --config $config
         $after_script
         """
 }
