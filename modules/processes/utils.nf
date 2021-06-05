@@ -14,13 +14,12 @@ process apply_mask {
     input:
         tuple val(sid), path(img), path(mask), path(metadata)
         val(caller_name)
-        path(config)
     output:
         tuple val(sid), path("${img.simpleName}__masked.nii.gz"), emit: image
         tuple val(sid), path("${img.simpleName}__masked_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey apply_mask $img $mask ${img.simpleName}__masked.nii.gz --config $config
+        magic-monkey apply_mask $img $mask ${img.simpleName}__masked.nii.gz
         """
 }
 

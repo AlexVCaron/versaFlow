@@ -38,7 +38,7 @@ workflow t12b0_registration {
 
         scil_compute_dti_fa(in_fa, "preprocess", "preprocess")
 
-        apply_mask(t1_channel.join(t1_mask_channel).map{ it + [""] })
+        apply_mask(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess")
 
         t1_base_registration_wkf(
             merge_channels_non_blocking(extract_b0.out.b0, scil_compute_dti_fa.out.fa),
