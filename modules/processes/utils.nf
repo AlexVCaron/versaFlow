@@ -12,14 +12,14 @@ process apply_mask {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_masked") }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(img), path(mask), path(metadata)
+        tuple val(sid), path(img), path(mask), file(metadata)
         val(caller_name)
     output:
         tuple val(sid), path("${img.simpleName}__masked.nii.gz"), emit: image
         tuple val(sid), path("${img.simpleName}__masked_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey apply_mask $img $mask ${img.simpleName}__masked.nii.gz
+        magic-monkey apply_mask --in $img --mask $mask --out ${img.simpleName}__masked.nii.gz
         """
 }
 
