@@ -38,7 +38,7 @@ include { extract_b0 as rev_b0; extract_b0 as dwi_b0; extract_b0 as extract_b0_m
 include { ants_correct_motion } from '../modules/processes/register.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
 include { ants_transform as ants_transform_base_t1; ants_transform as ants_transform_base_dwi; ants_transform as ants_transform_syn_t1; ants_transform as ants_transform_syn_dwi; ants_transform as ants_transform_base_wm; ants_transform as ants_transform_base_gm; ants_transform as ants_transform_base_csf; ants_transform as ants_transform_syn_wm; ants_transform as ants_transform_syn_gm; ants_transform as ants_transform_syn_csf } from '../modules/processes/register.nf'
-include { convert_datatype; convert_datatype as convert_wm_segmentation; convert_datatype as convert_gm_segmentation; convert_datatype as convert_csf_segmentation; convert_datatype as topup_convert_datatype; convert_datatype as rev_convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; bet_mask as rev_bet_mask; crop_image as crop_dwi; crop_image as crop_t1; crop_image as crop_wm; crop_image as crop_gm; crop_image as crop_csf; fit_bounding_box; average; merge_masks; merge_masks as eddy_merge_masks; timeseries_mean } from '../modules/processes/utils.nf'
+include { convert_datatype; convert_datatype as convert_wm_segmentation; convert_datatype as convert_gm_segmentation; convert_datatype as convert_csf_segmentation; convert_datatype as topup_convert_datatype; convert_datatype as rev_convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; bet_mask as rev_bet_mask; crop_image as crop_dwi; crop_image as crop_t1; crop_image as crop_wm; crop_image as crop_gm; crop_image as crop_csf; fit_bounding_box; average; merge_masks; merge_masks as eddy_merge_masks; timeseries_mean; apply_mask } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise; normalize_inter_b0 } from '../modules/processes/denoise.nf'
 include { scilpy_resample as scilpy_resample_wm; scilpy_resample as scilpy_resample_gm; scilpy_resample as scilpy_resample_csf; scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi; scilpy_resample_on_ref as scilpy_resample_mask } from '../modules/processes/upsample.nf'
 include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as topup_mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
@@ -197,9 +197,10 @@ workflow preprocess_wkf {
         if ( params.eddy_correction ) {
             if ( params.has_reverse && params.topup_correction ) {
                 timeseries_mean(topup_wkf.out.b0, "preprocess")
+                apply_mask(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess")
                 topup_mask_registration_wkf(
                     timeseries_mean.out.image.map{ [it[0], [it[1]]] },
-                    t1_channel.map{ [it[0], [it[1]]] },
+                    apply_mask.out.image.map{ [it[0], [it[1]]] },
                     t1_mask_channel,
                     null,
                     null,
