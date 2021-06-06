@@ -58,7 +58,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 0.4,
-                4,
+                32,
                 "Regular",
                 0.25
             ],
@@ -100,7 +100,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 0.4,
-                4,
+                32,
                 "Regular",
                 0.25
             ],

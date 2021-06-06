@@ -197,10 +197,9 @@ workflow preprocess_wkf {
         if ( params.eddy_correction ) {
             if ( params.has_reverse && params.topup_correction ) {
                 timeseries_mean(topup_wkf.out.b0, "preprocess")
-                apply_mask(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess")
                 topup_mask_registration_wkf(
                     timeseries_mean.out.image.map{ [it[0], [it[1]]] },
-                    apply_mask.out.image.map{ [it[0], [it[1]]] },
+                    t1_channel.map{ [it[0], [it[1]]] },
                     t1_mask_channel,
                     null,
                     null,
