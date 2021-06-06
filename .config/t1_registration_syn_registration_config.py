@@ -37,7 +37,7 @@ c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
     "conv_eps": 1e-06,
-    "conv_max_iter": [50, 25, 10],
+    "conv_max_iter": [100, 50, 25],
     "conv_win": 10,
     "grad_step": 0.1,
     "var_penality": 3,
@@ -48,7 +48,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.3,
                 32,
                 "Regular",
                 0.25
@@ -59,7 +59,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 1,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.7,
                 4
             ],
             "klass": "magic_monkey.traits.ants.MetricCC"

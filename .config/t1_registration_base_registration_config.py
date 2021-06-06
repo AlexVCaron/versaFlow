@@ -25,7 +25,7 @@ c.AntsConfiguration.accross_modalities = True
 
 c.AntsConfiguration.dimension = 3
 
-c.AntsConfiguration.init_transform = [0, 0, 0]
+c.AntsConfiguration.init_transform = None
 
 c.AntsConfiguration.inlier_range = [0.005, 0.995]
 
@@ -36,18 +36,29 @@ c.AntsConfiguration.klass = "magic_monkey.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-10,
+    "conv_eps": 1e-6,
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 10,
-    "grad_step": 0.2,
+    "grad_step": 0.1,
     "klass": "magic_monkey.traits.ants.AntsRigid",
     "metrics": [
         {
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.6,
                 32,
+                "Regular",
+                0.25
+            ],
+            "klass": "magic_monkey.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 1,
+            "moving_index": 0,
+            "args": [
+                0.4,
+                4,
                 "Regular",
                 0.25
             ],
@@ -67,18 +78,29 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-10,
+    "conv_eps": 1e-6,
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 10,
-    "grad_step": 0.2,
+    "grad_step": 0.1,
     "klass": "magic_monkey.traits.ants.AntsAffine",
     "metrics": [
         {
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.6,
                 32,
+                "Regular",
+                0.25
+            ],
+            "klass": "magic_monkey.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 1,
+            "moving_index": 0,
+            "args": [
+                0.4,
+                4,
                 "Regular",
                 0.25
             ],
