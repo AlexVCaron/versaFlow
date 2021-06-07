@@ -51,7 +51,7 @@ c.AntsConfiguration.passes = [{
                 0.3,
                 32,
                 "Regular",
-                0.25
+                0.5
             ],
             "klass": "magic_monkey.traits.ants.MetricMI"
         },

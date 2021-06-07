@@ -49,7 +49,7 @@ c.AntsConfiguration.passes = [{
                 1.0,
                 64,
                 "Regular",
-                0.5
+                1.0
             ],
             "klass": "magic_monkey.traits.ants.MetricMI"
         }
@@ -80,7 +80,7 @@ c.AntsConfiguration.passes = [{
                 1.0,
                 64,
                 "Regular",
-                0.5
+                1.0
             ],
             "klass": "magic_monkey.traits.ants.MetricMI"
         }
@@ -111,9 +111,9 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                32,
+                64,
                 "Regular",
-                0.25
+                1.0
             ],
             "klass": "magic_monkey.traits.ants.MetricMI"
         }

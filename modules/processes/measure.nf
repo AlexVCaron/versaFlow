@@ -34,6 +34,11 @@ process dti_metrics {
 process scil_compute_dti_fa {
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
+    publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$measuring_caller_name/${task.index}_${task.process.replaceAll(":", "_")}",saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f },  mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/dti", saveAs: { f -> f.contains("dti_dti") ? f : null }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}/dti", saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f }, mode: params.publish_mode
+
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), file(mask)
         val(processing_caller_name)
