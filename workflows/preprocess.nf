@@ -139,13 +139,16 @@ workflow preprocess_wkf {
 
             topup2eddy_channel = topup_wkf.out.param.join(topup_wkf.out.prefix).join(topup_wkf.out.topup.map{ [it[0], it.subList(1, it.size())] })
 
+            dwi2topup_channel = uniformize_naming(dwi_channel, "dwi_to_topup", "false", "false")
+            rev2topup_channel = uniformize_naming(rev_channel, "dwi_to_topup_rev", "false", "false")
+            meta2topup_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(0..<it[1].size()).step(2)] }, "dwi_to_topup_metadata", "false", "false")
+            rev_meta2topup_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(1..<it[1].size()).step(2)] }, "dwi_to_topup_rev_metadata", "false", "false")
+            apply_topup_wkf(dwi2topup_channel, rev2topup_channel, topup2eddy_channel, meta2topup_channel.join(rev_meta2topup_channel).map{ [it[0], it.subList(1, it.size())] })
+            topup_corrected_dwi = apply_topup_wkf.out.dwi
+
+
             if ( !params.eddy_correction ) {
-                dwi_channel = uniformize_naming(dwi_channel, "dwi_to_topup", "false", "false")
-                rev_channel = uniformize_naming(rev_channel, "dwi_to_topup_rev", "false", "false")
-                meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(0..<it[1].size()).step(2)] }, "dwi_to_topup_metadata", "false", "false")
-                rev_meta_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(1..<it[1].size()).step(2)] }, "dwi_to_topup_rev_metadata", "false", "false")
-                apply_topup_wkf(dwi_channel, rev_channel, topup2eddy_channel, meta_channel.join(rev_meta_channel).map{ [it[0], it.subList(1, it.size())] })
-                dwi_channel = uniformize_naming(apply_topup_wkf.out.dwi, "topup_corrected", "false", "false")
+                dwi_channel = uniformize_naming(topup_corrected_dwi, "topup_corrected", "false", "false")
                 meta_channel = uniformize_naming(apply_topup_wkf.out.metadata, "topup_corrected_metadata", "false", "false")
             }
         }
@@ -191,11 +194,11 @@ workflow preprocess_wkf {
         else if ( params.masked_t1 && params.t1mask2dwi_registration ) {
             if ( params.topup_correction ) {
                 if ( dwi_mask_channel ) {
-                    in_fa = dwi_channel.join(dwi_mask_channel)
+                    in_fa = topup_corrected_dwi.join(dwi_mask_channel)
                 }
                 else {
                     mask_channel = null
-                    in_fa = dwi_channel.map{ it + [""] }
+                    in_fa = topup_corrected_dwi.map{ it + [""] }
                 }
 
                 scil_compute_dti_fa(in_fa, "preprocess", "preprocess")
