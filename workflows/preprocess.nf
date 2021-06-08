@@ -27,7 +27,8 @@ params.nlmeans_t1 = true
 // params.intensity_normalization = true
 // params.resample_data = true
 
-params.pre_denoise_mask_registration_config = file("$projectDir/.config/pre_denoise_mask_registration_config.py")
+params.b02t1_mask_registration_config = file("$projectDir/.config/b02t1_mask_registration_config.py")
+params.t1_mask_to_topup_b0_registration_config = file("$projectDir/.config/t1_mask_to_topup_b0_registration_config.py")
 params.ants_transform_base_config = file("$projectDir/.config/ants_transform_base_config.py")
 params.extract_mean_b0_base_config = file("$projectDir/.config/extract_mean_b0_base_config.py")
 params.dwi_n4_normalization_config = file("$projectDir/.config/dwi_n4_normalization_config.py")
@@ -206,7 +207,7 @@ workflow preprocess_wkf {
                     null,
                     null,
                     meta_channel.map{ [it[0], it[1], ""] },
-                    params.pre_denoise_mask_registration_config
+                    params.t1_mask_to_topup_b0_registration_config
                 )
 
                 topup_convert_datatype(topup_mask_registration_wkf.out.image, "int8", "preprocess")
@@ -264,7 +265,7 @@ workflow preprocess_wkf {
                 dwi_mask_channel,
                 null,
                 b0_metadata.map{ it.subList(0, 2) + [""] },
-                params.pre_denoise_mask_registration_config
+                params.b02t1_mask_registration_config
             )
 
             t1_mask_convert_datatype(t1_mask_registration_wkf.out.image, "int8", "preprocess")
