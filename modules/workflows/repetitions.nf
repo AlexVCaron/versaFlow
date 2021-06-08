@@ -21,7 +21,7 @@ workflow register_dwi_repetitions_wkf {
         rev_metadata_channel
     main:
         dwi_channel = merge_repetitions(dwi_channel, true)
-        if ( rev_channel ) {
+        if ( is_data(rev_channel) ) {
             rev_channel = merge_repetitions(rev_channel, true).transpose()
             rev_metadata_channel = merge_repetitions(rev_metadata_channel, false)
         }
@@ -39,7 +39,7 @@ workflow register_dwi_repetitions_wkf {
             params.reps_registration_b0_registration_config,
             params.reps_registration_apply_registration_config
         )
-        if ( rev_channel ) {
+        if ( is_data(rev_channel) ) {
             ants_register_rev_repetition(
                 main_b0.combine(rev_channel, by: 0).combine(rev_metadata_channel, by: 0),
                 "preprocess",

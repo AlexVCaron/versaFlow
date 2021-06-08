@@ -10,7 +10,7 @@ include { measure_wkf } from "./workflows/measure.nf"
 
 workflow {
     dataloader = load_dataset()
-    preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.seg, dataloader.metadata, dataloader.rev_metadata)
+    preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.seg, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
     reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.seg, preprocess_wkf.out.metadata)
     measure = measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.metadata)
 }

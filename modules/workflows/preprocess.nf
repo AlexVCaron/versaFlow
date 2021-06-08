@@ -16,7 +16,7 @@ params.prepare_eddy_base_config = file("$projectDir/.config/prepare_eddy_base_co
 params.prepare_eddy_cuda_base_config = file("$projectDir/.config/prepare_eddy_cuda_base_config.py")
 params.concatenate_base_config = file("$projectDir/.config/concatenate_base_config.py")
 
-include { merge_channels_non_blocking; group_subject_reps; join_optional; map_optional; opt_channel; replace_dwi_file; uniformize_naming; sort_as_with_name; merge_repetitions; interleave } from '../functions.nf'
+include { merge_channels_non_blocking; group_subject_reps; join_optional; map_optional; opt_channel; replace_dwi_file; uniformize_naming; sort_as_with_name; merge_repetitions; interleave; is_data } from '../functions.nf'
 include { extract_b0 as b0_topup; extract_b0 as b0_topup_rev; squash_b0 as squash_dwi; squash_b0 as squash_rev } from '../processes/preprocess.nf'
 include { n4_denoise; dwi_denoise; prepare_topup; topup; prepare_eddy; eddy } from '../processes/denoise.nf'
 include { ants_register; ants_transform } from '../processes/register.nf'
@@ -39,7 +39,7 @@ workflow registration_wkf {
         into_register = join_optional(into_register, mask_channel)
         ants_register(into_register.join(reg_metadata), "preprocess", parameters ? parameters : params.ants_registration_base_config)
 
-        if ( trans_channel ) {
+        if ( is_data(trans_channel) ) {
             in_ants_trans = trans_channel.join(ants_register.out.reference).join(ants_register.out.transformation)
             in_ants_trans = join_optional(in_ants_trans, bvecs_channel)
             ants_transform(in_ants_trans.join(trans_metadata), "preprocess", params.ants_transform_base_config)
@@ -170,7 +170,7 @@ workflow eddy_wkf {
     main:
 
         bval_channel = dwi_channel.map{ [it[0], "${it[2].getName()}".tokenize(".")[0]] }
-        if ( topup_channel ) {
+        if ( is_data(topup_channel) ) {
             bval_channel = join_optional(bval_channel, topup_channel.map { [it[0], it[1]] })
         }
         else {

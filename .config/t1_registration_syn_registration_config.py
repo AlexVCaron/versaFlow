@@ -36,10 +36,10 @@ c.AntsConfiguration.klass = "magic_monkey.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-06,
-    "conv_max_iter": [100, 50, 25],
+    "conv_eps": 1e-10,
+    "conv_max_iter": [150, 75, 50],
     "conv_win": 10,
-    "grad_step": 0.1,
+    "grad_step": 0.05,
     "var_penality": 3,
     "var_total": 0,
     "klass": "magic_monkey.traits.ants.AntsSyN",
@@ -48,10 +48,10 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                0.3,
-                32,
+                1.0,
+                128,
                 "Regular",
-                0.5
+                1.0
             ],
             "klass": "magic_monkey.traits.ants.MetricMI"
         },
@@ -59,7 +59,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 1,
             "moving_index": 0,
             "args": [
-                0.7,
+                1.0,
                 4
             ],
             "klass": "magic_monkey.traits.ants.MetricCC"

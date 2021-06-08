@@ -1,5 +1,7 @@
 #!/usr/bin/env nextflow
 
+package groovyx.gpars.dataflow
+
 nextflow.enable.dsl=2
 
 def group_channel_rep ( chan ) {
@@ -25,11 +27,15 @@ def opt_channel () {
     return OPT_CHANNEL
 }
 
+def is_data ( opt_channel ) {
+    return ( opt_channel && !( opt_channel instanceof DataflowVariable ) ) || ( opt_channel instanceof DataflowVariable && opt_channel.value )
+}
+
 def join_optional ( base_channel, opt_channel ) {
-    if ( opt_channel )
+    if ( is_data(opt_channel) )
         return base_channel.join(opt_channel)
     else
-        return base_channel.map{ it + [OPT_FILE_VALUE] }
+        return base_channel.map { it + [OPT_FILE_VALUE] }
 }
 
 def map_optional ( base_channel, opt_idx ) {

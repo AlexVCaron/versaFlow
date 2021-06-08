@@ -38,7 +38,7 @@ process bet_mask {
     script:
         """
         fslmaths $img -Tmean $img
-        bet $img "${img.simpleName}_bet_mask.nii.gz" -m -R -f $params.bet.f
+        bet $img "${img.simpleName}_bet.nii.gz" -m -R -f $params.bet.f
         """
 }
 

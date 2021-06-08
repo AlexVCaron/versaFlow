@@ -13,7 +13,7 @@ include { extract_b0 } from '../processes/preprocess.nf'
 include { scil_compute_dti_fa } from '../processes/measure.nf'
 include { registration_wkf as t1_base_registration_wkf; registration_wkf as t1_syn_registration_wkf } from "./preprocess.nf"
 include { ants_transform as ants_mask_transform_base; ants_transform as ants_mask_transform_syn } from '../processes/register.nf'
-include { merge_channels_non_blocking } from '../functions.nf'
+include { merge_channels_non_blocking; is_data } from '../functions.nf'
 
 workflow t12b0_registration {
     take:
@@ -26,7 +26,7 @@ workflow t12b0_registration {
         extract_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", params.t1_registration_extract_b0_config)
         b0_metadata = extract_b0.out.metadata
 
-        if ( dwi_mask_channel ) {
+        if ( is_data(dwi_mask_channel) ) {
             in_fa = dwi_channel.join(dwi_mask_channel)
         }
         else {
@@ -40,13 +40,13 @@ workflow t12b0_registration {
             merge_channels_non_blocking(extract_b0.out.b0, scil_compute_dti_fa.out.fa),
             t1_channel.map{ [it[0], [it[1]]] },
             null,
-            null,
+            dwi_mask_channel.join(t1_mask_channel).map{ [it[0], [it[1], it[2]]] },
             null,
             b0_metadata.map{ it.subList(0, 2) + [""] },
             params.t1_registration_base_registration_config
         )
 
-        if ( t1_mask_channel ) {
+        if ( is_data(t1_mask_channel) ) {
             ants_mask_transform_base(t1_mask_channel.join(t1_base_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", params.ants_transform_base_config)
             t1_mask_channel = ants_mask_transform_base.out.image
         }
@@ -54,7 +54,7 @@ workflow t12b0_registration {
 
         if ( params.register_syn_t12b0 ) {
             if ( params.register_syn_t12b0_with_mask ) {
-                if ( dwi_mask_channel && t1_mask_channel ) {
+                if ( is_data(dwi_mask_channel) && is_data(t1_mask_channel) ) {
                     syn_mask = dwi_mask_channel.join(t1_mask_channel).map{ [it[0], [it[1], it[2]]] }
                 }
                 else {
@@ -75,7 +75,7 @@ workflow t12b0_registration {
                 params.t1_registration_syn_registration_config
             )
 
-            if ( t1_mask_channel ) {
+            if ( is_data(t1_mask_channel) ) {
                 ants_mask_transform_syn(t1_mask_channel.join(t1_syn_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", params.ants_transform_base_config)
                 t1_mask_channel = ants_mask_transform_syn.out.image
             }
