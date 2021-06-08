@@ -189,8 +189,18 @@ workflow preprocess_wkf {
         }
         else if ( params.masked_t1 && params.t1mask2dwi_registration ) {
             if ( params.topup_correction ) {
+                if ( dwi_mask_channel ) {
+                    in_fa = dwi_channel.join(dwi_mask_channel)
+                }
+                else {
+                    mask_channel = null
+                    in_fa = dwi_channel.map{ it + [""] }
+                }
+
+                scil_compute_dti_fa(in_fa, "preprocess", "preprocess")
+
                 topup_mask_registration_wkf(
-                    b0_channel.map{ [it[0], [it[1]]] },
+                    merge_channels_non_blocking(b0_channel, scil_compute_dti_fa.out.fa),
                     t1_channel.map{ [it[0], [it[1]]] },
                     t1_mask_channel,
                     null,
