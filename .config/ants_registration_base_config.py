@@ -39,7 +39,7 @@ c.AntsConfiguration.passes = [{
     "conv_eps": 1e-10,
     "conv_max_iter": [100, 30, 20, 10],
     "conv_win": 10,
-    "grad_step": 0.05,
+    "grad_step": 0.1,
     "klass": "magic_monkey.traits.ants.AntsRigid",
     "metrics": [
         {
@@ -47,7 +47,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                128,
+                64,
                 "Regular",
                 1.0
             ],
@@ -79,7 +79,7 @@ c.AntsConfiguration.passes = [{
     "conv_eps": 1e-10,
     "conv_max_iter": [100, 30, 20, 10],
     "conv_win": 10,
-    "grad_step": 0.05,
+    "grad_step": 0.1,
     "klass": "magic_monkey.traits.ants.AntsAffine",
     "metrics": [
         {
@@ -87,7 +87,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                128,
+                64,
                 "Regular",
                 1.0
             ],
@@ -110,7 +110,7 @@ c.AntsConfiguration.passes = [{
     "conv_eps": 1e-10,
     "conv_max_iter": [150, 75, 50, 25],
     "conv_win": 10,
-    "grad_step": 0.05,
+    "grad_step": 0.1,
     "klass": "magic_monkey.traits.ants.AntsSyN",
     "metrics": [
         {

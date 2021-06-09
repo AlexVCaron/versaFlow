@@ -192,14 +192,11 @@ workflow preprocess_wkf {
         }
         else if ( params.masked_t1 && params.t1mask2dwi_registration ) {
             if ( params.topup_correction ) {
-                if ( is_data(dwi_mask_channel) ) {
-                    topup_b0_channel = b0_channel
-                }
-                else {
+                if ( !is_data(dwi_mask_channel) )
                     dwi_mask_channel = bet_mask_topup(b0_channel, "preprocess")
-                    apply_mask_to_b0_for_reg(b0_channel.join(dwi_mask_channel).map{ it + [""] }, "preprocess")
-                    topup_b0_channel = apply_mask_to_b0_for_reg.out.image
-                }
+
+                apply_mask_to_b0_for_reg(b0_channel.join(dwi_mask_channel).map{ it + [""] }, "preprocess")
+                topup_b0_channel = apply_mask_to_b0_for_reg.out.image
 
                 scil_compute_dti_fa(topup_corrected_dwi.join(dwi_mask_channel), "preprocess", "preprocess")
 

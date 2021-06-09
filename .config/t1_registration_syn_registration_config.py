@@ -39,7 +39,7 @@ c.AntsConfiguration.passes = [{
     "conv_eps": 1e-10,
     "conv_max_iter": [150, 75, 50],
     "conv_win": 10,
-    "grad_step": 0.05,
+    "grad_step": 0.1,
     "var_penality": 3,
     "var_total": 0,
     "klass": "magic_monkey.traits.ants.AntsSyN",
@@ -49,7 +49,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                128,
+                64,
                 "Regular",
                 1.0
             ],

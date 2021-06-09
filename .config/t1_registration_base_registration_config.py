@@ -25,7 +25,7 @@ c.AntsConfiguration.accross_modalities = True
 
 c.AntsConfiguration.dimension = 3
 
-c.AntsConfiguration.init_transform = [0, 0, 0]
+c.AntsConfiguration.init_transform = [1, 0, 1]
 
 c.AntsConfiguration.inlier_range = [0.005, 0.995]
 
@@ -39,7 +39,7 @@ c.AntsConfiguration.passes = [{
     "conv_eps": 1e-10,
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 10,
-    "grad_step": 0.05,
+    "grad_step": 0.1,
     "klass": "magic_monkey.traits.ants.AntsRigid",
     "metrics": [
         {
@@ -47,7 +47,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                128,
+                64,
                 "Regular",
                 1.0
             ],
@@ -58,7 +58,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                128,
+                64,
                 "Regular",
                 1.0
             ],
@@ -81,7 +81,7 @@ c.AntsConfiguration.passes = [{
     "conv_eps": 1e-10,
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 10,
-    "grad_step": 0.05,
+    "grad_step": 0.1,
     "klass": "magic_monkey.traits.ants.AntsAffine",
     "metrics": [
         {
@@ -89,7 +89,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                128,
+                64,
                 "Regular",
                 1.0
             ],
@@ -100,7 +100,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                128,
+                64,
                 "Regular",
                 1.0
             ],
