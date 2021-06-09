@@ -38,7 +38,7 @@ include { merge_channels_non_blocking; map_optional; opt_channel; replace_dwi_fi
 include { extract_b0 as dwi_b0; extract_b0 as extract_topup_b0 } from '../modules/processes/preprocess.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
 include { ants_transform as ants_transform_base_t1; ants_transform as ants_transform_base_dwi; ants_transform as ants_transform_syn_t1; ants_transform as ants_transform_syn_dwi; ants_transform as ants_transform_base_wm; ants_transform as ants_transform_base_gm; ants_transform as ants_transform_base_csf; ants_transform as ants_transform_syn_wm; ants_transform as ants_transform_syn_gm; ants_transform as ants_transform_syn_csf } from '../modules/processes/register.nf'
-include { convert_datatype; convert_datatype as convert_wm_segmentation; convert_datatype as convert_gm_segmentation; convert_datatype as convert_csf_segmentation; convert_datatype as topup_convert_datatype; convert_datatype as rev_convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; bet_mask as rev_bet_mask; bet_mask as bet_mask_topup; crop_image as crop_dwi; crop_image as crop_t1; crop_image as crop_wm; crop_image as crop_gm; crop_image as crop_csf; fit_bounding_box; average as average_t1; average as average_b0; merge_masks; } from '../modules/processes/utils.nf'
+include { convert_datatype; convert_datatype as convert_wm_segmentation; convert_datatype as convert_gm_segmentation; convert_datatype as convert_csf_segmentation; convert_datatype as topup_convert_datatype; convert_datatype as rev_convert_datatype; convert_datatype as t1_mask_convert_datatype; bet_mask; bet_mask as rev_bet_mask; bet_mask as bet_mask_topup; crop_image as crop_dwi; crop_image as crop_t1; crop_image as crop_wm; crop_image as crop_gm; crop_image as crop_csf; fit_bounding_box; average as average_t1; average as average_b0; merge_masks; apply_mask as apply_mask_to_t1_for_reg; apply_mask as apply_mask_to_b0_for_reg; dilate_mask as dilate_t1_mask; dilate_mask as dilate_b0_mask } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise; normalize_inter_b0 } from '../modules/processes/denoise.nf'
 include { scilpy_resample as scilpy_resample_wm; scilpy_resample as scilpy_resample_gm; scilpy_resample as scilpy_resample_csf; scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi; scilpy_resample_on_ref as scilpy_resample_mask } from '../modules/processes/upsample.nf'
 include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as topup_mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
@@ -193,20 +193,27 @@ workflow preprocess_wkf {
         else if ( params.masked_t1 && params.t1mask2dwi_registration ) {
             if ( params.topup_correction ) {
                 if ( is_data(dwi_mask_channel) ) {
-                    in_fa = topup_corrected_dwi.join(dwi_mask_channel)
+                    topup_b0_channel = b0_channel
                 }
                 else {
                     dwi_mask_channel = bet_mask_topup(b0_channel, "preprocess")
-                    in_fa = topup_corrected_dwi.map{ it + [""] }
+                    apply_mask_to_b0_for_reg(b0_channel.join(dwi_mask_channel).map{ it + [""] }, "preprocess")
+                    topup_b0_channel = apply_mask_to_b0_for_reg.out.image
                 }
 
-                scil_compute_dti_fa(in_fa, "preprocess", "preprocess")
+                scil_compute_dti_fa(topup_corrected_dwi.join(dwi_mask_channel), "preprocess", "preprocess")
+
+                apply_mask_to_t1_for_reg(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess")
+                topup_t1_channel = apply_mask_to_t1_for_reg.out.image
+
+                topup_t1_mask_channel = dilate_t1_mask(t1_mask_channel, 3, "preprocess")
+                topup_b0_mask_channel = dilate_b0_mask(dwi_mask_channel, 3, "preprocess")
 
                 topup_mask_registration_wkf(
-                    merge_channels_non_blocking(b0_channel, scil_compute_dti_fa.out.fa),
-                    t1_channel.map{ [it[0], [it[1]]] },
+                    merge_channels_non_blocking(topup_b0_channel, scil_compute_dti_fa.out.fa),
+                    topup_t1_channel.map{ [it[0], [it[1]]] },
                     t1_mask_channel,
-                    dwi_mask_channel.join(t1_mask_channel).map{ [it[0], [it[1], it[2]]] },
+                    topup_b0_mask_channel.join(topup_t1_mask_channel).map{ [it[0], [it[1], it[2]]] },
                     null,
                     meta_channel.map{ [it[0], it[1], ""] },
                     params.t1_mask_to_topup_b0_registration_config

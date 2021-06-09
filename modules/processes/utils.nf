@@ -335,3 +335,20 @@ process extract_shells {
     magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config
     """
 }
+
+process dilate_mask {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+
+    input:
+        tuple val(sid), path(mask)
+        val(dilation_factor)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${mask.simpleName}__dilated.nii.gz")
+    script:
+    """
+    scil_image_math.py dilation $mask $dilation_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
+    """
+}
