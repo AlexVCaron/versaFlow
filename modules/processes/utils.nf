@@ -216,6 +216,7 @@ process crop_image {
         tuple val(sid), path("${image.simpleName}__cropped.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__bbox.pkl"), emit: bbox, optional: true
         tuple val(sid), path("${mask.simpleName}__cropped.nii.gz"), emit: mask, optional: true
+        tuple val(sid), path("${image.simpleName}__cropped_metadata.py"), emit: metadata, optional: true
     script:
         args = ""
         img = "$image"

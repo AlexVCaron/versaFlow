@@ -348,6 +348,7 @@ workflow preprocess_wkf {
         }
 
         dwi_channel = replace_dwi_file(dwi_channel, crop_dwi.out.image)
+        meta_channel = crop_dwi.out.metadata
         dwi_mask_channel = crop_dwi.out.mask
         t1_channel = crop_t1.out.image
         t1_mask_channel = crop_dwi.out.mask
