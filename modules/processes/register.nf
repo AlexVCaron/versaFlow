@@ -14,7 +14,7 @@ process ants_register {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : f.contains("registration_warped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(moving), path(target), val(reference), file(mask), path(metadata)
+        tuple val(sid), path(moving), path(target), val(reference), file(mask), file(metadata)
         val(caller_name)
         path(config)
     output:

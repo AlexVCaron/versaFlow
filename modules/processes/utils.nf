@@ -353,3 +353,25 @@ process dilate_mask {
     scil_image_math.py dilation $mask $dilation_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
     """
 }
+
+process segmentation_to_binary {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(segmentation)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${segmentation.simpleName}_wm.nii.gz"), emit: wm_seg
+        tuple val(sid), path("${segmentation.simpleName}_gm.nii.gz"), emit: gm_seg
+        tuple val(sid), path("${segmentation.simpleName}_csf.nii.gz"), emit: csf_seg
+        tuple val(sid), path("${segmentation.simpleName}_dgm.nii.gz"), emit: dgm_seg
+        tuple val(sid), path("${segmentation.simpleName}_all_gm.nii.gz"), emit: all_gm_seg
+    script:
+    """
+    magic-monkey seg2mask --in $segmentation --values 1,2,3,4 --labels csf,gm,dgm,wm --out ${segmentation.simpleName}
+    scil_image_math.py addition ${segmentation.simpleName}_gm.nii.gz ${segmentation.simpleName}_dgm.nii.gz ${segmentation.simpleName}_all_gm.nii.gz --data_type uint8 -f
+    """
+}

@@ -20,6 +20,7 @@ params.register_t12b0_denoised = true
 params.register_syn_t12b0 = false
 params.msmt_odf = false
 params.seg_on_t1 = true
+params.generate_segmentation = false
 
 // T1 preprocess workflow parameters
 params.denoise_t1 = true
@@ -33,6 +34,7 @@ params.ants_transform_base_config = file("$projectDir/.config/ants_transform_bas
 params.extract_mean_b0_base_config = file("$projectDir/.config/extract_mean_b0_base_config.py")
 params.dwi_n4_normalization_config = file("$projectDir/.config/dwi_n4_normalization_config.py")
 params.t1_n4_normalization_config = file("$projectDir/.config/t1_n4_normalization_config.py")
+params.b0_to_b0_normalization_config = file("$projectDir/.config/b0_to_b0_normalization_config.py")
 
 include { merge_channels_non_blocking; map_optional; opt_channel; replace_dwi_file; uniformize_naming; merge_repetitions; is_data } from '../modules/functions.nf'
 include { extract_b0 as dwi_b0; extract_b0 as extract_topup_b0 } from '../modules/processes/preprocess.nf'
@@ -44,6 +46,7 @@ include { scilpy_resample as scilpy_resample_wm; scilpy_resample as scilpy_resam
 include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as topup_mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
 include { cat_dwi_repetitions_wkf; cat_dwi_repetitions_wkf as cat_rev_repetitions_wkf; register_dwi_repetitions_wkf as pre_register_dwi_repetitions_wkf; register_t1_repetitions_wkf } from '../modules/workflows/repetitions.nf'
 include { t12b0_registration as mask_registration_wkf; t12b0_registration as rev_mask_registration_wkf; t12b0_registration as t1_registration_wkf } from '../modules/workflows/t1_registration.nf'
+include { segment_nmt } from '../modules/workflows/segment.nf'
 
 workflow preprocess_wkf {
     take:
@@ -91,7 +94,7 @@ workflow preprocess_wkf {
             } else {
                 to_normalize = dwi_channel.map{ it.subList(0, 3) }.join(rev_channel.map{ it.subList(0, 3) }).join(meta_channel).join(rev_meta_channel)
             }
-            normalize_inter_b0(to_normalize, "preprocess")
+            normalize_inter_b0(to_normalize, "preprocess", params.b0_to_b0_normalization_config)
             dwi_channel = replace_dwi_file(dwi_channel, normalize_inter_b0.out.dwi)
             meta_channel = normalize_inter_b0.out.dwi_metadata
             rev_meta_channel = normalize_inter_b0.out.rev_metadata
@@ -352,6 +355,12 @@ workflow preprocess_wkf {
         dwi_mask_channel = crop_dwi.out.mask
         t1_channel = crop_t1.out.image
         t1_mask_channel = crop_dwi.out.mask
+
+        if ( params.generate_segmentation ) {
+            empty_segmentations = seg_channel.filter{ it[1].isEmpty() }.map{ [it[0]] }
+            segment_nmt(empty_segmentations.join(t1_channel), empty_segmentations.join(t1_mask_channel))
+            seg_channel = seg_channel.filter{ !it[1].isEmpty() }.mix(segment_nmt.out.masks.map{ [it[0], it.subList(1, it.size()).reverse()] })
+        }
 
         dwi_channel = uniformize_naming(dwi_channel.map{ it.subList(0, 4) }, "dwi_preprocessed", "false", "false")
         meta_channel = uniformize_naming(meta_channel, "dwi_preprocessed_metadata", "false", "false")

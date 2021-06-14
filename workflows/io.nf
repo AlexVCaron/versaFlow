@@ -19,9 +19,9 @@ workflow load_dataset {
         dwi_meta_channel = Channel.fromFilePairs("$root/**/*dwi.json", size: 1, flat: true)
         anat_channel = Channel.fromFilePairs("$root/**/*t1.nii.gz", size: 1, flat: true)
 
-        seg_channel = null
-        if ( params.msmt_odf )
-            seg_channel = Channel.fromFilePairs("$root/**/*{wm,gm,csf}_mask.nii.gz", size: 3, flat: true).map{ [it[0], [it[3], it[2], it[1]]] }
+        seg_channel = Channel.fromFilePairs("$root/**/*{wm,gm,csf}_mask.nii.gz", size: 3, flat: true)
+        seg_channel = anat_channel.join(seg_channel, remainder: true).map{ it.size() > 3 ? [it[0], it.subList(2, it.size()).reverse()] : [it[0], []] }
+
         rev_channel = null
         rev_meta_channel = null
 

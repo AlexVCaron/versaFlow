@@ -133,6 +133,7 @@ process normalize_inter_b0 {
     input:
         tuple val(sid), path(dwi), path(bval), file(rev_dwi), file(rev_bval), file(dwi_metadata), file(rev_metadata)
         val(caller_name)
+        file(config)
     output:
         tuple val(sid), path("${dwi.simpleName}__inter_b0_normalized.nii.gz"), emit: dwi
         tuple val(sid), path("${rev_dwi.simpleName}__inter_b0_normalized.nii.gz"), optional: true, emit: rev
@@ -145,6 +146,8 @@ process normalize_inter_b0 {
             args += " --rev $rev_dwi"
         if ( !rev_bval.empty() )
             args += " --rvals $rev_bval"
+        if ( !config.empty() )
+            args += " --config $config"
 
         if (!dwi_metadata.empty())
             after_script += "cp $dwi_metadata ${dwi.simpleName}__inter_b0_normalized_metadata.py\n"
