@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-params.nmt_root = "/nmt"
+params.nmt_root = "$projectDir/.data/segmentation"
 params.nmt_ver = "2.0_asym"
 
 params.segmentation_registration_config = file("$projectDir/.config/segmentation_registration_config.py")
@@ -19,7 +19,7 @@ workflow segment_nmt {
             t1_channel.map{ [it[0], [it[1]]] },
             t1_channel.map{ [it[0], [file("${params.nmt_root}/NMT_v${params.nmt_ver}_SS.nii.gz")]] },
             t1_channel.map{ [it[0], [file("${params.nmt_root}/NMT_v${params.nmt_ver}_segmentation.nii.gz")]] },
-            mask_channel.map{ it + [file("${params.nmt_root}/NMT_v${params.nmt_ver}_brainmask.nii.gz")] },
+            mask_channel.map{ [it[0], [it[1], file("${params.nmt_root}/NMT_v${params.nmt_ver}_brainmask.nii.gz")]] },
             null,
             null,
             params.segmentation_registration_config
