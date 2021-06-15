@@ -37,8 +37,8 @@ process bet_mask {
         tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz")
     script:
         """
-        fslmaths $img -Tmean $img
-        bet $img "${img.simpleName}_bet.nii.gz" -m -R -f $params.bet.f
+        fslmaths $img -Tmean mean_image.nii.gz
+        bet mean_image.nii.gz "${img.simpleName}_bet.nii.gz" -m -R -f $params.bet.f
         """
 }
 
