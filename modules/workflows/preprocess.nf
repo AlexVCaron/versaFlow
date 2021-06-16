@@ -95,7 +95,7 @@ workflow topup_wkf {
         b0_data_channel = b0_channel.join(b0_rev_channel).map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] }
         b0_data_channel = b0_data_channel.map{ it + [[], []] }.join(b0_metadata_channel)
 
-        cat_topup(b0_data_channel, "_b0_to_topup", "preprocess", params.concatenate_base_config)
+        cat_topup(b0_data_channel, "b0", "preprocess", params.concatenate_base_config)
 
         metadata_channel = cat_topup.out.metadata.join(meta_channel).map{ [it[0], [it[1]] + it[2]] }
 
@@ -132,7 +132,7 @@ workflow apply_topup_wkf {
         dwi = apply_topup.out.dwi
         metadata = apply_topup.out.metadata
         if ( params.merge_repetitions ) {
-            cat_datasets(dwi.join(metadata), "_topup_corrected", "preprocess", params.concatenate_base_config)
+            cat_datasets(dwi.join(metadata), "dwi", "preprocess", params.concatenate_base_config)
             dwi = cat_datasets.out.image.join(cat_datasets.out.bval).join(cat_datasets.out.bvec)
             metadata = cat_datasets.out.metadata
         }
@@ -209,7 +209,7 @@ workflow eddy_wkf {
         }
 
         if ( params.has_reverse && params.eddy_on_rev ) {
-            cat_eddy_on_rev(merge_channels_non_blocking(dwi_channel, rev_channel).join(metadata_channel), "_whole", "preprocess", params.concatenate_base_config)
+            cat_eddy_on_rev(merge_channels_non_blocking(dwi_channel, rev_channel).join(metadata_channel), "dwi", "preprocess", params.concatenate_base_config)
             dwi_channel = cat_eddy_on_rev.out.image.join( cat_eddy_on_rev.out.bval).join(cat_eddy_on_rev.out.bvec)
             metadata_channel = cat_eddy_on_rev.out.metadata.map{ [it[0], it.subList(1, it.size())] }
         }

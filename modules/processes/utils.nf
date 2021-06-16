@@ -28,7 +28,7 @@ process bet_mask {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_mask") }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img)
@@ -49,14 +49,14 @@ process cat_datasets {
 
     input:
         tuple val(sid), path(imgs), file(bval), file(bvec), file(metadatas)
-        val(suffix)
+        val(prefix)
         val(caller_name)
         path(config)
     output:
-        tuple val(sid), path("${sid}__concatenated${suffix}.nii.gz"), emit: image
-        tuple val(sid), path("${sid}__concatenated${suffix}.bval"), optional: true, emit: bval
-        tuple val(sid), path("${sid}__concatenated${suffix}.bvec"), optional: true, emit: bvec
-        tuple val(sid), path("${sid}__concatenated${suffix}_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${sid}_${prefix}__concatenated.nii.gz"), emit: image
+        tuple val(sid), path("${sid}_${prefix}__concatenated.bval"), optional: true, emit: bval
+        tuple val(sid), path("${sid}_${prefix}__concatenated.bvec"), optional: true, emit: bvec
+        tuple val(sid), path("${sid}_${prefix}__concatenated_metadata.*"), optional: true, emit: metadata
     script:
         args = "--in ${imgs.join(',')}"
 
@@ -66,7 +66,7 @@ process cat_datasets {
             args += " --bvecs ${bvec.join(',')}"
 
         """
-        magic-monkey concatenate $args --out ${sid}__concatenated${suffix} --config $config
+        magic-monkey concatenate $args --out ${sid}_${prefix}__concatenated --config $config
         """
 }
 
@@ -121,11 +121,11 @@ process apply_topup {
         tuple val(sid), path(dwis), path(bvals), path(bvecs), path(revs), path(topup_params), val(topup_prefix), path(topup_files), path(metadata)
         val(caller_name)
     output:
-        tuple val(sid), path("${sid}__topup_corrected_*.nii.gz"), path("${sid}__topup_corrected_*.bval"), path("${sid}__topup_corrected_*.bvec"), emit: dwi
-        tuple val(sid), path("${sid}__topup_corrected_*_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${sid}_dwi__topup_corrected_*.nii.gz"), path("${sid}_dwi__topup_corrected_*.bval"), path("${sid}_dwi__topup_corrected_*.bvec"), emit: dwi
+        tuple val(sid), path("${sid}_dwi__topup_corrected_*_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey apply_topup --dwi ${dwis.join(",")} --bvals ${bvals.join(",")} --bvecs ${bvecs.join(",")} --rev ${revs.join(",")} --acqp $topup_params --topup $topup_prefix --out ${sid}__topup_corrected
+        magic-monkey apply_topup --dwi ${dwis.join(",")} --bvals ${bvals.join(",")} --bvecs ${bvecs.join(",")} --rev ${revs.join(",")} --acqp $topup_params --topup $topup_prefix --out ${sid}_dwi__topup_corrected
         """
 }
 

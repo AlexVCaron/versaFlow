@@ -161,12 +161,12 @@ workflow preprocess_wkf {
         }
 
         if ( params.merge_repetitions ) {
-            cat_dwi_repetitions_wkf(dwi_channel, meta_channel, "_dwi")
+            cat_dwi_repetitions_wkf(dwi_channel, meta_channel, "dwi")
             dwi_channel = cat_dwi_repetitions_wkf.out.dwi
             meta_channel = cat_dwi_repetitions_wkf.out.metadata
 
             if ( params.has_reverse ) {
-                cat_rev_repetitions_wkf(rev_channel, meta_channel, "_rev")
+                cat_rev_repetitions_wkf(rev_channel, meta_channel, "rev")
                 rev_channel = cat_rev_repetitions_wkf.out.dwi
                 meta_channel = meta_channel.join(cat_rev_repetitions_wkf.out.metadata)
             }
