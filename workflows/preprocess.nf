@@ -21,6 +21,7 @@ params.register_syn_t12b0 = false
 params.msmt_odf = false
 params.seg_on_t1 = true
 params.generate_segmentation = false
+params.generate_wm_segmentation = true
 
 // T1 preprocess workflow parameters
 params.denoise_t1 = true
@@ -46,7 +47,7 @@ include { scilpy_resample as scilpy_resample_wm; scilpy_resample as scilpy_resam
 include { dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; squash_wkf; registration_wkf as topup_mask_registration_wkf; registration_wkf as t1_mask_registration_wkf; topup_wkf; eddy_wkf; apply_topup_wkf; n4_denoise_wkf } from "../modules/workflows/preprocess.nf"
 include { cat_dwi_repetitions_wkf; cat_dwi_repetitions_wkf as cat_rev_repetitions_wkf; register_dwi_repetitions_wkf as pre_register_dwi_repetitions_wkf; register_t1_repetitions_wkf } from '../modules/workflows/repetitions.nf'
 include { t12b0_registration as mask_registration_wkf; t12b0_registration as rev_mask_registration_wkf; t12b0_registration as t1_registration_wkf } from '../modules/workflows/t1_registration.nf'
-include { segment_nmt } from '../modules/workflows/segment.nf'
+include { segment_nmt_wkf; segment_wm_wkf } from '../modules/workflows/segment.nf'
 
 workflow preprocess_wkf {
     take:
@@ -362,8 +363,14 @@ workflow preprocess_wkf {
 
         if ( params.generate_segmentation ) {
             empty_segmentations = seg_channel.filter{ it[1].isEmpty() }.map{ [it[0]] }
-            segment_nmt(empty_segmentations.join(t1_channel), empty_segmentations.join(t1_mask_channel))
+            segment_nmt_wkf(empty_segmentations.join(t1_channel), empty_segmentations.join(t1_mask_channel))
             seg_channel = seg_channel.filter{ !it[1].isEmpty() }.mix(segment_nmt.out.masks.map{ [it[0], it.subList(1, it.size()).reverse()] })
+        }
+
+        wm_segmentation = null
+        if ( params.generate_wm_segmentation ) {
+            segment_wm_wkf(dwi_channel, dwi_mask_channel)
+            wm_segmentation = segment_wm_wkf.out.segmentation
         }
 
         dwi_channel = uniformize_naming(dwi_channel.map{ it.subList(0, 4) }, "dwi_preprocessed", "false", "false")
@@ -374,6 +381,7 @@ workflow preprocess_wkf {
         dwi = dwi_channel
         mask = dwi_mask_channel
         seg = seg_channel
+        wm_seg = wm_segmentation
         metadata = meta_channel
 }
 
