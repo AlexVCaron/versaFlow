@@ -99,7 +99,7 @@ c.AntsConfiguration.passes = [{
     ]
 }, {
     "conv_eps": 1e-10,
-    "conv_max_iter": [150, 75, 50],
+    "conv_max_iter": [200, 150, 100, 50],
     "conv_win": 10,
     "grad_step": 0.1,
     "var_penality": 3,
@@ -111,14 +111,15 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                64,
+                8,
                 "Regular",
                 1.0
             ],
-            "klass": "magic_monkey.traits.ants.MetricMI"
+            "klass": "magic_monkey.traits.ants.MetricCC"
         }
     ],
     "shrinks": [
+        8,
         4,
         2,
         1
@@ -126,7 +127,8 @@ c.AntsConfiguration.passes = [{
     "smoothing": [
         3,
         2,
-        1
+        1,
+        0
     ]
 }]
 

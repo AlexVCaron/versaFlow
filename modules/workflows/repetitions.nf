@@ -19,6 +19,7 @@ workflow register_dwi_repetitions_wkf {
         rev_channel
         metadata_channel
         rev_metadata_channel
+        additional_publish_path
     main:
         dwi_channel = merge_repetitions(dwi_channel, true)
         if ( is_data(rev_channel) ) {
@@ -35,6 +36,7 @@ workflow register_dwi_repetitions_wkf {
         ants_register_dwi_repetition(
             main_b0.combine(dwi_reg, by: 0).combine(metadata_channel.map{ [it[0]] + it.subList(2, it.size()) }, by: 0),
             "preprocess",
+            additional_publish_path,
             params.reps_registration_extract_b0_config,
             params.reps_registration_b0_registration_config,
             params.reps_registration_apply_registration_config
@@ -43,6 +45,7 @@ workflow register_dwi_repetitions_wkf {
             ants_register_rev_repetition(
                 main_b0.combine(rev_channel, by: 0).combine(rev_metadata_channel, by: 0),
                 "preprocess",
+                additional_publish_path,
                 params.reps_registration_extract_b0_config,
                 params.reps_registration_b0_registration_config,
                 params.reps_registration_apply_registration_config
@@ -64,7 +67,7 @@ workflow register_t1_repetitions_wkf {
         t1_channel = merge_repetitions(t1_channel, true)
         template_t1 = t1_channel.map{ [it[0], it[2][0]] }
         t1_reg = t1_channel.map{ [it[0]] + it.subList(1, it.size()).collect{ i -> i.subList(1, i.size()) } }.transpose()
-        ants_register_t1_repetition(template_t1.combine(t1_reg, by: 0), "preprocess", params.reps_registration_t1_registration_config)
+        ants_register_t1_repetition(template_t1.combine(t1_reg, by: 0), "preprocess", additional_publish_path, params.reps_registration_t1_registration_config)
     emit:
         t1 = ants_register_t1_repetition.out.t1.concat(t1_channel.map{ ["${it[0]}_${it[1][0]}", it[2][0]] })
         mask = mask_channel ? ants_register_t1_repetition.out.mask.concat(t1_channel.map{ ["${it[0]}_${it[1][0]}", it[3][0]] }) : null

@@ -48,11 +48,12 @@ workflow t12b0_registration {
             reg_b0_mask_channel.join(reg_t1_mask_channel).map{ [it[0], [it[1], it[2]]] },
             null,
             b0_metadata.map{ it.subList(0, 2) + [""] },
+            "",
             params.t1_registration_base_registration_config
         )
 
-        ants_mask_transform_base(t1_mask_channel.join(t1_base_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", params.ants_transform_base_config)
-        ants_t1_transform_base(t1_channel.join(t1_base_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", params.ants_transform_base_config)
+        ants_mask_transform_base(t1_mask_channel.join(t1_base_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+        ants_t1_transform_base(t1_channel.join(t1_base_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
 
         t1_mask_channel = ants_mask_transform_base.out.image
         t1_channel = ants_t1_transform_base.out.image
@@ -70,11 +71,12 @@ workflow t12b0_registration {
                 syn_mask,
                 null,
                 b0_metadata.map{ it.subList(0, 2) + [""] },
+                "",
                 params.t1_registration_syn_registration_config
             )
 
-            ants_mask_transform_syn(t1_mask_channel.join(t1_syn_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", params.ants_transform_base_config)
-            ants_t1_transform_syn(t1_channel.join(t1_syn_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", params.ants_transform_base_config)
+            ants_mask_transform_syn(t1_mask_channel.join(t1_syn_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+            ants_t1_transform_syn(t1_channel.join(t1_syn_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
 
             t1_mask_channel = ants_mask_transform_syn.out.image
             t1_channel = ants_t1_transform_syn.out.image

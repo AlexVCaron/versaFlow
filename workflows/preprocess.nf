@@ -113,7 +113,8 @@ workflow preprocess_wkf {
                 dwi_channel,
                 rev_channel,
                 meta_channel,
-                rev_meta_channel
+                rev_meta_channel,
+                ""
             )
             register_t1_repetitions_wkf(
                 t1_channel,
@@ -217,10 +218,11 @@ workflow preprocess_wkf {
                     topup_b0_mask_channel.join(topup_t1_mask_channel).map{ [it[0], [it[1], it[2]]] },
                     null,
                     meta_channel.map{ [it[0], it[1], ""] },
+                    "",
                     params.t1_mask_to_topup_b0_registration_config
                 )
 
-                topup_convert_datatype(topup_mask_registration_wkf.out.image, "int8", "preprocess")
+                topup_convert_datatype(topup_mask_registration_wkf.out.image, "int8", "preprocess", "")
                 dwi_mask_channel = topup_convert_datatype.out.image
             }
             else {
@@ -232,7 +234,7 @@ workflow preprocess_wkf {
                     meta_channel.map { [it[0], it[1]] }
                 )
 
-                convert_datatype(mask_registration_wkf.out.mask, "int8", "preprocess")
+                convert_datatype(mask_registration_wkf.out.mask, "int8", "preprocess", "")
                 dwi_mask_channel = convert_datatype.out.image
 
                 if (params.has_reverse) {
@@ -241,10 +243,11 @@ workflow preprocess_wkf {
                         t1_channel,
                         t1_mask_channel,
                         null,
-                        meta_channel.map{ [it[0], it[2]] }
+                        meta_channel.map{ [it[0], it[2]] },
+                        ""
                     )
 
-                    rev_convert_datatype(rev_mask_registration_wkf.out.mask, "int8", "preprocess")
+                    rev_convert_datatype(rev_mask_registration_wkf.out.mask, "int8", "preprocess", "")
                     rev_mask_channel = uniformize_naming(rev_convert_datatype.out.image, "rev_mask", "false", "false")
                     reg_merge_mask(dwi_mask_channel.join(rev_mask_channel).map { [it[0], it.subList(1, it.size()), "bet_mask"] }, "preprocess")
                     dwi_mask_channel = reg_merge_mask.out.mask
@@ -275,10 +278,11 @@ workflow preprocess_wkf {
                 dwi_mask_channel,
                 null,
                 b0_metadata.map{ it.subList(0, 2) + [""] },
+                "",
                 params.b02t1_mask_registration_config
             )
 
-            t1_mask_convert_datatype(t1_mask_registration_wkf.out.image, "int8", "preprocess")
+            t1_mask_convert_datatype(t1_mask_registration_wkf.out.image, "int8", "preprocess", "")
             t1_mask_channel = t1_mask_convert_datatype.out.image
         }
 
@@ -306,33 +310,33 @@ workflow preprocess_wkf {
                 t1_channel,
                 t1_mask_channel,
                 dwi_mask_channel,
-                meta_channel,
+                meta_channel
             )
             t1_channel = t1_registration_wkf.out.t1
-            ants_transform_base_t1(t1_mask_channel.join(t1_channel).join(t1_registration_wkf.out.transform_base.map{ [it[0], it[2]] }).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
-            ants_transform_base_dwi(t1_mask_channel.join(t1_registration_wkf.out.transform_base).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
+            ants_transform_base_t1(t1_mask_channel.join(t1_channel).join(t1_registration_wkf.out.transform_base.map{ [it[0], it[2]] }).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+            ants_transform_base_dwi(t1_mask_channel.join(t1_registration_wkf.out.transform_base).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
             t1_mask_channel = ants_transform_base_t1.out.image
             dwi_mask_channel = uniformize_naming(ants_transform_base_dwi.out.image, "dwi_mask", "false", "true")
 
             if ( params.seg_on_t1 ) {
                 seg_to_register = seg_channel.filter{ !it[1].isEmpty() }
-                ants_transform_base_wm(seg_to_register.map{ [it[0], it[1][0]] }.join(t1_registration_wkf.out.transform_base).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
-                ants_transform_base_gm(seg_to_register.map{ [it[0], it[1][1]] }.join(t1_registration_wkf.out.transform_base).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
-                ants_transform_base_csf(seg_to_register.map{ [it[0], it[1][2]] }.join(t1_registration_wkf.out.transform_base).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
+                ants_transform_base_wm(seg_to_register.map{ [it[0], it[1][0]] }.join(t1_registration_wkf.out.transform_base).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+                ants_transform_base_gm(seg_to_register.map{ [it[0], it[1][1]] }.join(t1_registration_wkf.out.transform_base).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+                ants_transform_base_csf(seg_to_register.map{ [it[0], it[1][2]] }.join(t1_registration_wkf.out.transform_base).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
                 seg_channel = ants_transform_base_wm.out.image.join(ants_transform_base_gm.out.image).join(ants_transform_base_csf.out.image).map{ [it[0], it.subList(1, it.size())] }.mix(seg_channel.filter{ it[1].isEmpty() })
             }
 
             if ( params.register_syn_t12b0 ) {
-                ants_transform_syn_t1(t1_mask_channel.join(t1_channel).join(t1_registration_wkf.out.transform_syn.map{ [it[0], it[2]] }).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
-                ants_transform_syn_dwi(t1_mask_channel.join(t1_registration_wkf.out.transform_syn).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
+                ants_transform_syn_t1(t1_mask_channel.join(t1_channel).join(t1_registration_wkf.out.transform_syn.map{ [it[0], it[2]] }).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+                ants_transform_syn_dwi(t1_mask_channel.join(t1_registration_wkf.out.transform_syn).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
                 t1_mask_channel = ants_transform_syn_t1.out.image
                 dwi_mask_channel = uniformize_naming(ants_transform_syn_dwi.out.image, "dwi_mask", "false", "true")
 
                 if ( params.seg_on_t1 ) {
                     seg_to_register = seg_channel.filter{ !it[1].isEmpty() }
-                    ants_transform_syn_wm(seg_to_register.map{ [it[0], it[1][0]] }.join(t1_registration_wkf.out.transform_syn).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
-                    ants_transform_syn_gm(seg_to_register.map{ [it[0], it[1][1]] }.join(t1_registration_wkf.out.transform_syn).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
-                    ants_transform_syn_csf(seg_to_register.map{ [it[0], it[1][2]] }.join(t1_registration_wkf.out.transform_syn).map{ it + ["", ""] }, "preprocess", params.ants_transform_base_config)
+                    ants_transform_syn_wm(seg_to_register.map{ [it[0], it[1][0]] }.join(t1_registration_wkf.out.transform_syn).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+                    ants_transform_syn_gm(seg_to_register.map{ [it[0], it[1][1]] }.join(t1_registration_wkf.out.transform_syn).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+                    ants_transform_syn_csf(seg_to_register.map{ [it[0], it[1][2]] }.join(t1_registration_wkf.out.transform_syn).map{ it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
                     seg_channel = ants_transform_syn_wm.out.image.join(ants_transform_syn_gm.out.image).join(ants_transform_syn_csf.out.image).map{ [it[0], it.subList(1, it.size())] }.mix(seg_channel.filter{ it[1].isEmpty() })
                 }
             }
@@ -349,9 +353,9 @@ workflow preprocess_wkf {
             crop_wm(seg_to_crop.map{ [it[0], it[1][0]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
             crop_gm(seg_to_crop.map{ [it[0], it[1][1]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
             crop_csf(seg_to_crop.map{ [it[0], it[1][2]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
-            convert_wm_segmentation(crop_wm.out.image, "int8", "preprocess")
-            convert_gm_segmentation(crop_gm.out.image, "int8", "preprocess")
-            convert_csf_segmentation(crop_csf.out.image, "int8", "preprocess")
+            convert_wm_segmentation(crop_wm.out.image, "int8", "preprocess", "segmentation")
+            convert_gm_segmentation(crop_gm.out.image, "int8", "preprocess", "segmentation")
+            convert_csf_segmentation(crop_csf.out.image, "int8", "preprocess", "segmentation")
             seg_channel = convert_wm_segmentation.out.image.join(convert_gm_segmentation.out.image).join(convert_csf_segmentation.out.image).map{ [it[0], it.subList(1, it.size())] }.mix(seg_channel.filter{ it[1].isEmpty() })
         }
 
@@ -364,7 +368,7 @@ workflow preprocess_wkf {
         if ( params.generate_segmentation ) {
             empty_segmentations = seg_channel.filter{ it[1].isEmpty() }.map{ [it[0]] }
             segment_nmt_wkf(empty_segmentations.join(t1_channel), empty_segmentations.join(t1_mask_channel))
-            seg_channel = seg_channel.filter{ !it[1].isEmpty() }.mix(segment_nmt.out.masks.map{ [it[0], it.subList(1, it.size()).reverse()] })
+            seg_channel = seg_channel.filter{ !it[1].isEmpty() }.mix(segment_nmt_wkf.out.masks.map{ [it[0], it.subList(1, it.size()).reverse()] })
         }
 
         wm_segmentation = null

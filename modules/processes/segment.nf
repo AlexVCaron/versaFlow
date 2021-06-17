@@ -10,7 +10,7 @@ process atropos {
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}/segmentation", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(t1_image), path(mask), path(priors)

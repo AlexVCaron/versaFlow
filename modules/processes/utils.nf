@@ -28,7 +28,7 @@ process bet_mask {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_bet_mask") }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img)
@@ -152,12 +152,13 @@ process convert_datatype {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image)
         val(datatype)
         val(caller_name)
+        val(additional_publish_path)
     output:
         tuple val(sid), path("${image.simpleName}__dt_${datatype}.nii.gz"), emit: image
     script:
@@ -374,4 +375,17 @@ process segmentation_to_binary {
     magic-monkey seg2mask --in $segmentation --values 1,2,3,4 --labels csf,gm,dgm,wm --out ${segmentation.simpleName}
     scil_image_math.py addition ${segmentation.simpleName}_gm.nii.gz ${segmentation.simpleName}_dgm.nii.gz ${segmentation.simpleName}_all_gm.nii.gz --data_type uint8 -f
     """
+}
+
+process prepend_sid {
+    label "res_single_cpu"
+
+    input:
+        tuple val(sid), path(file)
+    output:
+        tuple val(sid), path("${sid}_${file.getName()}")
+    script:
+        """
+        ln -s $file ${sid}_${file.getName()}
+        """
 }

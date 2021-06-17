@@ -11,6 +11,7 @@ params.segmentation_registration_config = file("$projectDir/.config/segmentation
 include { registration_wkf as nmt_registration_wkf; registration_wkf as wm_seg_registration_wkf } from "./preprocess.nf"
 include { atropos } from '../processes/segment.nf'
 include { scil_compute_dti_fa } from '../processes/measure.nf'
+include { prepend_sid as prepend_sid_template; prepend_sid as prepend_sid_segmentation; prepend_sid as prepend_sid_template_fa; prepend_sid as prepend_sid_wm_atlas } from '../processes/utils.nf'
 
 workflow segment_nmt_wkf {
     take:
@@ -19,11 +20,12 @@ workflow segment_nmt_wkf {
     main:
         nmt_registration_wkf(
             t1_channel.map{ [it[0], [it[1]]] },
-            t1_channel.map{ [it[0], [file("${params.nmt_root}/NMT_v${params.nmt_ver}_SS.nii.gz")]] },
-            t1_channel.map{ [it[0], [file("${params.nmt_root}/NMT_v${params.nmt_ver}_segmentation.nii.gz")]] },
+            prepend_sid_template(t1_channel.map{ [it[0], file("${params.nmt_root}/NMT_v${params.nmt_ver}_SS.nii.gz")] }).map{ [it[0], [it[1]]] },
+            prepend_sid_segmentation(t1_channel.map{ [it[0], file("${params.nmt_root}/NMT_v${params.nmt_ver}_segmentation.nii.gz")] }).map{ [it[0], [it[1]]] },
             mask_channel.map{ [it[0], [it[1], file("${params.nmt_root}/NMT_v${params.nmt_ver}_brainmask.nii.gz")]] },
             null,
             null,
+            "segmentation",
             params.segmentation_registration_config
         )
         atropos(t1_channel.join(mask_channel).join(nmt_registration_wkf.out.image), "segment")
@@ -40,11 +42,12 @@ workflow segment_wm_wkf {
         scil_compute_dti_fa(dwi_channel.join(mask_channel), "segment", "segment")
         wm_seg_registration_wkf(
             scil_compute_dti_fa.out.fa.map{ [it[0], [it[1]]] },
-            scil_compute_dti_fa.out.fa.map{ [it[0], [file("${params.wm_seg_root}/fa.nii.gz")]] },
-            scil_compute_dti_fa.out.fa.map{ [it[0], [file("${params.wm_seg_root}/wm_atlas.nii.gz")]] },
+            prepend_sid_template_fa(scil_compute_dti_fa.out.fa.map{ [it[0], file("${params.wm_seg_root}/fa.nii.gz")] }).map{ [it[0], [it[1]]] },
+            prepend_sid_wm_atlas(scil_compute_dti_fa.out.fa.map{ [it[0], file("${params.wm_seg_root}/wm_atlas.nii.gz")] }).map{ [it[0], [it[1]]] },
             null,
             null,
             null,
+            "segmentation",
             params.segmentation_registration_config
         )
     emit:
