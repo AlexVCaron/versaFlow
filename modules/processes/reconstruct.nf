@@ -122,7 +122,7 @@ process scilpy_response {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        mrconvert -datatype uint8 $mask mask4scil.nii.gz
+        scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
         magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells 1500 --keep leq --out dwi_leq_1500 --with_b0
         scil_compute_ssst_frf.py dwi_leq_1500.nii.gz dwi_leq_1500.bval dwi_leq_1500.bvec ${sid}_response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox $args
         """
@@ -149,7 +149,7 @@ process scilpy_msmt_response {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        mrconvert -datatype uint8 $mask mask4scil.nii.gz
+        scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
         scil_compute_msmt_frf.py $dwi $bval $bvec ${sid}_wm_response.txt ${sid}_gm_response.txt ${sid}_csf_response.txt --mask mask4scil.nii.gz --mask_wm ${seg[0]} --mask_gm ${seg[1]} --mask_csf ${seg[2]} --fa_thr_wm $params.frf_fa --min_nvox $params.frf_min_nvox $args
         """
 }
@@ -170,7 +170,7 @@ process scilpy_csd {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        mrconvert -datatype uint8 $mask mask4scil.nii.gz
+        scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
         scil_compute_ssst_fodf.py $dwi $bval $bvec $response ${sid}_fodf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
         """
 }
@@ -192,7 +192,7 @@ process scilpy_msmt_csd {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        mrconvert -datatype uint8 $mask mask4scil.nii.gz
+        scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
         scil_compute_msmt_fodf.py $dwi $bval $bvec $wm_response $gm_response $csf_response --wm_out_fODF ${sid}_wm_fodf.nii.gz --gm_out_fODF ${sid}_gm_fodf.nii.gz --csf_out_fODF ${sid}_csf_fodf.nii.gz --vf ${sid}_vf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
         """
 }

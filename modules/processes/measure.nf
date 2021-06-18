@@ -56,7 +56,7 @@ process scil_compute_dti_fa {
         before = ""
         if ( !mask.empty() ) {
             args += " --mask $mask"
-            before += "mrconvert -datatype uint8 $mask mask4scil.nii.gz\n"
+            before += "scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f\n"
         }
 
         """
@@ -102,7 +102,7 @@ process scil_dti_and_metrics {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
-        mrconvert -datatype uint8 $mask mask4scil.nii.gz
+        scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
         scil_compute_dti_metrics.py $dwi $bval $bvec --mask mask4scil.nii.gz -f --not_all $args
         """
 }

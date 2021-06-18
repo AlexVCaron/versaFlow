@@ -246,7 +246,7 @@ process crop_image {
             }
             after_script += [img_script]
             after_script += [mask_script]
-            after_script += ["scil_image_math.py convert ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
+            after_script += ["scil_image_math.py round ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
         }
 
         if ( metadata instanceof nextflow.util.BlankSeparatedList ? !metadata.isEmpty() : !metadata.empty() )
