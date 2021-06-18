@@ -25,7 +25,9 @@ process atropos {
             mask_renaming += "mv ${sid}_SegmentationPosteriors0${i}.nii.gz ${sid}_${cl}_mask.nii.gz\n"
         }
         """
-        antsAtroposN4.sh -d 3 -a $t1_image -x $mask -c ${params.classes.size()} -p $priors -o ${sid}_
+        magic-monkey seg2mask --in $segmentation --values 1,2,3,4 --labels 01,02,04,03 --out ${segmentation.simpleName}
+        scil_image_math.py addition ${segmentation.simpleName}_02.nii.gz ${segmentation.simpleName}_04.nii.gz ${segmentation.simpleName}_02.nii.gz --data_type uint8 -f
+        antsAtroposN4.sh -d 3 -a $t1_image -x $mask -c ${params.classes.size()} -p ${segmentation.simpleName}_%02d.nii.gz -o ${sid}_
         mv ${sid}_Segmentation.nii.gz ${sid}_segmentation.nii.gz
         $mask_renaming
         """
