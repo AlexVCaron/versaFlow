@@ -28,10 +28,7 @@ process diamond {
             args += " --mask $mask"
 
         """
-        magic-monkey flip2ref --in $input_dwi --bvecs ${input_dwi.simpleName}.bvec --out flipped_bvecs
-        cp $input_dwi flipped_bvecs.nii.gz
-        cp ${input_dwi.simpleName}.bval flipped_bvecs.bval
-        magic-monkey diamond --in flipped_bvecs.nii.gz --mask $mask --out ${sid}_diamond --config $config
+        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}_diamond --config $config
         """
 }
 

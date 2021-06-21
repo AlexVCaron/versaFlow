@@ -64,8 +64,8 @@ process scil_compute_dti_fa {
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
         $before
-        magic-monkey flip2ref --in $dwi --bvecs $bvec --out flipped_bvecs
-        scil_compute_dti_metrics.py $dwi $bval flipped_bvecs.bvec -f --not_all $args
+        magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells 1300 --keep leq --out dwi_leq_1300 --with_b0
+        scil_compute_dti_metrics.py dwi_leq_1300.nii.gz dwi_leq_1300.bval dwi_leq_1300.bvec -f --not_all $args
         """
 }
 
@@ -103,7 +103,8 @@ process scil_dti_and_metrics {
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
-        scil_compute_dti_metrics.py $dwi $bval $bvec --mask mask4scil.nii.gz -f --not_all $args
+        magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells 1300 --keep leq --out dwi_leq_1300 --with_b0
+        scil_compute_dti_metrics.py dwi_leq_1300.nii.gz dwi_leq_1300.bval dwi_leq_1300.bvec --mask mask4scil.nii.gz -f --not_all $args
         """
 }
 
