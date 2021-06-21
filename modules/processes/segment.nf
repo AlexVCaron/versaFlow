@@ -13,7 +13,7 @@ process atropos {
     publishDir "${params.output_root}/${sid}/segmentation", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(t1_image), path(mask), path(priors)
+        tuple val(sid), path(t1_image), path(mask), path(segmentation)
         val(caller_name)
     output:
         tuple val(sid), path("${sid}_segmentation.nii.gz"), emit: segmentation
@@ -23,6 +23,7 @@ process atropos {
         i = 1
         for (cl in params.classes) {
             mask_renaming += "mv ${sid}_SegmentationPosteriors0${i}.nii.gz ${sid}_${cl}_mask.nii.gz\n"
+            i += 1
         }
         """
         magic-monkey seg2mask --in $segmentation --values 1,2,3,4 --labels 01,02,04,03 --out ${segmentation.simpleName}
