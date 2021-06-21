@@ -160,3 +160,19 @@ def rename( channel, name ) {
         [it[0], copy_and_rename(it[1], "${it[0]}_$name", false, true)]
     }
 }
+
+def fill_missing_datapoints( data_channel, id_channel, fill_tuple ) {
+    return id_channel.join(data_channel, remainder: true).map{ (it[1] == null) ? [it[0]] + fill_tuple : it }
+}
+
+def filter_datapoints( data_channel, filter_function ) {
+    return data_channel.filter{ filter_function(it) }
+}
+
+def exclude_missing_datapoints( data_channel, filter_index, missing_value ) {
+    return filter_datapoints(data_channel, { it[filter_index] != missing_value })
+}
+
+def separate_b0_from_dwi( data_channel ) {
+    return [exclude_missing_datapoints(into_denoise, 2, ""), filter_datapoints(into_denoise, { it[2] == "" })]
+}

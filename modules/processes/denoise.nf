@@ -45,17 +45,22 @@ process nlmeans_denoise {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(image)
+        tuple val(sid), path(image), file(mask), file(metadata)
         val(caller_name)
     output:
         tuple val(sid), path("${image.simpleName}__nlmeans_denoised.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__nlmeans_denoised_metadata.*"), optional: true, emit: metadata
     script:
+        def args = ""
+        if ( !mask.empty() ) args += "--mask $mask"
+        def after_script = ""
+        if ( !metadata.empty() ) after_script += "cp $metadata ${image.simpleName}__nlmeans_denoised_metadata.py"
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
-        scil_run_nlmeans.py $image ${image.simpleName}__nlmeans_denoised.nii.gz 1 --processes $task.cpus -f
+        scil_run_nlmeans.py $image ${image.simpleName}__nlmeans_denoised.nii.gz 1 --processes $task.cpus -f $args
+        $after_script
         """
 }
 

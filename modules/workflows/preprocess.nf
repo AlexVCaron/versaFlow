@@ -16,9 +16,9 @@ params.prepare_eddy_base_config = file("$projectDir/.config/prepare_eddy_base_co
 params.prepare_eddy_cuda_base_config = file("$projectDir/.config/prepare_eddy_cuda_base_config.py")
 params.concatenate_base_config = file("$projectDir/.config/concatenate_base_config.py")
 
-include { merge_channels_non_blocking; group_subject_reps; join_optional; map_optional; opt_channel; replace_dwi_file; uniformize_naming; sort_as_with_name; merge_repetitions; interleave; is_data } from '../functions.nf'
+include { separate_b0_from_dwi; exclude_missing_datapoints; fill_missing_datapoints; merge_channels_non_blocking; group_subject_reps; join_optional; map_optional; opt_channel; replace_dwi_file; uniformize_naming; sort_as_with_name; merge_repetitions; interleave; is_data } from '../functions.nf'
 include { extract_b0 as b0_topup; extract_b0 as b0_topup_rev; squash_b0 as squash_dwi; squash_b0 as squash_rev } from '../processes/preprocess.nf'
-include { n4_denoise; dwi_denoise; prepare_topup; topup; prepare_eddy; eddy } from '../processes/denoise.nf'
+include { n4_denoise; dwi_denoise; nlmeans_denoise; prepare_topup; topup; prepare_eddy; eddy } from '../processes/denoise.nf'
 include { ants_register; ants_transform } from '../processes/register.nf'
 include { cat_datasets; cat_datasets as cat_topup; cat_datasets as cat_eddy_on_rev; bet_mask; split_image; apply_topup; convert_datatype; replicate_image; check_dwi_conformity } from '../processes/utils.nf'
 
@@ -68,42 +68,46 @@ workflow topup_wkf {
         rev_channel
         metadata_channel
     main:
-        meta_channel = metadata_channel.map{ [it[0], [it[1]]] }.join(
-            metadata_channel.map{ [it[0], [it[2]]] }
-        ).map{ [it[0], it[1] + it[2]] }
+        existing_rev = exclude_missing_datapoints(rev_channel, 1, "")
+        (dwi_rev, b0_rev) = separate_b0_from_dwi(existing_rev)
+        topupable_indexes = existing_rev.map{ [it[0]] }
 
-        b0_topup(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", params.preproc_extract_b0_topup_config)
-        b0_topup_rev(rev_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", params.preproc_extract_b0_topup_config)
+        topupable_meta_channel = topupable_indexes.join(metadata_channel.map{ [it[0], [it[1], it[2]]] })
+        topupable_dwi_channel = topupable_indexes.join(dwi_channel)
+
+        b0_topup(topupable_dwi_channel.map{ it.subList(0, 3) }.join(topupable_meta_channel), "preprocess", params.preproc_extract_b0_topup_config)
+        b0_topup_rev(dwi_rev.join(topupable_meta_channel), "preprocess", params.preproc_extract_b0_topup_config)
 
         b0_channel = b0_topup.out.b0
-        b0_rev_channel = b0_topup_rev.out.b0
-        b0_metadata_channel = b0_topup.out.metadata.join(b0_topup_rev.out.metadata).map{ [it[0], it.subList(1, it.size())] }
+        b0_rev_channel = b0_topup_rev.out.b0.mix(b0_rev.map{ it.subList(0, 2) })
+        b0_metadata_channel = b0_topup.out.metadata.join(b0_topup_rev.out.metadata.mix(b0_rev.map{ [it[0]] }.join(topupable_meta_channel))).map{ [it[0], it.subList(1, it.size())] }
 
         if ( params.merge_repetitions ) {
             b0_channel = merge_repetitions(b0_channel, false) //.map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
             b0_rev_channel = merge_repetitions(b0_rev_channel, false) //.map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
             b0_metadata_channel = merge_repetitions(b0_metadata_channel, false).map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
-            meta_channel = merge_repetitions(meta_channel, false).map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
-            dwi_channel = merge_repetitions(dwi_channel, false)
-            rev_channel = merge_repetitions(rev_channel, false)
+            topupable_meta_channel = merge_repetitions(topupable_meta_channel, false).map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
+            topupable_dwi_channel = merge_repetitions(topupable_dwi_channel, false)
+            existing_rev = merge_repetitions(existing_rev, false)
         }
         else {
             b0_channel = b0_channel.map{ [it[0], it.subList(1, it.size())] }
             b0_rev_channel = b0_rev_channel.map{ [it[0], it.subList(1, it.size())] }
         }
 
-        acq_channel = dwi_channel.map{ [it[0], [it[2]]] }.join(rev_channel.map{ [it[0], [it[2]]] })
+        acq_channel = topupable_dwi_channel.map{ [it[0], [it[2]]] }.join(existing_rev.map{ [it[0], [it[2]]] })
         b0_data_channel = b0_channel.join(b0_rev_channel).map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] }
         b0_data_channel = b0_data_channel.map{ it + [[], []] }.join(b0_metadata_channel)
 
         cat_topup(b0_data_channel, "b0", "preprocess", params.concatenate_base_config)
 
-        metadata_channel = cat_topup.out.metadata.join(meta_channel).map{ [it[0], [it[1]] + it[2]] }
+        metadata_channel = cat_topup.out.metadata.join(topupable_meta_channel).map{ [it[0], [it[1]] + it[2]] }
 
-        prepare_topup(cat_topup.out.image.join(dwi_channel.map{ [it[0], it[2]] }).join(rev_channel.map{ [it[0], it[2]] }).join(metadata_channel), params.prepare_topup_base_config)
+        prepare_topup(cat_topup.out.image.join(topupable_dwi_channel.map{ [it[0], it[2]] }).join(existing_rev.map{ [it[0], it[2]] }).join(metadata_channel), params.prepare_topup_base_config)
         data_channel = prepare_topup.out.config.map{ it.subList(0, 4) }.join(cat_topup.out.image)
 
         topup(data_channel.join(prepare_topup.out.metadata), "preprocess")
+        excluded_indexes = filter_datapoints(rev_channel, { it[1] == "" })
     emit:
         b0 = topup.out.image
         field = topup.out.field
@@ -114,6 +118,10 @@ workflow topup_wkf {
         topup = topup.out.pkg
         metadata = prepare_topup.out.metadata
         in_metadata_w_topup = sort_as_with_name(prepare_topup.out.in_metadata_w_topup, acq_channel.map{ it.flatten() })
+        topupable_indexes = topupable_indexes
+        excluded_indexes = excluded_indexes
+        excluded_dwi = excluded_indexes.join(dwi_channel)
+        excluded_dwi_metadata = excluded_indexes.join(metadata_channel).map{ it.subList(0, 2) }
 }
 
 workflow apply_topup_wkf {
@@ -148,20 +156,17 @@ workflow squash_wkf {
         rev_channel
         metadata_channel
     main:
-        dwi_meta_channel = metadata_channel.map{ it.subList(0, 2) }
+        squash_dwi(dwi_channel.join(metadata_channel.map{ it.subList(0, 2) }), "preprocess", params.preproc_squash_b0_config)
 
-        squash_dwi(dwi_channel.join(dwi_meta_channel), "preprocess", params.preproc_squash_b0_config)
-        meta_channel = squash_dwi.out.metadata
-        if ( params.has_reverse ) {
-            rev_meta_channel = metadata_channel.map{ [it[0], it[2]] }
-            squash_rev(rev_channel.join(rev_meta_channel), "preprocess", params.preproc_squash_b0_config)
-            rev_channel = squash_rev.out.dwi
-            meta_channel =meta_channel.join(squash_rev.out.metadata)
-        }
+        (dwi_rev, b0_rev) = separate_b0_from_dwi(exclude_missing_datapoints(rev_channel.join(metadata_channel.map{ [it[0], it[2]] }), 1, ""))
+
+        squash_rev(dwi_rev, "preprocess", params.preproc_squash_b0_config)
+
+        ref_id_channel = dwi_channel.map{ [it[0]] }
     emit:
         dwi = squash_dwi.out.dwi
-        rev = rev_channel
-        metadata = meta_channel
+        rev = fill_missing_datapoints(squash_rev.out.dwi.mix(b0_rev.map{ it.subList(0, it.size() - 1) }), ref_id_channel, ["", "", ""])
+        metadata = squash_dwi.out.metadata.join(fill_missing_datapoints(squash_rev.out.metadata.mix(b0_rev.map{ [it[0], it[-1]] }), ref_id_channel, [""] ))
 }
 
 workflow eddy_wkf {
@@ -251,11 +256,15 @@ workflow dwi_denoise_wkf {
         mask_channel
         metadata_channel
     main:
-        dwi_channel = join_optional(dwi_channel, mask_channel)
-        dwi_denoise(dwi_channel.join(metadata_channel), "preprocess")
+        (dwi_into_denoise, b0_into_denoise) = separate_b0_from_dwi(exclude_missing_datapoints(dwi_channel.join(mask_channel).join(metadata_channel), 1, ""))
+
+        dwi_denoise(dwi_into_denoise.map{ it.subList(0, 2) + it.subList(4, it.size()) }, "preprocess")
+        nlmeans_denoise(b0_into_denoise.map{ it.subList(0, 2) + it.subList(4, it.size()) }, "preprocess")
+
+        ref_id_channel = dwi_channel.map{ [it[0]] }
     emit:
-        image = dwi_denoise.out.image
-        metadata = dwi_denoise.out.metadata
+        image = fill_missing_datapoints(dwi_denoise.out.image.mix(nlmeans_denoise.out.image), ref_id_channel, [""])
+        metadata = fill_missing_datapoints(dwi_denoise.out.metadata.mix(nlmeans_denoise.out.metadata), ref_id_channel, [""])
 }
 
 workflow n4_denoise_wkf {
@@ -266,10 +275,7 @@ workflow n4_denoise_wkf {
         metadata_channel
         config
     main:
-        dwi_channel = join_optional(dwi_channel, b0_channel)
-        dwi_channel = join_optional(dwi_channel, mask_channel)
-        dwi_channel = join_optional(dwi_channel, metadata_channel)
-        n4_denoise(dwi_channel, "preprocess", config)
+        n4_denoise(dwi_channel.join(b0_channel).join(mask_channel).join(metadata_channel), "preprocess", config)
     emit:
         image = n4_denoise.out.image
         metadata = n4_denoise.out.metadata
