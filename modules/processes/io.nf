@@ -2,20 +2,33 @@
 
 nextflow.enable.dsl=2
 
+params.default_readout = null
+params.default_multiband_factor = null
+params.default_is_interleaved = null
+params.default_slicing_direction = null
+params.default_phase_direction = null
+params.default_acquisition_tensor_type = null
 
 def metadata_from_params ( reverse ) {
-    def direction = "${params.metadata.direction}"
-    if ( "$reverse" == "true" )
-        direction = direction.reverse()
+    if ([
+        params.default_readout,
+        params.default_multiband_factor,
+        params.default_is_interleaved,
+        params.default_slicing_direction,
+        params.default_phase_direction,
+        params.default_acquisition_tensor_type
+    ].any{ it == null })
+        error "Some default acquisition parameters are not set, but are required. Set their values in the nextflow.config file."
 
-    def margs = "--acq ${params.metadata.acquisition} --dir $direction --dwell ${params.metadata.readout} --sd ${params.metadata.slice_direction}"
-    if ( params.metadata.interleaved )
+    direction = "${params.default_phase_direction}"
+    if ( "$reverse".equals("true") ) direction = direction.reverse()
+
+    margs = "--acq ${params.default_acquisition_tensor_type} --dir $direction --dwell ${params.default_readout} --sd ${params.default_slicing_direction}"
+    if ( params.default_is_interleaved )
         margs += " --interleaved"
 
-    if ( params.metadata.multiband && params.metadata.multiband > 1 )
-        margs += " --mb ${params.metadata.multiband}"
-
-    args += margs
+    if ( params.default_multiband_factor && params.default_multiband_factor > 1 )
+        margs += " --mb ${params.default_multiband_factor}"
 
     return margs
 }

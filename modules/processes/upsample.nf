@@ -33,7 +33,7 @@ process scilpy_resample {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_resample_volume.py $image resampled.nii.gz --resolution $params.resampling_resolution --interp $interpolation
+        scil_resample_volume.py $image resampled.nii.gz --voxel_size $params.resampling_resolution --interp $interpolation
         fslmaths resampled.nii.gz -thr 0 ${image.simpleName}__resampled.nii.gz
         if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}__resampled.nii.gz)" ]
         then

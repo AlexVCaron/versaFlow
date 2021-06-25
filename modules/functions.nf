@@ -75,7 +75,7 @@ def copy_and_rename ( fl, prefix, overwrite, copy ) {
 def uniformize_naming ( files_channel, prefix, overwrite, copy ) {
     return files_channel.map{ it ->
         [it[0]] + it.subList(1, it.size()).collect{ i ->
-            copy_and_rename(i, "${i.simpleName.split("__")[0]}__$prefix", overwrite, copy)
+            i == "" ? i : copy_and_rename(i, "${i.simpleName.split("__")[0]}__$prefix", overwrite, copy)
         }
     }
 }
@@ -161,8 +161,12 @@ def rename( channel, name ) {
     }
 }
 
-def fill_missing_datapoints( data_channel, id_channel, fill_tuple ) {
-    return id_channel.join(data_channel, remainder: true).map{ (it[1] == null) ? [it[0]] + fill_tuple : it }
+def fill_missing_datapoints( data_channel, id_channel, filter_index, fill_tuple ) {
+    return id_channel.join(data_channel, remainder: true).map{
+        it instanceof ArrayList ? it : [it, null]
+    }.map{
+        (it[filter_index] == null) ? it.subList(0, filter_index) + fill_tuple : it
+    }
 }
 
 def filter_datapoints( data_channel, filter_function ) {
@@ -174,5 +178,5 @@ def exclude_missing_datapoints( data_channel, filter_index, missing_value ) {
 }
 
 def separate_b0_from_dwi( data_channel ) {
-    return [exclude_missing_datapoints(into_denoise, 2, ""), filter_datapoints(into_denoise, { it[2] == "" })]
+    return [exclude_missing_datapoints(data_channel, 2, ""), filter_datapoints(data_channel, { it[2] == "" })]
 }

@@ -172,7 +172,7 @@ process prepare_topup {
     label "res_single_cpu"
 
     input:
-        tuple val(sid), path(b0s), path(dwi_bval), path(rev_bval), file(metadata)
+        tuple val(sid), path(b0s), path(dwi_bval), file(rev_bval), file(metadata)
         path(config)
     output:
         tuple val(sid), path("${b0s.simpleName}__topup_script.sh"), path("${b0s.simpleName}__topup_acqp.txt"), path("${b0s.simpleName}__topup_config.cnf"), val("${sid}__topup_results"), emit: config
