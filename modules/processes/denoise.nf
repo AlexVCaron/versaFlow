@@ -8,7 +8,7 @@ params.use_cuda = false
 params.eddy_force_shelled = true
 params.b0_threshold = false
 
-include { get_size_in_gb; swap_configurations; remove_alg_suffixes } from '../functions.nf'
+include { get_size_in_gb; remove_alg_suffixes } from '../functions.nf'
 
 process dwi_denoise {
     label params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
@@ -45,17 +45,22 @@ process nlmeans_denoise {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(image)
+        tuple val(sid), path(image), file(mask), file(metadata)
         val(caller_name)
     output:
         tuple val(sid), path("${image.simpleName}__nlmeans_denoised.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__nlmeans_denoised_metadata.*"), optional: true, emit: metadata
     script:
+        def args = ""
+        if ( !mask.empty() ) args += "--mask $mask"
+        def after_script = ""
+        if ( !metadata.empty() ) after_script += "cp $metadata ${image.simpleName}__nlmeans_denoised_metadata.py"
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
-        scil_run_nlmeans.py $image ${image.simpleName}__nlmeans_denoised.nii.gz 1 --processes $task.cpus -f
+        scil_run_nlmeans.py $image ${image.simpleName}__nlmeans_denoised.nii.gz 1 --processes $task.cpus -f $args
+        $after_script
         """
 }
 
@@ -167,7 +172,7 @@ process prepare_topup {
     label "res_single_cpu"
 
     input:
-        tuple val(sid), path(b0s), path(dwi_bval), path(rev_bval), file(metadata)
+        tuple val(sid), path(b0s), path(dwi_bval), file(rev_bval), file(metadata)
         path(config)
     output:
         tuple val(sid), path("${b0s.simpleName}__topup_script.sh"), path("${b0s.simpleName}__topup_acqp.txt"), path("${b0s.simpleName}__topup_config.cnf"), val("${sid}__topup_results"), emit: config

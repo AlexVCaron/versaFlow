@@ -60,9 +60,9 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                4
+                8
             ],
-            "klass": "magic_monkey.traits.ants.MetricCC"
+            "klass": "magic_monkey.traits.ants.MetricMI"
         }
     ],
     "shrinks": [

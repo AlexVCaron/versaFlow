@@ -10,8 +10,6 @@ params.max_fa_ventricle = 0.1
 params.min_md_ventricle = 0.003
 
 
-include { get_size_in_gb; swap_configurations } from '../functions.nf'
-
 process dti_metrics {
     label "res_single_cpu"
 

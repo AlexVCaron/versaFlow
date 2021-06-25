@@ -2,6 +2,8 @@
 
 nextflow.enable.dsl=2
 
+params.add_odd_dimension = false
+
 include { get_size_in_gb; remove_alg_suffixes; add_suffix } from '../functions.nf'
 
 process apply_mask {
@@ -147,7 +149,7 @@ process tournier2descoteaux_odf {
         """
 }
 
-process convert_datatype {
+process convert_float_to_integer {
     memory { 4f * get_size_in_gb(image) }
     label "res_single_cpu"
 
@@ -160,10 +162,10 @@ process convert_datatype {
         val(caller_name)
         val(additional_publish_path)
     output:
-        tuple val(sid), path("${image.simpleName}__dt_${datatype}.nii.gz"), emit: image
+        tuple val(sid), path("${image.simpleName}__uint8.nii.gz"), emit: image
     script:
         """
-        magic-monkey convert --in $image --out "${image.simpleName}__dt_${datatype}.nii.gz" --dt $datatype
+        scil_image_math.py round $image ${image.simpleName}__${datatype}.nii.gz -f --data_type $datatype
         """
 }
 
@@ -284,6 +286,11 @@ process fit_bounding_box {
 }
 
 process average {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
+
     input:
         tuple val(sid), path(images), val(base_name)
         val(caller_name)
@@ -387,5 +394,60 @@ process prepend_sid {
     script:
         """
         ln -s $file ${sid}_${file.getName()}
+        """
+}
+
+process generate_b0_bval {
+    label "res_single_cpu"
+
+    input:
+        tuple val(sid), path(b0_image)
+        val(with_bvec)
+    output:
+        tuple val(sid), path("${b0_image.simpleName}.bval"), emit: bval
+        tuple val(sid), path("${b0_image.simpleName}.bvec"), optional: true, emit: bvec
+    script:
+        if (with_bvec == "true") {
+            """
+            echo "0" >> ${b0_image.simpleName}.bval
+            echo "0\n0\n0" >> ${b0_image.simpleName}.bvec
+            """
+        }
+        else {
+            """
+            echo "0" >> ${b0_image.simpleName}.bval
+            """
+        }
+}
+
+process check_odd_dimensions {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(dwi), path(bval), path(bvec), file(reverse), file(rval), file(rvec), file(mask), file(metadata)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${dwi.simpleName}__even_dims.nii.gz"), path("${dwi.simpleName}__even_dims.bval"), path("${dwi.simpleName}__even_dims.bvec"), emit: dwi
+        tuple val(sid), path("${reverse.simpleName}__even_dims.nii.gz"), optional: true, emit: rev
+        tuple val(sid), path("${reverse.simpleName}__even_dims.bval"), path("${reverse.simpleName}__even_dims.bvec"), optional: true, emit: rev_bval_bvec
+        tuple val(sid), path("${mask.simpleName}__even_dims.nii.gz"), optional: true, emit: mask
+        tuple val(sid), path("*__even_dims_metadata.*"), optional: true, emit: metadata
+    script:
+        args = "--strat ${params.add_odd_dimension ? "add" : "sub"}"
+        after_script = ""
+        assoc = []
+        if ( !reverse.empty() ) assoc += ["$reverse"]
+        if ( !mask.empty() ) assoc += ["$mask"]
+        args += " --assoc ${assoc.join(",")}"
+        if ( !rval.empty() ) after_script += "cp $rval ${reverse.simpleName}__even_dims.bval\n"
+        if ( !rvec.empty() ) after_script += "cp $rvec ${reverse.simpleName}__even_dims.bvec\n"
+        """
+        magic-monkey even_dimensions --in $dwi --suffix __even_dims $args
+        cp $bval ${dwi.simpleName}__even_dims.bval
+        cp $bvec ${dwi.simpleName}__even_dims.bvec
+        $after_script
         """
 }

@@ -48,7 +48,7 @@ c.EddyConfiguration.outlier_model = None
 #     "sum_squared": False
 # }
 
-c.EddyConfiguration.pre_filter_width = [1.6, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+c.EddyConfiguration.pre_filter_width = [0]
 
 c.EddyConfiguration.qspace_smoothing = 10
 
