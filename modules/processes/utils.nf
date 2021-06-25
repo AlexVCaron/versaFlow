@@ -158,14 +158,14 @@ process convert_float_to_integer {
 
     input:
         tuple val(sid), path(image)
-        val(caller_name)
         val(datatype)
+        val(caller_name)
         val(additional_publish_path)
     output:
         tuple val(sid), path("${image.simpleName}__uint8.nii.gz"), emit: image
     script:
         """
-        scil_image_math.py round $image ${image.simpleName}__$datatype.nii.gz -f --data_type $datatype
+        scil_image_math.py round $image ${image.simpleName}__${datatype}.nii.gz -f --data_type $datatype
         """
 }
 

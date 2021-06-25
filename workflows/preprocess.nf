@@ -8,7 +8,6 @@ params.gibbs_ringing_correction = true
 params.t1mask2dwi_registration = true
 params.topup_correction = true
 params.eddy_correction = true
-params.do_bet_mask = false
 params.dwi_intensity_normalization = true
 params.resample_data = true
 params.register_t12b0_denoised = true
@@ -237,7 +236,7 @@ workflow preprocess_wkf {
             params.b02t1_mask_registration_config
         )
 
-        dwi_mask_convert_datatype(dwi_mask_registration_wkf.out.image, "int8", "preprocess", "")
+        dwi_mask_convert_datatype(dwi_mask_registration_wkf.out.image, "uint8", "preprocess", "")
         t1_mask_channel = exclude_missing_datapoints(t1_mask_channel, 1, "").mix(dwi_mask_convert_datatype.out.image)
 
         t1_preprocess_wkf(t1_channel.map{ it.subList(0, 2) }, t1_mask_channel)
@@ -303,9 +302,9 @@ workflow preprocess_wkf {
         crop_wm(seg_to_crop.map{ [it[0], it[1][0]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
         crop_gm(seg_to_crop.map{ [it[0], it[1][1]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
         crop_csf(seg_to_crop.map{ [it[0], it[1][2]] }.join(dwi_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess")
-        convert_wm_segmentation(crop_wm.out.image, "int8", "preprocess", "segmentation")
-        convert_gm_segmentation(crop_gm.out.image, "int8", "preprocess", "segmentation")
-        convert_csf_segmentation(crop_csf.out.image, "int8", "preprocess", "segmentation")
+        convert_wm_segmentation(crop_wm.out.image, "uint8", "preprocess", "segmentation")
+        convert_gm_segmentation(crop_gm.out.image, "uint8", "preprocess", "segmentation")
+        convert_csf_segmentation(crop_csf.out.image, "uint8", "preprocess", "segmentation")
         seg_channel = convert_wm_segmentation.out.image.join(convert_gm_segmentation.out.image).join(convert_csf_segmentation.out.image).map{ [it[0], it.subList(1, it.size())] }.mix(seg_channel.filter{ it[1].isEmpty() })
 
         dwi_channel = replace_dwi_file(dwi_channel, crop_dwi.out.image)
