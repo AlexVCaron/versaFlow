@@ -12,7 +12,7 @@ params.dwi_intensity_normalization = true
 params.resample_data = true
 params.register_t12b0_denoised = true
 params.register_syn_t12b0 = false
-params.generate_segmentation = false
+params.generate_tissue_segmentation = false
 params.generate_wm_segmentation = true
 
 // T1 preprocess workflow parameters
@@ -313,7 +313,7 @@ workflow preprocess_wkf {
         t1_channel = crop_t1.out.image
         t1_mask_channel = crop_dwi.out.mask
 
-        if ( params.generate_segmentation ) {
+        if ( params.generate_tissue_segmentation ) {
             empty_segmentations = seg_channel.filter{ it[1].isEmpty() }.map{ [it[0]] }
             segment_nmt_wkf(empty_segmentations.join(t1_channel), empty_segmentations.join(t1_mask_channel))
             seg_channel = seg_channel.filter{ !it[1].isEmpty() }.mix(segment_nmt_wkf.out.masks.map{ [it[0], it.subList(1, it.size()).reverse()] })

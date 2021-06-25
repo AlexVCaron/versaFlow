@@ -3,6 +3,7 @@
 nextflow.enable.dsl=2
 
 params.add_odd_dimension = false
+params.bet_f = 0.5
 
 include { get_size_in_gb; remove_alg_suffixes; add_suffix } from '../functions.nf'
 
@@ -40,7 +41,7 @@ process bet_mask {
     script:
         """
         fslmaths $img -Tmean mean_image.nii.gz
-        bet mean_image.nii.gz "${img.simpleName}_bet.nii.gz" -m -R -f $params.bet.f
+        bet mean_image.nii.gz "${img.simpleName}_bet.nii.gz" -m -R -f $params.bet_f
         """
 }
 

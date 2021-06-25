@@ -24,8 +24,8 @@ process scilpy_resample {
     script:
         after_script = ""
         if ( !mask.empty() ) {
-            after_script += "scil_resample_volume.py $mask mask_resampled.nii.gz --ref ${image.simpleName}__resampled.nii.gz --interp nn\n"
-            after_script += "magic-monkey convert --in mask_resampled.nii.gz --out ${mask.simpleName}__resampled.nii.gz --dt int8\n"
+            after_script += "scil_resample_volume.py $mask mask_resampled.nii.gz --ref ${image.simpleName}__resampled.nii.gz --interp nn --enforce_dimensions\n"
+            after_script += "scil_image_math.py round mask_resampled.nii.gz ${mask.simpleName}__resampled.nii.gz --data_type uint8 -f\n"
         }
         if ( !metadata.empty() )
             after_script += "magic-monkey metadata --in ${image.getSimpleName()}__resampled.nii.gz --update_affine --metadata $metadata\n"
