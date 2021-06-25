@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-params.eddy_on_rev = true
+params.eddy_with_reverse = true
 params.eddy_select_gpu = true
 params.use_cuda = false
 params.eddy_force_shelled = true
@@ -229,7 +229,7 @@ process prepare_eddy {
         }
         if ( rev_prefix ) {
             args += " --rev $rev_prefix"
-            if ( params.eddy_on_rev )
+            if ( params.eddy_with_reverse )
                 args += " --rev_eddy"
         }
 

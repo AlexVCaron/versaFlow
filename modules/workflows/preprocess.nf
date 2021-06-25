@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-params.eddy_on_rev = true
+params.eddy_with_reverse = true
 params.use_cuda = false
 
 params.ants_registration_base_config = file("$projectDir/.config/ants_registration_base_config.py")
@@ -213,7 +213,7 @@ workflow eddy_wkf {
         dwi_channel = dwi_channel.map{ it.subList(0, 3) }.join(prepare_eddy.out.bvec.map{ [it[0], it[1].find{ f -> f.simpleName.indexOf("_rev") == -1 }] })
         rev_channel = rev_channel.map{ it.subList(0, 3) }.join(prepare_eddy.out.bvec.map{ [it[0], it[1].find { f -> f.simpleName.indexOf("_rev") >= 0 }] })
 
-        if ( params.eddy_on_rev ) {
+        if ( params.eddy_with_reverse ) {
             cat_eddy_on_rev(merge_channels_non_blocking(dwi_channel, rev_channel).join(metadata_channel), "dwi", "preprocess", params.concatenate_base_config)
             dwi_channel = cat_eddy_on_rev.out.image.join( cat_eddy_on_rev.out.bval ).join(cat_eddy_on_rev.out.bvec).mix( absent_reverse_ids.join(dwi_channel) )
             metadata_channel = cat_eddy_on_rev.out.metadata.map{ [it[0], it.subList(1, it.size())] }.mix( absent_reverse_ids.join(metadata_channel) )
