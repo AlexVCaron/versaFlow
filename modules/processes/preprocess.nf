@@ -4,7 +4,7 @@ nextflow.enable.dsl=2
 
 params.b0_threshold = false
 
-include { get_size_in_gb; swap_configurations; remove_alg_suffixes; add_suffix } from '../functions.nf'
+include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 
 process extract_b0 {
     label "res_single_cpu"

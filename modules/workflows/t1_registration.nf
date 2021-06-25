@@ -12,9 +12,16 @@ params.t1_registration_syn_registration_config = file("$projectDir/.config/t1_re
 include { extract_b0 } from '../processes/preprocess.nf'
 include { scil_compute_dti_fa } from '../processes/measure.nf'
 include { registration_wkf as t1_base_registration_wkf; registration_wkf as t1_syn_registration_wkf } from "./preprocess.nf"
-include { ants_transform as ants_mask_transform_base; ants_transform as ants_mask_transform_syn;  ants_transform as ants_t1_transform_base; ants_transform as ants_t1_transform_syn } from '../processes/register.nf'
+include {
+    ants_transform as ants_mask_transform_base; ants_transform as ants_mask_transform_syn;
+    ants_transform as ants_t1_transform_base; ants_transform as ants_t1_transform_syn
+} from '../processes/register.nf'
 include { merge_channels_non_blocking; is_data } from '../functions.nf'
-include { bet_mask; apply_mask as apply_mask_to_b0_for_reg; apply_mask as apply_mask_to_t1_for_reg; dilate_mask as dilate_t1_mask; dilate_mask as dilate_b0_mask } from '../processes/utils.nf'
+include {
+    apply_mask as apply_mask_to_b0_for_reg; apply_mask as apply_mask_to_t1_for_reg;
+    dilate_mask as dilate_t1_mask; dilate_mask as dilate_b0_mask;
+    bet_mask
+} from '../processes/utils.nf'
 
 workflow t12b0_registration {
     take:

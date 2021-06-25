@@ -8,7 +8,7 @@ params.use_cuda = false
 params.eddy_force_shelled = true
 params.b0_threshold = false
 
-include { get_size_in_gb; swap_configurations; remove_alg_suffixes } from '../functions.nf'
+include { get_size_in_gb; remove_alg_suffixes } from '../functions.nf'
 
 process dwi_denoise {
     label params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"

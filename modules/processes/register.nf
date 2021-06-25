@@ -5,7 +5,7 @@ import java.io.File
 nextflow.enable.dsl=2
 
 
-include { get_size_in_gb; swap_configurations; remove_alg_suffixes } from '../functions.nf'
+include { remove_alg_suffixes } from '../functions.nf'
 
 process ants_register {
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"

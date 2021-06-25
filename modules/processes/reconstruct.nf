@@ -8,9 +8,6 @@ params.frf_min_nvox = 300
 params.frf_radii = false
 params.frf_center = false
 
-
-include { get_size_in_gb; uniformize_naming } from '../functions.nf'
-
 process diamond {
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
 

@@ -2,7 +2,6 @@
 
 nextflow.enable.dsl=2
 
-params.merge_repetitions = false
 params.eddy_on_rev = true
 params.use_cuda = false
 
@@ -15,13 +14,16 @@ params.prepare_eddy_base_config = file("$projectDir/.config/prepare_eddy_base_co
 params.prepare_eddy_cuda_base_config = file("$projectDir/.config/prepare_eddy_cuda_base_config.py")
 params.concatenate_base_config = file("$projectDir/.config/concatenate_base_config.py")
 
-include { filter_datapoints; separate_b0_from_dwi; exclude_missing_datapoints; fill_missing_datapoints; merge_channels_non_blocking; group_subject_reps; join_optional; map_optional; opt_channel; replace_dwi_file; uniformize_naming; sort_as_with_name; merge_repetitions; interleave; is_data } from '../functions.nf'
+include {
+    filter_datapoints; separate_b0_from_dwi; exclude_missing_datapoints; fill_missing_datapoints;
+    merge_channels_non_blocking; join_optional; sort_as_with_name; is_data
+} from '../functions.nf'
 include { extract_b0 as b0_topup; extract_b0 as b0_topup_rev; squash_b0 as squash_dwi; squash_b0 as squash_rev } from '../processes/preprocess.nf'
 include { n4_denoise; dwi_denoise; nlmeans_denoise; prepare_topup; topup; prepare_eddy; eddy } from '../processes/denoise.nf'
 include { ants_register; ants_transform } from '../processes/register.nf'
 include {
     cat_datasets; cat_datasets as cat_topup; cat_datasets as cat_eddy_on_rev;
-    bet_mask; split_image; apply_topup; replicate_image; check_dwi_conformity; generate_b0_bval
+    apply_topup; check_dwi_conformity; generate_b0_bval
 } from '../processes/utils.nf'
 
 
@@ -87,18 +89,8 @@ workflow topup_wkf {
             b0_topup_rev.out.metadata.mix(b0_rev.map{ [it[0]] }.join(topupable_meta_channel).map{ [it[0], it[1][1]] })
         ).map{ [it[0], it.subList(1, it.size())] }
 
-        if ( params.merge_repetitions ) {
-            b0_channel = merge_repetitions(b0_channel, false) //.map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
-            b0_rev_channel = merge_repetitions(b0_rev_channel, false) //.map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
-            b0_metadata_channel = merge_repetitions(b0_metadata_channel, false).map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
-            topupable_meta_channel = merge_repetitions(topupable_meta_channel, false).map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
-            topupable_dwi_channel = merge_repetitions(topupable_dwi_channel, false)
-            existing_rev = merge_repetitions(existing_rev, false)
-        }
-        else {
-            b0_channel = b0_channel.map{ [it[0], it.subList(1, it.size())] }
-            b0_rev_channel = b0_rev_channel.map{ [it[0], it.subList(1, it.size())] }
-        }
+        b0_channel = b0_channel.map{ [it[0], it.subList(1, it.size())] }
+        b0_rev_channel = b0_rev_channel.map{ [it[0], it.subList(1, it.size())] }
 
         acq_channel = topupable_dwi_channel.map{ [it[0], [it[2]]] }.join(existing_rev.map{ [it[0], [it[2]]] })
         b0_data_channel = b0_channel.join(b0_rev_channel).map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] }
@@ -145,20 +137,10 @@ workflow apply_topup_wkf {
         topup_channel
         meta_channel
     main:
-        if ( params.merge_repetitions ) {
-            // meta_channel = merge_repetitions(meta_channel, false).map{ [it[0], it[1].inject([]){ c, t -> c + t }] }
-            dwi_channel = merge_repetitions(dwi_channel, false)
-            rev_channel = merge_repetitions(rev_channel, false)
-        }
         data_channel = dwi_channel.join(rev_channel.map{ it.subList(0, 2) })
         apply_topup(data_channel.join(topup_channel).join(meta_channel), "preprocess")
         dwi = apply_topup.out.dwi
         metadata = apply_topup.out.metadata
-        if ( params.merge_repetitions ) {
-            cat_datasets(dwi.join(metadata), "dwi", "preprocess", params.concatenate_base_config)
-            dwi = cat_datasets.out.image.join(cat_datasets.out.bval).join(cat_datasets.out.bvec)
-            metadata = cat_datasets.out.metadata
-        }
     emit:
         dwi = dwi
         metadata = metadata

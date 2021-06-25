@@ -11,7 +11,6 @@ params.eddy_correction = true
 params.do_bet_mask = false
 params.dwi_intensity_normalization = true
 params.resample_data = true
-params.register_repetitions = true
 params.register_t12b0_denoised = true
 params.register_syn_t12b0 = false
 params.generate_segmentation = false
@@ -31,8 +30,7 @@ params.t1_n4_normalization_config = file("$projectDir/.config/t1_n4_normalizatio
 params.b0_to_b0_normalization_config = file("$projectDir/.config/b0_to_b0_normalization_config.py")
 
 include {
-    merge_channels_non_blocking; map_optional; opt_channel; replace_dwi_file; uniformize_naming; merge_repetitions;
-    is_data; exclude_missing_datapoints; fill_missing_datapoints; filter_datapoints
+    merge_channels_non_blocking; replace_dwi_file; uniformize_naming; exclude_missing_datapoints; fill_missing_datapoints; filter_datapoints
 } from '../modules/functions.nf'
 include { extract_b0 as dwi_b0; extract_b0 as extract_topup_b0 } from '../modules/processes/preprocess.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
@@ -48,27 +46,20 @@ include {
     convert_float_to_integer as t1_mask_convert_datatype;
     crop_image as crop_dwi; crop_image as crop_t1; crop_image as crop_wm; crop_image as crop_gm; crop_image as crop_csf;
     apply_mask as apply_mask_to_t1_for_reg; apply_mask as apply_mask_to_b0_for_reg;
-    bet_mask; bet_mask as rev_bet_mask; bet_mask as bet_mask_topup;
     dilate_mask as dilate_t1_mask; dilate_mask as dilate_b0_mask;
-    average as average_t1; average as average_b0;
-    fit_bounding_box; merge_masks; check_odd_dimensions
+    bet_mask;fit_bounding_box; merge_masks; check_odd_dimensions
 } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise; normalize_inter_b0 } from '../modules/processes/denoise.nf'
 include {
     scilpy_resample as scilpy_resample_wm; scilpy_resample as scilpy_resample_gm; scilpy_resample as scilpy_resample_csf;
-    scilpy_resample as scilpy_resample_t1; scilpy_resample_on_ref as scilpy_resample_t1_mask; scilpy_resample as scilpy_resample_dwi;
-    scilpy_resample_on_ref as scilpy_resample_mask
+    scilpy_resample as scilpy_resample_t1; scilpy_resample as scilpy_resample_dwi;
 } from '../modules/processes/upsample.nf'
 include {
     registration_wkf as dwi_mask_registration_wkf; registration_wkf as t1_mask_registration_wkf;
-    dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; n4_denoise_wkf
+    dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; n4_denoise_wkf;
     squash_wkf; topup_wkf; apply_topup_wkf; eddy_wkf
 } from "../modules/workflows/preprocess.nf"
-include {
-    cat_dwi_repetitions_wkf; cat_dwi_repetitions_wkf as cat_rev_repetitions_wkf;
-    register_dwi_repetitions_wkf as pre_register_dwi_repetitions_wkf; register_t1_repetitions_wkf
-} from '../modules/workflows/repetitions.nf'
-include { t12b0_registration as mask_registration_wkf; t12b0_registration as rev_mask_registration_wkf; t12b0_registration as t1_registration_wkf } from '../modules/workflows/t1_registration.nf'
+include { t12b0_registration as mask_registration_wkf; t12b0_registration as t1_registration_wkf } from '../modules/workflows/t1_registration.nf'
 include { segment_nmt_wkf; segment_wm_wkf } from '../modules/workflows/segment.nf'
 
 workflow preprocess_wkf {
@@ -120,26 +111,6 @@ workflow preprocess_wkf {
             meta_channel = normalize_inter_b0.out.dwi_metadata
             rev_channel = replace_dwi_file(rev_channel, fill_missing_datapoints(normalize_inter_b0.out.rev, ref_id_channel, 1, [""]))
             rev_meta_channel = fill_missing_datapoints(normalize_inter_b0.out.rev_metadata, ref_id_channel, 1, [""])
-        }
-
-        if ( params.register_repetitions ) {
-            pre_register_dwi_repetitions_wkf(
-                dwi_channel,
-                rev_channel,
-                meta_channel,
-                rev_meta_channel,
-                ""
-            )
-            register_t1_repetitions_wkf(
-                t1_channel,
-                params.masked_t1 ? t1_mask_channel : null
-            )
-            t1_channel = register_t1_repetitions_wkf.out.t1
-            t1_mask_channel = params.masked_t1 ? register_t1_repetitions_wkf.out.mask : null
-            dwi_channel = pre_register_dwi_repetitions_wkf.out.dwi
-            rev_channel = pre_register_dwi_repetitions_wkf.out.rev
-            meta_channel = pre_register_dwi_repetitions_wkf.out.metadata
-            rev_meta_channel  = pre_register_dwi_repetitions_wkf.out.rev_metadata
         }
 
         squash_wkf(dwi_channel, rev_channel, meta_channel.join(rev_meta_channel))
@@ -206,34 +177,10 @@ workflow preprocess_wkf {
             topup2eddy_channel = ref_id_channel.map{ it + ["", "", []] }
         }
 
-        if ( params.merge_repetitions ) {
-            cat_dwi_repetitions_wkf(dwi_channel, meta_channel, "dwi")
-            dwi_channel = cat_dwi_repetitions_wkf.out.dwi
-            meta_channel = cat_dwi_repetitions_wkf.out.metadata
-
-            if ( params.has_reverse ) {
-                cat_rev_repetitions_wkf(rev_channel, meta_channel, "rev")
-                rev_channel = cat_rev_repetitions_wkf.out.dwi
-                meta_channel = meta_channel.join(cat_rev_repetitions_wkf.out.metadata)
-            }
-
-            t1_channel = merge_repetitions(t1_channel, false)
-            average_t1(t1_channel.join(t1_channel.map{ [it[0], it[1][0].simpleName] }), "preprocess")
-            t1_channel = average_t1.out.image
-            if ( params.masked_t1 ) {
-                t1_mask_channel = merge_repetitions(t1_mask_channel, false)
-                merge_masks(t1_mask_channel.join(t1_mask_channel.map{ [it[0], it[1][0].simpleName] }), "preprocess")
-                t1_mask_channel = merge_masks.out.mask
-            }
-
-            average_b0(b0_channel.join(b0_channel.map{ [it[0], it[1].simpleName] }), "preprocess")
-            b0_channel = average_b0.out.image
-        }
-
         empty_dwi_mask_ids = filter_datapoints(dwi_mask_channel, { it[1] == "" }).map{ [it[0]] }
         dwi_mask_channel = exclude_missing_datapoints(dwi_mask_channel, 1, "")
         dwi_mask_channel = dwi_mask_channel.mix(bet_mask(empty_dwi_mask_ids.join(b0_channel), "preprocess"))
-//
+
         if ( params.t1mask2dwi_registration ) {
             existing_t1_mask_ids = exclude_missing_datapoints(t1_mask_channel, 1, "").map{ [it[0]] }
             absent_t1_mask_ids = filter_datapoints(t1_mask_channel, { it[1] == "" }).map{ [it[0]] }
