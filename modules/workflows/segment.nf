@@ -19,9 +19,9 @@ workflow segment_nmt_wkf {
     main:
         nmt_registration_wkf(
             t1_channel.map{ [it[0], [it[1]]] },
-            prepend_sid_template(t1_channel.map{ [it[0], file("${params.nmt_root}/tissue_segmentation_t1.nii.gz")] }).map{ [it[0], [it[1]]] },
-            prepend_sid_segmentation(t1_channel.map{ [it[0], file("${params.nmt_root}/tissue_segmentation.nii.gz")] }).map{ [it[0], [it[1]]] },
-            mask_channel.map{ [it[0], [it[1], file("${params.nmt_root}/tissue_segmentation_mask.nii.gz")]] },
+            prepend_sid_template(t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_t1.nii.gz")] }).map{ [it[0], [it[1]]] },
+            prepend_sid_segmentation(t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation.nii.gz")] }).map{ [it[0], [it[1]]] },
+            mask_channel.map{ [it[0], [it[1], file("${params.tissue_segmentation_root}/tissue_segmentation_mask.nii.gz")]] },
             null,
             null,
             "segmentation",
@@ -41,8 +41,8 @@ workflow segment_wm_wkf {
         scil_compute_dti_fa(dwi_channel.join(mask_channel), "segment", "segment")
         wm_seg_registration_wkf(
             scil_compute_dti_fa.out.fa.map{ [it[0], [it[1]]] },
-            prepend_sid_template_fa(scil_compute_dti_fa.out.fa.map{ [it[0], file("${params.wm_seg_root}/wm_segmentation_fa.nii.gz")] }).map{ [it[0], [it[1]]] },
-            prepend_sid_wm_atlas(scil_compute_dti_fa.out.fa.map{ [it[0], file("${params.wm_seg_root}/wm_segmentation_atlas.nii.gz")] }).map{ [it[0], [it[1]]] },
+            prepend_sid_template_fa(scil_compute_dti_fa.out.fa.map{ [it[0], file("${params.wm_segmentation_root}/wm_segmentation_fa.nii.gz")] }).map{ [it[0], [it[1]]] },
+            prepend_sid_wm_atlas(scil_compute_dti_fa.out.fa.map{ [it[0], file("${params.wm_segmentation_root}/wm_segmentation_atlas.nii.gz")] }).map{ [it[0], [it[1]]] },
             null,
             null,
             null,

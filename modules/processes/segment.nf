@@ -21,7 +21,7 @@ process atropos {
     script:
         mask_renaming = ""
         i = 1
-        for (cl in params.classes) {
+        for (cl in params.segmentation_classes) {
             mask_renaming += "mv ${sid}_SegmentationPosteriors0${i}.nii.gz ${sid}_${cl}_mask.nii.gz\n"
             i += 1
         }

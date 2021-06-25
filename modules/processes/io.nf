@@ -23,7 +23,7 @@ def metadata_from_params ( reverse ) {
     direction = "${params.default_phase_direction}"
     if ( "$reverse".equals("true") ) direction = direction.reverse()
 
-    margs = "--acq ${params.default_acquisition_tensor_type} --dir $direction --dwell ${params.default_readout} --sd ${params.default_slicing_direction}"
+    margs = "--acq ${params.default_acquisition_tensor_type} --dir $direction --readout ${params.default_readout} --sd ${params.default_slicing_direction}"
     if ( params.default_is_interleaved )
         margs += " --interleaved"
 
