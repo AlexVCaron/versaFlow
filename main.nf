@@ -77,7 +77,13 @@ def display_usage () {
             "fodf_max_absolute_factor" : "$params.fodf_max_absolute_factor",
             "fodf_relative_thr" : "$params.fodf_relative_thr",
             "sh_order" : "$params.sh_order",
-            "recons_diamond" : "$params.recons_diamond"
+            "recons_diamond" : "$params.recons_diamond",
+            "n_fascicles" : "$params.n_fascicles",
+            "fascicle_model" : "$params.fascicle_model",
+            "model_selection_with_tensor" : "$params.model_selection_with_tensor",
+            "estimate_restriction" : "$params.estimate_restriction",
+            "normalized_fractions" : "$params.normalized_fractions",
+            "free_water_tensor" : "$params.free_water_tensor"
     ]
 
     engine = new groovy.text.SimpleTemplateEngine()

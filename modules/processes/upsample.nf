@@ -11,12 +11,14 @@ process scilpy_resample {
     label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(mask), file(metadata)
         val(caller_name)
         val(interpolation)
+        val(publish_mask)
+        val(mask_prefix)
     output:
         tuple val(sid), path("${image.getSimpleName()}__resampled.nii.gz"), emit: image
         tuple val(sid), path("${mask.simpleName}__resampled.nii.gz"), optional: true, emit: mask

@@ -25,6 +25,8 @@ workflow segment_nmt_wkf {
             null,
             null,
             "segmentation",
+            false,
+            "", "",
             params.segmentation_registration_config
         )
         atropos(t1_channel.join(mask_channel).join(nmt_registration_wkf.out.image), "segment")
@@ -47,6 +49,8 @@ workflow segment_wm_wkf {
             null,
             null,
             "segmentation",
+            true,
+            "", "",
             params.segmentation_registration_config
         )
     emit:

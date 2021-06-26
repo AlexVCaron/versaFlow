@@ -11,12 +11,14 @@ process ants_register {
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> f.contains("metadata") ? null : f.contains("registration_warped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : f.contains("registration_warped.nii.gz") ? publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(moving), path(target), val(reference), file(mask), file(metadata)
         val(caller_name)
         val(additional_publish_path)
+        val(publish)
+        val(publish_suffix)
         path(config)
     output:
         tuple val(sid), path("${moving[0].simpleName}__registration_ref.nii.gz"), emit: reference
@@ -99,12 +101,14 @@ process ants_transform {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img), path(ref), path(trans), file(bvec), file(metadata)
         val(caller_name)
         val(additional_publish_path)
+        val(publish)
+        val(publish_suffix)
         path(config)
     output:
         tuple val(sid), path("${img.simpleName}__transformed.nii.gz"), emit: image

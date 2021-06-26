@@ -7,6 +7,12 @@ params.frf_min_fa = 0.5
 params.frf_min_nvox = 300
 params.frf_radii = false
 params.frf_center = false
+params.n_fascicles = 3
+params.fascicle_model = "diamondNCcyl"
+params.model_selection_with_tensor = false
+params.estimate_restriction = false
+params.restriction_tensor = false
+params.normalized_fractions = true
 
 process diamond {
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
@@ -15,17 +21,27 @@ process diamond {
     publishDir "${params.output_root}/${sid}/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(input_dwi), path(mask), path(data)
+        tuple val(sid), path(input_dwi), file(mask), path(data)
         val(caller_name)
         path(config)
     output:
         tuple val(sid), path("${sid}_diamond*.nii.gz"), emit: diamond
     script:
-        if ( "${mask}" != "" )
+        if ( !mask.empty() )
             args += " --mask $mask"
+        if ( params.model_selection_with_tensor )
+            args += " --mose-tensor"
+        if ( params.estimate_restriction )
+            args += " --restricted"
+        if ( params.restriction_tensor )
+            args += " --res-tensor"
+        if ( !params.normalized_fractions )
+            args += " --nosum-fractions"
+        if ( params.free_water_tensor )
+            args += " --iso-tensor"
 
         """
-        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}_diamond --config $config
+        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}_diamond --n $params.n_fascicles --f $params.fascicle_model --config $config
         """
 }
 
