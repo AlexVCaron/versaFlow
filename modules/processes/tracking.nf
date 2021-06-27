@@ -3,6 +3,7 @@
 nextflow.enable.dsl=2
 
 params.streamline_compression_factor = 0.2
+params.pve_threshold = 0.05
 params.pft_seeding_strategy = "npv"
 params.pft_number_of_seeds = 10
 params.pft_step_size = 0.5
@@ -34,7 +35,7 @@ process PFT_maps {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_compute_maps_for_particle_filter_tracking.py $wm_vf $gm_vf $csf_vf --include ${sid}_map_include.nii.gz --exclude ${sid}_map_exclude.nii.gz --interface ${sid}_wm_gm_interface.nii.gz -f
+        scil_compute_maps_for_particle_filter_tracking.py $wm_vf $gm_vf $csf_vf --include ${sid}_map_include.nii.gz --exclude ${sid}_map_exclude.nii.gz --interface ${sid}_wm_gm_interface.nii.gz -t $params.pve_threshold -f
         """
 }
 
