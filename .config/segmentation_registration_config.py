@@ -29,7 +29,7 @@ c.AntsConfiguration.init_transform = [0, 0, 1]
 
 c.AntsConfiguration.inlier_range = [0.005, 0.995]
 
-c.AntsConfiguration.interpolation = "MultiLabel"
+c.AntsConfiguration.interpolation = "Linear"
 
 c.AntsConfiguration.klass = "magic_monkey.config.ants.AntsConfiguration"
 

@@ -9,6 +9,7 @@ include { load_dataset } from "./workflows/io.nf"
 include { preprocess_wkf } from "./workflows/preprocess.nf"
 include { reconstruct_wkf } from "./workflows/reconstruct.nf"
 include { measure_wkf } from "./workflows/measure.nf"
+include { tracking_wkf } from "./workflows/tracking.nf"
 
 workflow {
     if (params.help) display_usage()
@@ -16,8 +17,9 @@ workflow {
         validate_required_parameters()
         dataloader = load_dataset()
         preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.seg, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
-        reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.seg, preprocess_wkf.out.metadata)
-        measure = measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.metadata)
+        reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.segmentation, preprocess_wkf.out.metadata)
+        measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.metadata)
+        tracking_wkf(reconstruct_wkf.out.csd, preprocess_wkf.out.segmentation)
     }
 }
 
@@ -43,6 +45,7 @@ def display_usage () {
             "force_resampling_sequential" : "$params.force_resampling_sequential",
             "b0_threshold" : "$params.b0_threshold",
             "bet_f" : "$params.bet_f",
+            "segmentation_mask_threshold" : "$params.segmentation_mask_threshold ",
             "t1_intensity_normalization" : "$params.t1_intensity_normalization",
             "t1mask2dwi_registration" : "$params.t1mask2dwi_registration",
             "register_t12b0_denoised" : "$params.register_t12b0_denoised",
@@ -83,7 +86,21 @@ def display_usage () {
             "model_selection_with_tensor" : "$params.model_selection_with_tensor",
             "estimate_restriction" : "$params.estimate_restriction",
             "normalized_fractions" : "$params.normalized_fractions",
-            "free_water_tensor" : "$params.free_water_tensor"
+            "free_water_tensor" : "$params.free_water_tensor",
+            "pft_random_seed" : "$params.pft_random_seed",
+            "tracking_algorithm" : "$params.tracking_algorithm",
+            "streamline_compression_factor" : "$params.streamline_compression_factor",
+            "pft_seeding_strategy" : "$params.pft_seeding_strategy",
+            "pft_number_of_seeds" : "$params.pft_number_of_seeds",
+            "pft_step_size" : "$params.pft_step_size",
+            "pft_theta_max" : "$params.pft_theta_max",
+            "pft_sfthres" : "$params.pft_sfthres",
+            "pft_sfthres_init" : "$params.pft_sfthres_init",
+            "pft_min_tract_length" : "$params.pft_min_tract_length",
+            "pft_max_tract_length" : "$params.pft_max_tract_length",
+            "pft_number_of_particles" : "$params.pft_number_of_particles",
+            "pft_back_tracking_length" : "$params.pft_back_tracking_length",
+            "pft_forward_tracking_length" : "$params.pft_forward_tracking_length"
     ]
 
     engine = new groovy.text.SimpleTemplateEngine()

@@ -39,7 +39,8 @@ workflow registration_wkf {
         publish
         publish_suffix
         trans_publish_suffix
-        parameters
+        registration_parameters
+        transformation_parameters
     main:
         reg_metadata = null
         trans_metadata = null
@@ -49,12 +50,24 @@ workflow registration_wkf {
         }
         into_register = moving_channel.join(target_channel).join(target_channel.map{ [it[0], it[1][0]] })
         into_register = join_optional(into_register, mask_channel)
-        ants_register(join_optional(into_register, reg_metadata), "preprocess", additional_publish_path, publish, publish_suffix, parameters ? parameters : params.ants_registration_base_config)
+        ants_register(
+            join_optional(into_register, reg_metadata),
+            "preprocess",
+            additional_publish_path,
+            publish, publish_suffix,
+            registration_parameters ? registration_parameters : params.ants_registration_base_config
+        )
 
         if ( is_data(trans_channel) ) {
             in_ants_trans = trans_channel.join(ants_register.out.reference).join(ants_register.out.transformation)
             in_ants_trans = join_optional(in_ants_trans, bvecs_channel)
-            ants_transform(join_optional(in_ants_trans, trans_metadata), "preprocess", additional_publish_path, publish, trans_publish_suffix, params.ants_transform_base_config)
+            ants_transform(
+                join_optional(in_ants_trans, trans_metadata),
+                "preprocess",
+                additional_publish_path,
+                publish, trans_publish_suffix,
+                transformation_parameters ? transformation_parameters : params.ants_transform_base_config
+            )
             img = ants_transform.out.image
         }
         else {

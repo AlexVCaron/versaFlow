@@ -60,7 +60,8 @@ workflow t12b0_registration {
             "",
             false,
             "", "",
-            params.t1_registration_base_registration_config
+            params.t1_registration_base_registration_config,
+            null
         )
 
         ants_mask_transform_base(
@@ -93,7 +94,8 @@ workflow t12b0_registration {
                 "",
                 false,
                 "", "",
-                params.t1_registration_syn_registration_config
+                params.t1_registration_syn_registration_config,
+                null
             )
 
             ants_mask_transform_syn(

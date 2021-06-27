@@ -6,6 +6,7 @@ params.tissue_segmentation_root = "$projectDir/.data/segmentation"
 params.wm_segmentation_root = "$projectDir/.data/wm_segmentation"
 
 params.segmentation_registration_config = file("$projectDir/.config/segmentation_registration_config.py")
+params.ants_transform_segmentation_config = file("$projectDir/.config/ants_transform_segmentation_config.py")
 
 include { registration_wkf as nmt_registration_wkf; registration_wkf as wm_seg_registration_wkf } from "./preprocess.nf"
 include { atropos } from '../processes/segment.nf'
@@ -27,11 +28,13 @@ workflow segment_nmt_wkf {
             "segmentation",
             false,
             "", "",
-            params.segmentation_registration_config
+            params.segmentation_registration_config,
+            params.ants_transform_segmentation_config
         )
         atropos(t1_channel.join(mask_channel).join(nmt_registration_wkf.out.image), "segment")
     emit:
         segmentation = atropos.out.segmentation
+        volume_fractions = atropos.out.vol_fractions
         masks = atropos.out.masks
 }
 
@@ -51,7 +54,8 @@ workflow segment_wm_wkf {
             "segmentation",
             true,
             "", "",
-            params.segmentation_registration_config
+            params.segmentation_registration_config,
+            params.ants_transform_segmentation_config
         )
     emit:
         segmentation = wm_seg_registration_wkf.out.image

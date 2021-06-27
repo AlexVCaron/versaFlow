@@ -206,7 +206,8 @@ workflow preprocess_wkf {
                 "",
                 !params.register_t12b0_denoised,
                 "", "mask",
-                params.t1_mask_to_topup_b0_registration_config
+                params.t1_mask_to_topup_b0_registration_config,
+                null
             )
 
             t1_mask_convert_datatype(t1_mask_registration_wkf.out.image, "uint8", "preprocess", !params.register_t12b0_denoised, "mask", "")
@@ -237,7 +238,8 @@ workflow preprocess_wkf {
             absent_t1_mask_ids.join(b0_metadata).map{ it.subList(0, 2) + [""] },
             "",
             false, "", "",
-            params.b02t1_mask_registration_config
+            params.b02t1_mask_registration_config,
+            null
         )
 
         dwi_mask_convert_datatype(dwi_mask_registration_wkf.out.image, "uint8", "preprocess", false, "", "")
@@ -368,7 +370,7 @@ workflow preprocess_wkf {
         if ( params.generate_tissue_segmentation ) {
             empty_segmentations = seg_channel.filter{ it[1].isEmpty() }.map{ [it[0]] }
             segment_nmt_wkf(empty_segmentations.join(t1_channel), empty_segmentations.join(t1_mask_channel))
-            seg_channel = seg_channel.filter{ !it[1].isEmpty() }.mix(segment_nmt_wkf.out.masks.map{ [it[0], it.subList(1, it.size()).reverse()] })
+            seg_channel = seg_channel.filter{ !it[1].isEmpty() }.mix(segment_nmt_wkf.out.volume_fractions.map{ [it[0], it[1].reverse()] })
         }
 
         wm_segmentation = Channel.empty()
@@ -386,8 +388,8 @@ workflow preprocess_wkf {
         t1 = t1_channel
         dwi = dwi_channel
         mask = dwi_mask_channel
-        seg = seg_channel
-        wm_seg = wm_segmentation
+        segmentation = seg_channel
+        wm_segmentation = wm_segmentation
         metadata = meta_channel
 }
 
