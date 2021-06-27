@@ -4,7 +4,7 @@ Magic-Monkey Pipeline
 
 Usage
 
-nextflow run [ -resume -with-singularity <sif> -w <workdir> ] -dsl2 main.nf --data_root <root> [ additional parameters ... ]
+nextflow run [-resume] [-with-singularity <sif> | -with-docker [<docker_image> | avcaron/magic-monkey:latest]] [-w <workdir>] -dsl2 main.nf --data_root <root> [ additional parameters ... ]
 
 DESCRIPTION
 
