@@ -91,6 +91,7 @@ def display_usage () {
             "pft_random_seed" : "$params.pft_random_seed",
             "tracking_algorithm" : "$params.tracking_algorithm",
             "streamline_compression_factor" : "$params.streamline_compression_factor",
+            "pft_tracking": "$params.pft_tracking",
             "pve_threshold": "$params.pve_threshold",
             "pft_seeding_strategy" : "$params.pft_seeding_strategy",
             "pft_number_of_seeds" : "$params.pft_number_of_seeds",
