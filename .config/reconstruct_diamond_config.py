@@ -29,13 +29,9 @@ c.DiamondConfiguration.bounding_box = None
 
 c.DiamondConfiguration.estimate_b0 = False
 
-c.DiamondConfiguration.estimate_restriction = False
-
 c.DiamondConfiguration.estimate_water = True
 
 c.DiamondConfiguration.fa_lower_bound = 0.6
-
-c.DiamondConfiguration.fascicle = "diamondNCcyl"
 
 c.DiamondConfiguration.fw_md_higher_bound = 0.003
 
@@ -61,11 +57,7 @@ c.DiamondConfiguration.mose_min_fraction = 0.0
 
 c.DiamondConfiguration.mose_model = "aicu"
 
-c.DiamondConfiguration.mose_tensor = True
-
 c.DiamondConfiguration.multi_restart = False
-
-c.DiamondConfiguration.n_tensors = 3
 
 c.DiamondConfiguration.noise_model = "gaussian"
 
@@ -73,12 +65,6 @@ c.DiamondConfiguration.optimizer = "bobyqa"
 
 c.DiamondConfiguration.regularization = 1.0
 
-c.DiamondConfiguration.restriction_tensor = False
-
 c.DiamondConfiguration.splits = 8
 
-c.DiamondConfiguration.sum_fractions_to_1 = True
-
 c.DiamondConfiguration.water_diff = 0.
-
-c.DiamondConfiguration.water_tensor = False

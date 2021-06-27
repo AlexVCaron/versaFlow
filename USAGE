@@ -38,15 +38,39 @@ DESCRIPTION
 
     --resampling_resolution                 Final resampling resolution of T1 and diffusion volumes. Required when resampling is enabled
 
-OPTIONAL ARGUMENTS
+DIFFUSION ACQUISITION SPECIFICATION
+
+There is two ways of specifying the diffusion acquisition parameters for a given subject. In the case of uniform specification
+across subjects, one can use parameters in the nextflow.config file (or pass them through the command line). Those are :
+
+    --default_readout                   Default readout value to assign to datasets missing it
+    --default_multiband_factor          Default multiband factor to assign to datasets missing it. In case multiband is not used, this parameter must be 1
+    --default_is_interleaved            Specify input images as slice interleaved if not specified for a dataset [true|false]
+    --default_slicing_direction         Default slicing direction of input volumes to assign to datasets missing it [IS|SI|AP|PA|RL|LR]
+    --default_phase_direction           Default phase encoding direction to assign to datasets missing it. This value
+                                        will be automatically reversed for reverse phase images [IS|SI|AP|PA|RL|LR]
+    --default_acquisition_tensor_type   Default b-tensor shape to assign to datasets missing it [Linear|Planar|Spherical]
+
+For varying specification across subjects, one can place in the subject input path, a json file containing the information. For a subject <sub-i>,
+and a session <ses-j>, the file must be named <sub-i>_<ses-i>_[dwi|rev].json, and contain :
+
+{
+    "direction" : <phase encoding direction>,
+    "slice_direction" : <slicing direction>,
+    "readout" : <readout>,
+    "interleaved" : <false|true>,
+    "multiband_factor" : <multiband factor>
+}
+
+Optionally, one can omit the last two items and replace them by the parameter "slice_indexes", which is a list of list containing the indexes of
+the different slices acquired in order. Two examples :
+
+- An image with interleaved slices, multiband factor of 1, 10 slices : [[0], [2], [4], [6], [8], [1], [3], [5], [7], [9]]
+- An image with interleaved slices, multiband factor of 2, 10 slices : [[0, 5], [2, 7], [4, 9], [1, 6], [3, 8]]
+
+OPTIONAL ARGUMENTS [possible values] (default values)
 
 - I/O :
-    --default_readout                   Default readout value to assign to datasets missing it ($default_readout)
-    --default_multiband_factor          Default multiband factor to assign to datasets missing it ($default_multiband_factor)
-    --default_is_interleaved            Specify input images as slice interleaved if not specified for a dataset [true|false] ($default_is_interleaved)
-    --default_slicing_direction         Default slicing direction of input volumes to assign to datasets missing it ($default_slicing_direction)
-    --default_phase_direction           Default phase encoding direction to assign to datasets missing it ($default_phase_direction)
-    --default_acquisition_tensor_type   Default b-tensor shape to assign to datasets missing it [Linear|Planar|Spherical] ($default_acquisition_tensor_type)
 
     --b0_threshold                      Largest b-value to be considered as b0 ($b0_threshold)
 
@@ -86,6 +110,8 @@ OPTIONAL ARGUMENTS
         --recons_dti                    Reconstruct the diffusion tensor model [true|false] ($recons_dti)
         --recons_csd                    Reconstruct the fODF through constrained spherical deconvolution [true|false] ($recons_csd)
         --recons_diamond                Reconstruct the multi-tensor distribution through DIAMOND [true|false] ($recons_diamond)
+    - Tracking :
+        --pft_tracking                  Execute PFT tracking on reconstructed fodf ($pft_tracking)
 
 - Processing steps customization :
         --nlmeans_t1                    Use Non-local means to denoise T1 (if false, uses a basic gaussian denoising) [true|false] ($nlmeans_t1)
@@ -103,6 +129,8 @@ OPTIONAL ARGUMENTS
 
         --bet_f                         Fractional intensity threshold for FSL bet [0 > 1] ($bet_f)
 
+        --segmentation_mask_threshold   Threshold on segmentation volume fractions used to produce masks, under which the mask is set to 0 ($segmentation_mask_threshold)
+
         --msmt_odf                      Perform multi-shell, multi-tissue CSD [true|false] ($msmt_odf)
 
         --frf_fa                        When building the single-fiber response function, higher FA threshold for valid voxels ($frf_fa)
@@ -117,3 +145,25 @@ OPTIONAL ARGUMENTS
         --fodf_max_absolute_factor      Absolute thresholding factor of fODF peaks. Habitually between 1.5 and 2.0 ($fodf_max_absolute_factor)
         --fodf_relative_thr             Relative threshold on fODF peaks ($fodf_relative_thr)
         --sh_order                      Spherical harmonics order for fODF reconstruction ($sh_order)
+
+        --n_fascicles                   Maximal number of fascicles (single-fibers) for DIAMOND to estimate in each voxel ($n_fascicles)
+        --fascicle_model                Fascicle model for DIAMOND to use ($fascicle_model)
+        --model_selection_with_tensor   Make DIAMOND compute the model selection using Tensors instead of sticks [true|false] ($model_selection_with_tensor)
+        --estimate_restriction          Make DIAMOND estimate a restricted diffusion compartment over fascicles [true|false] ($estimate_restriction)
+        --normalized_fractions          Normalize fractions between compartments [true|false] ($normalized_fractions)
+        --free_water_tensor             Make DIAMOND estimate a distribution over tensors for the free water compartment [true|false] ($free_water_tensor)
+
+        --pft_random_seed               List of random seeds to use to produce a variety of tractograms ()
+        --tracking_algorithm            Type of tracking algorithm to use. Can be one or a list containing both [det|prob] ()
+        --streamline_compression_factor Compression factor to use for output tractograms. Zero leads to no compression ()
+        --pft_seeding_strategy          Seeding strategy to initialize tracking [npv|nt] ()
+        --pft_number_of_seeds           Number of seeds. With "npv", it is the number of seeds per voxels, with "nt" the total number to use ()
+        --pft_step_size                 Stepping size for the tracking algorithm in mm ()
+        --pft_theta_max                 Maximal angle between two valid tracking steps ()
+        --pft_sfthres                   Relative threshold on fodf ()
+        --pft_sfthres_init              Relative threshold on fodf for the initial tracking direction ()
+        --pft_min_tract_length          Minimal length for valid tracts in mm ()
+        --pft_max_tract_length          Maximal length for valid tracts in mm ()
+        --pft_number_of_particles       Number of particles emitted when tracking enter Map Exclude ()
+        --pft_back_tracking_length      Length of back tracking in mm ()
+        --pft_forward_tracking_length   Length of forward tracking in mm ()

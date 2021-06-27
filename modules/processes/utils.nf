@@ -12,11 +12,12 @@ process apply_mask {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_masked") }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_masked") : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img), path(mask), file(metadata)
         val(caller_name)
+        val(publish)
     output:
         tuple val(sid), path("${img.simpleName}__masked.nii.gz"), emit: image
         tuple val(sid), path("${img.simpleName}__masked_metadata.*"), optional: true, emit: metadata
@@ -31,11 +32,12 @@ process bet_mask {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_bet_mask") }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_bet_mask") : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img)
         val(caller_name)
+        val(publish)
     output:
         tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz")
     script:
@@ -155,12 +157,14 @@ process convert_float_to_integer {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image)
         val(datatype)
         val(caller_name)
+        val(publish)
+        val(publish_suffix)
         val(additional_publish_path)
     output:
         tuple val(sid), path("${image.simpleName}__uint8.nii.gz"), emit: image
@@ -211,11 +215,13 @@ process crop_image {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(mask), file(bounding_box), file(metadata)
         val(caller_name)
+        val(publish_mask)
+        val(mask_prefix)
     output:
         tuple val(sid), path("${image.simpleName}__cropped.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__bbox.pkl"), emit: bbox, optional: true
@@ -425,7 +431,7 @@ process check_odd_dimensions {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("${reverse.simpleName}") ? null : f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), file(reverse), file(rval), file(rvec), file(mask), file(metadata)

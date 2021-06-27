@@ -148,7 +148,9 @@ def merge_channels_non_blocking ( c1, c2 ) {
 }
 
 def remove_alg_suffixes ( f ) {
-    return [f.split("__")[0], extract_extension(f)].join(".")
+    name = f.split("__")
+    if (name.size() == 1) return f
+    else return [name[0], extract_extension(f)].join(".")
 }
 
 def add_suffix ( f, suffix ) {

@@ -10,11 +10,12 @@ process extract_b0 {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_b0") }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_b0") : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(metadata)
         val(caller_name)
+        val(publish)
         path(config)
     output:
         tuple val(sid), path("${dwi.simpleName}_b0.nii.gz"), emit: b0
@@ -30,11 +31,12 @@ process squash_b0 {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), path(metadata)
         val(caller_name)
+        val(publish)
         path(config)
     output:
         tuple val(sid), path("${dwi.simpleName}__b0_squashed.nii.gz"), path("${dwi.simpleName}__b0_squashed.bval"), path("${dwi.simpleName}__b0_squashed.bvec"), emit: dwi

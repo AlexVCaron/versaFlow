@@ -28,7 +28,7 @@ c.TopupConfiguration.interpolation = "spline"
 c.TopupConfiguration.klass = "magic_monkey.config.topup.TopupConfiguration"
 
 c.TopupConfiguration.passes = [{
-    "warp_resolution": 8,
+    "warp_resolution": 5.,
     "subsampling": 2,
     "blur_fwhm": 3.2,
     "n_iter": 10,
@@ -36,7 +36,7 @@ c.TopupConfiguration.passes = [{
     "minimizer": 0,
     "w_reg": 5e-3
 }, {
-    "warp_resolution": 6.4,
+    "warp_resolution": 4.,
     "subsampling": 2,
     "blur_fwhm": 2.4,
     "n_iter": 15,
@@ -44,7 +44,7 @@ c.TopupConfiguration.passes = [{
     "minimizer": 0,
     "w_reg": 1e-3
 }, {
-    "warp_resolution": 5.6,
+    "warp_resolution": 3.5,
     "subsampling": 2,
     "blur_fwhm": 1.6,
     "n_iter": 15,
@@ -52,7 +52,7 @@ c.TopupConfiguration.passes = [{
     "minimizer": 0,
     "w_reg": 1e-4
 }, {
-    "warp_resolution": 4.8,
+    "warp_resolution": 3.,
     "subsampling": 2,
     "blur_fwhm": 1.2,
     "n_iter": 40,
@@ -60,7 +60,7 @@ c.TopupConfiguration.passes = [{
     "minimizer": 0,
     "w_reg": 1.5e-5
 }, {
-    "warp_resolution": 4,
+    "warp_resolution": 2.5,
     "subsampling": 2,
     "blur_fwhm": 1.2,
     "n_iter": 40,
@@ -68,7 +68,7 @@ c.TopupConfiguration.passes = [{
     "minimizer": 0,
     "w_reg": 5e-6
 }, {
-    "warp_resolution": 2.4,
+    "warp_resolution": 1.5,
     "subsampling": 1,
     "blur_fwhm": 0.8,
     "n_iter": 50,
@@ -76,7 +76,7 @@ c.TopupConfiguration.passes = [{
     "minimizer": 1,
     "w_reg": 5e-7
 }, {
-    "warp_resolution": 1.6,
+    "warp_resolution": 1.,
     "subsampling": 1,
     "blur_fwhm": 0.4,
     "n_iter": 75,
@@ -84,7 +84,7 @@ c.TopupConfiguration.passes = [{
     "minimizer": 1,
     "w_reg": 5e-8
 }, {
-    "warp_resolution": 1.6,
+    "warp_resolution": 1.,
     "subsampling": 1,
     "blur_fwhm": 0,
     "n_iter": 100,
@@ -92,7 +92,7 @@ c.TopupConfiguration.passes = [{
     "minimizer": 1,
     "w_reg": 5e-10
 }, {
-    "warp_resolution": 1.6,
+    "warp_resolution": 16,
     "subsampling": 1,
     "blur_fwhm": 0,
     "n_iter": 200,

@@ -30,19 +30,21 @@ workflow t12b0_registration {
         t1_mask_channel
         dwi_mask_channel
         meta_channel
+        publish_mask
+        publish_t1
     main:
-        extract_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", params.t1_registration_extract_b0_config)
+        extract_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", "false", params.t1_registration_extract_b0_config)
         b0_metadata = extract_b0.out.metadata
 
         if ( !is_data(dwi_mask_channel) )
-            dwi_mask_channel = bet_mask(extract_b0.out.b0, "preprocess")
+            dwi_mask_channel = bet_mask(extract_b0.out.b0, "preprocess", "false")
 
-        apply_mask_to_b0_for_reg(extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess")
+        apply_mask_to_b0_for_reg(extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
         reg_b0_channel = apply_mask_to_b0_for_reg.out.image
 
         scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess")
 
-        apply_mask_to_t1_for_reg(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess")
+        apply_mask_to_t1_for_reg(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
         reg_t1_channel = apply_mask_to_t1_for_reg.out.image
 
         reg_t1_mask_channel = dilate_t1_mask(t1_mask_channel, 3, "preprocess")
@@ -56,11 +58,22 @@ workflow t12b0_registration {
             null,
             b0_metadata.map{ it.subList(0, 2) + [""] },
             "",
-            params.t1_registration_base_registration_config
+            false,
+            "", "",
+            params.t1_registration_base_registration_config,
+            null
         )
 
-        ants_mask_transform_base(t1_mask_channel.join(t1_base_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
-        ants_t1_transform_base(t1_channel.join(t1_base_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+        ants_mask_transform_base(
+            t1_mask_channel.join(t1_base_registration_wkf.out.transform).map { it + ["", ""] },
+            "preprocess", "", "$publish_mask", "mask",
+            params.ants_transform_base_config
+        )
+        ants_t1_transform_base(
+            t1_channel.join(t1_base_registration_wkf.out.transform).map { it + ["", ""] },
+            "preprocess", "", "$publish_t1", "",
+            params.ants_transform_base_config
+        )
 
         t1_mask_channel = ants_mask_transform_base.out.image
         t1_channel = ants_t1_transform_base.out.image
@@ -79,11 +92,22 @@ workflow t12b0_registration {
                 null,
                 b0_metadata.map{ it.subList(0, 2) + [""] },
                 "",
-                params.t1_registration_syn_registration_config
+                false,
+                "", "",
+                params.t1_registration_syn_registration_config,
+                null
             )
 
-            ants_mask_transform_syn(t1_mask_channel.join(t1_syn_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
-            ants_t1_transform_syn(t1_channel.join(t1_syn_registration_wkf.out.transform).map { it + ["", ""] }, "preprocess", "", params.ants_transform_base_config)
+            ants_mask_transform_syn(
+                t1_mask_channel.join(t1_syn_registration_wkf.out.transform).map { it + ["", ""] },
+                "preprocess", "", "$publish_mask", "mask",
+                params.ants_transform_base_config
+            )
+            ants_t1_transform_syn(
+                t1_channel.join(t1_syn_registration_wkf.out.transform).map { it + ["", ""] },
+                "preprocess", "", "$publish_t1", "",
+                params.ants_transform_base_config
+            )
 
             t1_mask_channel = ants_mask_transform_syn.out.image
             t1_channel = ants_t1_transform_syn.out.image
