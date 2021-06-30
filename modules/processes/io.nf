@@ -20,8 +20,8 @@ def metadata_from_params ( reverse ) {
     ].any{ it == null })
         error "Some default acquisition parameters are not set, but are required. Set their values in the nextflow.config file."
 
-    direction = "${params.default_phase_direction}"
-    if ( "$reverse".equals("true") ) direction = direction.reverse()
+    def direction = "${params.default_phase_direction}"
+    if ( "$reverse" == "true" ) direction = direction.reverse()
 
     margs = "--acq ${params.default_acquisition_tensor_type} --dir $direction --readout ${params.default_readout} --sd ${params.default_slicing_direction}"
     if ( params.default_is_interleaved )
