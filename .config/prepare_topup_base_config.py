@@ -92,7 +92,7 @@ c.TopupConfiguration.passes = [{
     "minimizer": 1,
     "w_reg": 5e-10
 }, {
-    "warp_resolution": 16,
+    "warp_resolution": 1.,
     "subsampling": 1,
     "blur_fwhm": 0,
     "n_iter": 200,
