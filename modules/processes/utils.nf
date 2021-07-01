@@ -8,7 +8,6 @@ params.bet_f = 0.5
 include { get_size_in_gb; remove_alg_suffixes; add_suffix } from '../functions.nf'
 
 process apply_mask {
-    memory { 4f * get_size_in_gb([img, mask]) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -28,7 +27,6 @@ process apply_mask {
 }
 
 process bet_mask {
-    memory { 4f * get_size_in_gb(img) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -76,7 +74,6 @@ process cat_datasets {
 }
 
 process split_image {
-    memory { 4f * get_size_in_gb(img) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -96,7 +93,6 @@ process split_image {
 }
 
 process join_images {
-    memory { 4f * get_size_in_gb(imgs) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -116,7 +112,6 @@ process join_images {
 }
 
 process apply_topup {
-    memory { 4f * (get_size_in_gb(dwis) + get_size_in_gb(revs)) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -135,7 +130,6 @@ process apply_topup {
 }
 
 process tournier2descoteaux_odf {
-    memory { 4f * get_size_in_gb(odfs) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -153,7 +147,6 @@ process tournier2descoteaux_odf {
 }
 
 process convert_float_to_integer {
-    memory { 4f * get_size_in_gb(image) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -175,7 +168,6 @@ process convert_float_to_integer {
 }
 
 process replicate_image {
-    memory { 4f * get_size_in_gb([img, ref_img]) }
     label "res_single_cpu"
 
     input:

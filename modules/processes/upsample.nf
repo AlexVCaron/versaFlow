@@ -46,7 +46,6 @@ process scilpy_resample {
 }
 
 process scilpy_resample_on_ref {
-    memory { 4f * get_size_in_gb([image, ref, mask]) }
     label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

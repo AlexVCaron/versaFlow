@@ -24,7 +24,6 @@ process deepbet_t1 {
 }
 
 process bet_mask {
-    memory { 4f * get_size_in_gb(img) }
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

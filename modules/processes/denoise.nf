@@ -39,7 +39,6 @@ process dwi_denoise {
 }
 
 process nlmeans_denoise {
-    memory { 4f * get_size_in_gb(image) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -67,7 +66,6 @@ process nlmeans_denoise {
 }
 
 process ants_gaussian_denoise {
-    memory { 4f * get_size_in_gb([image, mask]) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -187,8 +185,6 @@ process prepare_topup {
 }
 
 process topup {
-    memory { 4f * get_size_in_gb(b0) }
-
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -256,7 +252,6 @@ process prepare_eddy {
 }
 
 process eddy {
-    memory { 4f * get_size_in_gb([dwi, mask]) }
     label params.use_cuda ? "res_single_cpu" : params.on_hcp ? "res_full_node_override" : "res_max_cpu"
     label params.use_cuda ? "res_gpu" : ""
 
@@ -306,8 +301,6 @@ process eddy {
 }
 
 process gibbs_removal {
-    memory { 4f * get_size_in_gb(dwi) }
-
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

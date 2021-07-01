@@ -6,7 +6,6 @@ include { get_size_in_gb; remove_alg_suffixes } from '../functions.nf'
 
 
 process ants_register_dwi_repetition {
-    memory { 4f * (get_size_in_gb(target_b0) + get_size_in_gb(dwi)) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -34,7 +33,6 @@ process ants_register_dwi_repetition {
 }
 
 process ants_register_t1_repetition {
-    memory { 4f * (get_size_in_gb(ref_t1) + get_size_in_gb(t1)) }
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
