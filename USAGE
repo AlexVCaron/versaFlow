@@ -4,7 +4,7 @@ Magic-Monkey Pipeline
 
 Usage
 
-nextflow run [-resume] [-with-singularity <sif> | -with-docker [<docker_image> | avcaron/magic-monkey:latest]] [-w <workdir>] -dsl2 main.nf --data_root <root> [ additional parameters ... ]
+nextflow run [-resume] [-with-singularity <sif> | -with-docker [<docker_image> | avcaron/magic-monkey:latest]] [-w <workdir>] [-profile <profile>] -dsl2 main.nf --data_root <root> [ additional parameters ... ]
 
 DESCRIPTION
 
@@ -168,3 +168,10 @@ OPTIONAL ARGUMENTS [possible values] (default values)
         --pft_number_of_particles       Number of particles emitted when tracking enters Map Exclude ($pft_number_of_particles)
         --pft_back_tracking_length      Length of back tracking in mm ($pft_back_tracking_length)
         --pft_forward_tracking_length   Length of forward tracking in mm ($pft_forward_tracking_length)
+
+PROFILES
+
+Some computation environments require specific configurations. Those have been encapsulated in profiles :
+
+- macos : Execution on Macintosh OS
+- hcp : Execution on a cluster of Linux machines using Apache Ignite
