@@ -8,6 +8,7 @@ params.fodf_relative_thr = 0.1
 params.ventricles_center = false
 params.max_fa_ventricle = 0.1
 params.min_md_ventricle = 0.003
+params.max_dti_bvalue = 1300
 
 
 process dti_metrics {
@@ -57,13 +58,19 @@ process scil_compute_dti_fa {
             before += "scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f\n"
         }
 
+        if ( params.max_dti_bvalue ) {
+            before += "magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0\n"
+        }
+        else {
+            before += "cp $dwi dwi_for_dti.nii.gz\ncp $bval dwi_for_dti.bval\ncp $bvec dwi_for_dti.bvec"
+        }
+
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
         $before
-        magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells 1300 --keep leq --out dwi_leq_1300 --with_b0
-        scil_compute_dti_metrics.py dwi_leq_1300.nii.gz dwi_leq_1300.bval dwi_leq_1300.bvec -f --not_all $args
+        scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
         """
 }
 
@@ -96,13 +103,21 @@ process scil_dti_and_metrics {
         if ( params.verbose_outputs )
             args += " --residual ${sid}_dti_residuals.nii.gz --non-physical ${sid}_dti_non_physical.nii.gz --pulsation ${sid}_dti_pulsation.nii.gz"
 
+        before = ""
+        if ( params.max_dti_bvalue ) {
+            before += "magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0\n"
+        }
+        else {
+            before += "cp $dwi dwi_for_dti.nii.gz\ncp $bval dwi_for_dti.bval\ncp $bvec dwi_for_dti.bvec"
+        }
+
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
-        magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells 1300 --keep leq --out dwi_leq_1300 --with_b0
-        scil_compute_dti_metrics.py dwi_leq_1300.nii.gz dwi_leq_1300.bval dwi_leq_1300.bvec --mask mask4scil.nii.gz -f --not_all $args
+        $before
+        scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec --mask mask4scil.nii.gz -f --not_all $args
         """
 }
 
