@@ -7,6 +7,7 @@ params.eddy_select_gpu = true
 params.use_cuda = false
 params.eddy_force_shelled = true
 params.b0_threshold = false
+params.b0_normalization_strategy = "linear"
 
 include { get_size_in_gb; remove_alg_suffixes } from '../functions.nf'
 
@@ -163,7 +164,7 @@ process normalize_inter_b0 {
             args += " --ceil ${params.b0_threshold}"
 
         """
-        magic-monkey b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized
+        magic-monkey b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized --ref $params.b0_normalization_strategy
         $after_script
         """
 }
