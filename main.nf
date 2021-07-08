@@ -106,7 +106,8 @@ def display_usage () {
             "pft_number_of_particles" : "$params.pft_number_of_particles",
             "pft_back_tracking_length" : "$params.pft_back_tracking_length",
             "pft_forward_tracking_length" : "$params.pft_forward_tracking_length",
-            "raw_to_processed_space": "$params.raw_to_processed_space"
+            "raw_to_processed_space": "$params.raw_to_processed_space",
+            "cuda_max_parallel": "$params.cuda_max_parallel"
     ]
 
     engine = new groovy.text.SimpleTemplateEngine()

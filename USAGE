@@ -119,6 +119,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
         --eddy_with_reverse             Perform Eddy correction using reverse phase acquisition also [true|false] ($eddy_with_reverse)
         --eddy_select_gpu               Do automatic GPU selection for Eddy cuda [true|false] ($eddy_select_gpu)
                                         This is practical when running on multi-GPU architectures
+        --cuda_max_parallel             Limit number of parallel Eddy computations to prevent GPU memory busting ($cuda_max_parallel)
 
         --b0_threshold                      Largest b-value to be considered as b0 ($b0_threshold)
         --b0_normalization_strategy     Strategy to use to select which b0(s) pairs with a set of diffusion volumes when performing
