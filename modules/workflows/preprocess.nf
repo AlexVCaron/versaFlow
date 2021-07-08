@@ -152,9 +152,10 @@ workflow apply_topup_wkf {
         rev_channel
         topup_channel
         meta_channel
+        additional_publish_path
     main:
         data_channel = dwi_channel.join(rev_channel.map{ it.subList(0, 2) })
-        apply_topup(data_channel.join(topup_channel).join(meta_channel), "preprocess")
+        apply_topup(data_channel.join(topup_channel).join(meta_channel), "preprocess", additional_publish_path)
         dwi = apply_topup.out.dwi
         metadata = apply_topup.out.metadata
     emit:

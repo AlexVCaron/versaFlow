@@ -108,7 +108,9 @@ OPTIONAL ARGUMENTS [possible values] (default values)
         --recons_csd                    Reconstruct the fODF through constrained spherical deconvolution [true|false] ($recons_csd)
         --recons_diamond                Reconstruct the multi-tensor distribution through DIAMOND [true|false] ($recons_diamond)
     - Tracking :
-        --pft_tracking                  Execute PFT tracking on reconstructed fodf ($pft_tracking)
+        --pft_tracking                  Execute PFT tracking on reconstructed fodf [true|false] ($pft_tracking)
+    - Miscellaneous :
+        --raw_to_processed_space        Transform raw DWI input to processed output space, for comparison purposes [true|false] ($raw_to_processed_space)
 
 - Processing steps customization :
         --nlmeans_t1                    Use Non-local means to denoise T1 (if false, uses a basic gaussian denoising) [true|false] ($nlmeans_t1)

@@ -115,11 +115,12 @@ process apply_topup {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwis), path(bvals), path(bvecs), path(revs), path(topup_params), val(topup_prefix), path(topup_files), path(metadata)
         val(caller_name)
+        val(additional_publish_path)
     output:
         tuple val(sid), path("${sid}_dwi__topup_corrected_*.nii.gz"), path("${sid}_dwi__topup_corrected_*.bval"), path("${sid}_dwi__topup_corrected_*.bvec"), emit: dwi
         tuple val(sid), path("${sid}_dwi__topup_corrected_*_metadata.*"), optional: true, emit: metadata
@@ -207,13 +208,14 @@ process crop_image {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(mask), file(bounding_box), file(metadata)
         val(caller_name)
         val(publish_mask)
         val(mask_prefix)
+        val(additional_publish_path)
     output:
         tuple val(sid), path("${image.simpleName}__cropped.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__bbox.pkl"), emit: bbox, optional: true

@@ -105,7 +105,8 @@ def display_usage () {
             "pft_max_tract_length" : "$params.pft_max_tract_length",
             "pft_number_of_particles" : "$params.pft_number_of_particles",
             "pft_back_tracking_length" : "$params.pft_back_tracking_length",
-            "pft_forward_tracking_length" : "$params.pft_forward_tracking_length"
+            "pft_forward_tracking_length" : "$params.pft_forward_tracking_length",
+            "raw_to_processed_space": "$params.raw_to_processed_space"
     ]
 
     engine = new groovy.text.SimpleTemplateEngine()
