@@ -59,7 +59,7 @@ include {
 include {
     registration_wkf as dwi_mask_registration_wkf; registration_wkf as t1_mask_registration_wkf;
     dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; n4_denoise_wkf;
-    squash_wkf; topup_wkf; apply_topup_wkf; apply_topup_wkf as raw_apply_topup_wkf; eddy_wkf
+    squash_wkf; squash_wkf as squash_raw_wkf; topup_wkf; apply_topup_wkf; apply_topup_wkf as raw_apply_topup_wkf; eddy_wkf
 } from "../modules/workflows/preprocess.nf"
 include { t12b0_registration as mask_registration_wkf; t12b0_registration as t1_registration_wkf } from '../modules/workflows/t1_registration.nf'
 include { segment_nmt_wkf; segment_wm_wkf } from '../modules/workflows/segment.nf'
@@ -122,7 +122,7 @@ workflow preprocess_wkf {
             rev_meta_channel = fill_missing_datapoints(normalize_inter_b0.out.rev_metadata, ref_id_channel, 1, [""])
         }
 
-        squash_wkf(dwi_channel, rev_channel, meta_channel.join(rev_meta_channel))
+        squash_wkf(dwi_channel, rev_channel, meta_channel.join(rev_meta_channel), "")
         dwi_channel = squash_wkf.out.dwi
         rev_channel = squash_wkf.out.rev
         meta_channel = squash_wkf.out.metadata
@@ -181,10 +181,11 @@ workflow preprocess_wkf {
             }
 
             if ( params.raw_to_processed_space ) {
+                squash_raw_wkf(raw_dwi_channel, raw_rev_channel, raw_meta_channel.join(raw_rev_meta_channel), "raw")
                 raw_apply_topup_wkf(
-                    topup_wkf.out.topupable_indexes.join(raw_dwi_channel),
-                    topup_wkf.out.topupable_indexes.join(raw_rev_channel),
-                    topup2eddy_channel, raw_meta_channel.join(raw_rev_meta_channel).map{ [it[0], it.subList(1, it.size())] },
+                    topup_wkf.out.topupable_indexes.join(squash_raw_wkf.out.dwi),
+                    topup_wkf.out.topupable_indexes.join(squash_raw_wkf.out.rev),
+                    topup2eddy_channel, squash_raw_wkf.out.metadata.map{ [it[0], it.subList(1, it.size())] },
                     "raw"
                 )
                 raw_dwi_channel = excluded_dwi_channel.map{ [it[0]] }.join(raw_dwi_channel).mix(raw_apply_topup_wkf.out.dwi)

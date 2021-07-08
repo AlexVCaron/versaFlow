@@ -168,13 +168,14 @@ workflow squash_wkf {
         dwi_channel
         rev_channel
         metadata_channel
+        additional_publish_path
     main:
 
-        squash_dwi(dwi_channel.join(metadata_channel.map{ it.subList(0, 2) }), "preprocess", "true", params.preproc_squash_b0_config)
+        squash_dwi(dwi_channel.join(metadata_channel.map{ it.subList(0, 2) }), "preprocess", "true", params.preproc_squash_b0_config, additional_publish_path)
 
         (dwi_rev, b0_rev) = separate_b0_from_dwi(exclude_missing_datapoints(rev_channel.join(metadata_channel.map{ [it[0], it[2]] }), 1, ""))
 
-        squash_rev(dwi_rev, "preprocess", "false", params.preproc_squash_b0_config)
+        squash_rev(dwi_rev, "preprocess", "false", params.preproc_squash_b0_config, additional_publish_path)
 
         ref_id_channel = dwi_channel.map{ [it[0]] }
     emit:
