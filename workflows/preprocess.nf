@@ -182,10 +182,14 @@ workflow preprocess_wkf {
 
             if ( params.raw_to_processed_space ) {
                 squash_raw_wkf(raw_dwi_channel, raw_rev_channel, raw_meta_channel.join(raw_rev_meta_channel), "raw")
+                raw_dwi_channel = uniformize_naming(raw_dwi_channel, "raw", "false", "false")
+                raw_rev_channel = uniformize_naming(raw_rev_channel, "raw", "false", "false")
+                raw_meta_channel = uniformize_naming(meta2topup_channel, "raw_metadata", "false", "false")
+                raw_rev_meta_channel = uniformize_naming(rev_meta2topup_channel, "raw_metadata", "false", "false")
                 raw_apply_topup_wkf(
-                    topup_wkf.out.topupable_indexes.join(squash_raw_wkf.out.dwi),
-                    topup_wkf.out.topupable_indexes.join(squash_raw_wkf.out.rev),
-                    topup2eddy_channel, squash_raw_wkf.out.metadata.map{ [it[0], it.subList(1, it.size())] },
+                    topup_wkf.out.topupable_indexes.join(raw_dwi_channel),
+                    topup_wkf.out.topupable_indexes.join(raw_rev_channel),
+                    topup2eddy_channel, raw_meta_channel.join(raw_rev_meta_channel).map{ [it[0], it.subList(1, it.size())] },
                     "raw"
                 )
                 raw_dwi_channel = excluded_dwi_channel.map{ [it[0]] }.join(raw_dwi_channel).mix(raw_apply_topup_wkf.out.dwi)
