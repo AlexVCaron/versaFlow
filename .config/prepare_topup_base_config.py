@@ -30,7 +30,7 @@ c.TopupConfiguration.klass = "magic_monkey.config.topup.TopupConfiguration"
 c.TopupConfiguration.passes = [{
     "warp_resolution": 5.,
     "subsampling": 2,
-    "blur_fwhm": 3.2,
+    "blur_fwhm": 2.,
     "n_iter": 10,
     "estimate_motion": 1,
     "minimizer": 0,
@@ -38,7 +38,7 @@ c.TopupConfiguration.passes = [{
 }, {
     "warp_resolution": 4.,
     "subsampling": 2,
-    "blur_fwhm": 2.4,
+    "blur_fwhm": 1.5,
     "n_iter": 15,
     "estimate_motion": 1,
     "minimizer": 0,
@@ -46,7 +46,7 @@ c.TopupConfiguration.passes = [{
 }, {
     "warp_resolution": 3.5,
     "subsampling": 2,
-    "blur_fwhm": 1.6,
+    "blur_fwhm": 1.,
     "n_iter": 15,
     "estimate_motion": 1,
     "minimizer": 0,
@@ -54,7 +54,7 @@ c.TopupConfiguration.passes = [{
 }, {
     "warp_resolution": 3.,
     "subsampling": 2,
-    "blur_fwhm": 1.2,
+    "blur_fwhm": 0.75,
     "n_iter": 40,
     "estimate_motion": 1,
     "minimizer": 0,
@@ -62,7 +62,7 @@ c.TopupConfiguration.passes = [{
 }, {
     "warp_resolution": 2.5,
     "subsampling": 2,
-    "blur_fwhm": 1.2,
+    "blur_fwhm": 0.75,
     "n_iter": 40,
     "estimate_motion": 1,
     "minimizer": 0,
@@ -70,7 +70,7 @@ c.TopupConfiguration.passes = [{
 }, {
     "warp_resolution": 1.5,
     "subsampling": 1,
-    "blur_fwhm": 0.8,
+    "blur_fwhm": 0.5,
     "n_iter": 50,
     "estimate_motion": 0,
     "minimizer": 1,
@@ -78,7 +78,7 @@ c.TopupConfiguration.passes = [{
 }, {
     "warp_resolution": 1.,
     "subsampling": 1,
-    "blur_fwhm": 0.4,
+    "blur_fwhm": 0.25,
     "n_iter": 75,
     "estimate_motion": 0,
     "minimizer": 1,
