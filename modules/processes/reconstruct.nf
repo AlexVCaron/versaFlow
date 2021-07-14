@@ -13,6 +13,7 @@ params.model_selection_with_tensor = false
 params.estimate_restriction = false
 params.restriction_tensor = false
 params.normalized_fractions = true
+params.max_dti_bvalue = 1300
 
 process diamond {
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
@@ -124,17 +125,26 @@ process scilpy_response {
         tuple val(sid), path("${sid}_response.txt"), emit: response
     script:
         args = ""
+        before_frf = ""
         if (params.frf_radii)
             args += " --roi_radii $params.frf_radii"
         if (params.frf_center)
             args += " --roi_center ${params.frf_center.join(" ")}"
+        if (params.max_dti_bvalue)
+            before_frf += "magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_frf_shells --with_b0\n"
+        else {
+            before_frf += "cp $dwi dwi_frf_shells.nii.gz\n"
+            before_frf += "cp $bval dwi_frf_shells.bval\n"
+            before_frf += "cp $bvec dwi_frf_shells.bvec\n"
+        }
+
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
-        magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells 1500 --keep leq --out dwi_leq_1500 --with_b0
-        scil_compute_ssst_frf.py dwi_leq_1500.nii.gz dwi_leq_1500.bval dwi_leq_1500.bvec ${sid}_response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox $args
+        $before_frf
+        scil_compute_ssst_frf.py dwi_frf_shells.nii.gz dwi_frf_shells.bval dwi_frf_shells.bvec ${sid}_response.txt --mask mask4scil.nii.gz --fa $params.frf_fa --min_fa $params.frf_min_fa --min_nvox $params.frf_min_nvox $args
         """
 }
 
