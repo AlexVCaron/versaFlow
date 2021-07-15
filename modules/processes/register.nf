@@ -4,6 +4,8 @@ import java.io.File
 
 nextflow.enable.dsl=2
 
+params.random_seed = 1234
+
 
 include { remove_alg_suffixes } from '../functions.nf'
 
@@ -35,6 +37,7 @@ process ants_register {
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
+        export ANTS_RANDOM_SEED=$params.random_seed
         magic-monkey ants_registration --moving ${moving.join(",")} --target ${target.join(",")} --out ${moving[0].simpleName}__registration $mask_arg --config $config
         cp ${file(reference).name} ${moving[0].simpleName}__registration_ref.nii.gz
         cnt1=0
@@ -93,6 +96,7 @@ process ants_correct_motion {
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
+        export ANTS_RANDOM_SEED=$params.random_seed
         magic-monkey ants_motion --moving ${moving.join(",")} --target ${target.join(",")} --out ${sid}__motion_correct --config $config
         """
 }
@@ -124,6 +128,7 @@ process ants_transform {
             args += " --bvecs $bvec"
         }
         """
+        export ANTS_RANDOM_SEED=$params.random_seed
         magic-monkey ants_transform $args --out ${img.simpleName}__transformed --config $config
         """
 }

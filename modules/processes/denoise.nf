@@ -8,6 +8,7 @@ params.use_cuda = false
 params.eddy_force_shelled = true
 params.b0_threshold = false
 params.b0_normalization_strategy = "linear"
+params.random_seed = 1234
 
 include { get_size_in_gb; remove_alg_suffixes } from '../functions.nf'
 
@@ -34,6 +35,7 @@ process dwi_denoise {
             args += " -mask $mask"
 
         """
+        export MRTRIX_RNG_SEED=$params.random_seed
         dwidenoise $args $dwi dwidenoise.nii.gz
         $after_denoise
         """
@@ -87,6 +89,7 @@ process ants_gaussian_denoise {
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
+        export ANTS_RANDOM_SEED=$params.random_seed
         DenoiseImage --input-image $image --noise-model Gaussian --output [${image.simpleName}__ants_denoised.nii.gz,${image.simpleName}__ants_denoised_noise_map.nii.gz] --verbose 1 $args
         """
 }
@@ -125,6 +128,7 @@ process n4_denoise {
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
+        export ANTS_RANDOM_SEED=$params.random_seed
         magic-monkey n4 $args --out n4denoise --config $config
         $after_denoise
         """
@@ -244,11 +248,11 @@ process prepare_eddy {
 
         if ( will_gen_acqp )
             """
-            magic-monkey eddy $args --out ${prefix}__eddy --config $config
+            magic-monkey eddy $args --out ${prefix}__eddy --config $config --seed
             """
         else
             """
-            magic-monkey eddy $args --out ${prefix}__eddy --config $config && cp $topup_acqp "${prefix}__eddy_acqp.txt"
+            magic-monkey eddy $args --out ${prefix}__eddy --config $config && cp $topup_acqp "${prefix}__eddy_acqp.txt" --seed
             """
 }
 
@@ -320,6 +324,7 @@ process gibbs_removal {
         after_denoise += "cp $metadata ${dwi.simpleName}__gibbs_corrected_metadata.py"
 
     """
+    export MRTRIX_RNG_SEED=$params.random_seed
     mrdegibbs -nthreads 1 -datatype float64 $dwi gibbs_corrected.nii.gz
     $after_denoise
     """

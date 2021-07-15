@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 params.segmentation_classes = ["csf", "gm", "wm"]
 params.segmentation_mask_threshold = 1e-3
+params.random_seed = 1234
 
 include { remove_alg_suffixes } from '../functions.nf'
 
@@ -29,6 +30,7 @@ process atropos {
             i += 1
         }
         """
+        export ANTS_RANDOM_SEED=$params.random_seed
         magic-monkey seg2mask --in $segmentation --values 1,2,3,4 --labels 01,02,04,03 --out ${segmentation.simpleName}
         scil_image_math.py addition ${segmentation.simpleName}_02.nii.gz ${segmentation.simpleName}_04.nii.gz ${segmentation.simpleName}_02.nii.gz --data_type uint8 -f
         antsAtroposN4.sh -d 3 -a $t1_image -x $mask -c ${params.segmentation_classes.size()} -p ${segmentation.simpleName}_%02d.nii.gz -o ${sid}_

@@ -9,6 +9,7 @@ params.ventricles_center = false
 params.max_fa_ventricle = 0.1
 params.min_md_ventricle = 0.003
 params.max_dti_bvalue = 1300
+params.random_seed = 1234
 
 
 process dti_metrics {
@@ -26,6 +27,7 @@ process dti_metrics {
         tuple val(sid), path("${sid}_dti_metrics*.nii.gz"), emit: metrics
     script:
         """
+        export MRTRIX_RNG_SEED=$params.random_seed
         magic-monkey dti_metrics --in $input_prefix --out ${sid}_dti_metrics --config $config
         """
 }

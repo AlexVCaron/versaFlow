@@ -14,6 +14,7 @@ params.estimate_restriction = false
 params.restriction_tensor = false
 params.normalized_fractions = true
 params.max_dti_bvalue = 1300
+params.random_seed = 1234
 
 process diamond {
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
@@ -64,6 +65,7 @@ process mrtrix_dti {
             args += " --mask $mask"
 
         """
+        export MRTRIX_RNG_SEED=$params.random_seed
         magic-monkey dti $args --out ${sid}_dti --config $config
         """
 }
@@ -86,6 +88,7 @@ process response {
             args += " --mask $mask"
 
         """
+        export MRTRIX_RNG_SEED=$params.random_seed
         magic-monkey response $args --out ${sid}_response --config $config
         """
 }
@@ -108,6 +111,7 @@ process csd {
             args += " --mask $mask"
 
         """
+        export MRTRIX_RNG_SEED=$params.random_seed
         magic-monkey csd $args --out ${sid}_csd --responses ${responses.join(',')} --config $config
         """
 }
