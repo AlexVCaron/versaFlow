@@ -20,7 +20,8 @@ workflow csd_wkf {
     take:
         dwi_channel
         mask_channel
-        seg_channel
+        pvf_channel
+        safe_wm_mask_channel
     main:
         response_channel = Channel.empty()
         odfs_channel = Channel.empty()
@@ -37,13 +38,13 @@ workflow csd_wkf {
         else {
             if ( params.msmt_odf ) {
                 dwi_channel = extract_shells(dwi_channel, "reconstruct", params.extract_shell_greater_than_one_config)
-                scilpy_msmt_response(dwi_channel.join(mask_channel).join(seg_channel), "reconstruct")
+                scilpy_msmt_response(dwi_channel.join(mask_channel).join(pvf_channel), "reconstruct")
                 scilpy_msmt_csd(dwi_channel.join(scilpy_msmt_response.out.response).join(mask_channel), "reconstruct")
                 response_channel = scilpy_msmt_response.out.response
                 odfs_channel = scilpy_msmt_csd.out.odfs
             }
             else {
-                scilpy_response(dwi_channel.join(mask_channel), "reconstruct")
+                scilpy_response(dwi_channel.join(mask_channel).join(safe_wm_mask_channel), "reconstruct")
                 scilpy_csd(dwi_channel.join(scilpy_response.out.response).join(mask_channel), "reconstruct")
                 response_channel = scilpy_response.out.response
                 odfs_channel = scilpy_csd.out.odfs

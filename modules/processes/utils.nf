@@ -204,6 +204,35 @@ process check_dwi_conformity {
         """
 }
 
+process pvf_to_mask {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(wm_pvf), path(gm_pvf), path(csf_pvf), path(brain_mask)
+        val(caller_name)
+        val(additional_publish_path)
+    output:
+        tuple val(sid), path("${sid}_wm_mask.nii.gz"), emit: wm_mask
+        tuple val(sid), path("${sid}_gm_mask.nii.gz"), emit: gm_mask
+        tuple val(sid), path("${sid}_csf_mask.nii.gz"), emit: csf_mask
+        tuple val(sid), path("${sid}_safe_wm_mask.nii.gz"), emit: safe_wm_mask
+    script:
+        """
+        scil_image_math.py round $wm_pvf ${sid}_wm_mask.nii.gz --data_type uint8
+        scil_image_math.py round $gm_pvf ${sid}_gm_mask.nii.gz --data_type uint8
+        scil_image_math.py round $csf_pvf ${sid}_csf_mask.nii.gz --data_type uint8
+
+        scil_image_math.py lower_threshold_eq $csf_pvf 0.001 csf_map.nii.gz
+        scil_image_math.py dilation csf_map.nii.gz 1 csf_map.nii.gz -f --data_type uint8
+        scil_image_math.py difference ${sid}_wm_mask.nii.gz csf_map.nii.gz ${sid}_safe_wm_mask.nii.gz
+        scil_image_math.py difference ${sid}_safe_wm_mask.nii.gz ${sid}_gm_mask.nii.gz ${sid}_safe_wm_mask.nii.gz -f
+        scil_image_math.py intersection ${sid}_safe_wm_mask.nii.gz $brain_mask ${sid}_safe_wm_mask.nii.gz -f
+        """
+}
+
 process crop_image {
     label "res_single_cpu"
 

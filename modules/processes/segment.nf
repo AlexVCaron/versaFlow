@@ -3,7 +3,6 @@
 nextflow.enable.dsl=2
 
 params.segmentation_classes = ["csf", "gm", "wm"]
-params.segmentation_mask_threshold = 1e-3
 params.random_seed = 1234
 
 include { remove_alg_suffixes } from '../functions.nf'
@@ -19,14 +18,12 @@ process atropos {
         val(caller_name)
     output:
         tuple val(sid), path("${sid}_segmentation.nii.gz"), emit: segmentation
-        tuple val(sid), path("${sid}_{${params.segmentation_classes.join(',')}}_mask.nii.gz"), emit: masks
-        tuple val(sid), path("${sid}_{${params.segmentation_classes.join(',')}}_vf.nii.gz"), emit: vol_fractions
+        tuple val(sid), path("${sid}_{${params.segmentation_classes.join(',')}}_pvf.nii.gz"), emit: vol_fractions
     script:
         after_script = ""
         i = 1
         for (cl in params.segmentation_classes) {
-            after_script += "mv ${sid}_SegmentationPosteriors0${i}.nii.gz ${sid}_${cl}_vf.nii.gz\n"
-            after_script += "scil_image_math.py lower_threshold_eq ${sid}_${cl}_vf.nii.gz $params.segmentation_mask_threshold ${sid}_${cl}_mask.nii.gz --data_type uint8 -f\n"
+            after_script += "mv ${sid}_SegmentationPosteriors0${i}.nii.gz ${sid}_${cl}_pvf.nii.gz\n"
             i += 1
         }
         """

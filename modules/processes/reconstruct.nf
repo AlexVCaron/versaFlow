@@ -123,7 +123,7 @@ process scilpy_response {
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(dwi), path(bval), path(bvec), path(mask)
+        tuple val(sid), path(dwi), path(bval), path(bvec), path(mask), file(wm_mask)
         val(caller_name)
     output:
         tuple val(sid), path("${sid}_response.txt"), emit: response
@@ -141,6 +141,8 @@ process scilpy_response {
             before_frf += "cp $bval dwi_frf_shells.bval\n"
             before_frf += "cp $bvec dwi_frf_shells.bvec\n"
         }
+        if ( !wm_mask.empty() )
+            args += " --mask_wm $wm_mask"
 
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1

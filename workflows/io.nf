@@ -31,13 +31,13 @@ workflow load_dataset {
         rev_channel = rev_channel.join(rev_bval_bvec)
 
         // Load WM/GM/CSF segmentation if present
-        seg_channel = fill_missing_datapoints(
-            Channel.fromFilePairs("$root/**/*{wm,gm,csf}_mask.nii.gz", size: 3, flat: true),
+        pvf_channel = fill_missing_datapoints(
+            Channel.fromFilePairs("$root/**/*{wm,gm,csf}_pvf.nii.gz", size: 3, flat: true),
             ref_id_channel,
             1, []
         )
 
-        seg_channel = seg_channel.map{ [it[0], it.subList(1, it.size()).reverse()] }
+        pvf_channel = pvf_channel.map{ [it[0], it.subList(1, it.size()).reverse()] }
 
         // Load per subject/session DWI json metadata specification and transform
         dwi_json_channel = fill_missing_datapoints(
@@ -75,7 +75,7 @@ workflow load_dataset {
         anat = anat_channel
         anat_mask = anat_mask_channel
         rev = rev_channel
-        seg = seg_channel
+        pvf = pvf_channel
         metadata = dwi_meta_channel
         rev_metadata = rev_meta_channel
 }

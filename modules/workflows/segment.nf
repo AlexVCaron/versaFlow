@@ -11,7 +11,7 @@ params.ants_transform_segmentation_config = file("$projectDir/.config/ants_trans
 include { registration_wkf as nmt_registration_wkf; registration_wkf as wm_seg_registration_wkf } from "./preprocess.nf"
 include { atropos } from '../processes/segment.nf'
 include { scil_compute_dti_fa } from '../processes/measure.nf'
-include { prepend_sid as prepend_sid_template; prepend_sid as prepend_sid_segmentation; prepend_sid as prepend_sid_template_fa; prepend_sid as prepend_sid_wm_atlas } from '../processes/utils.nf'
+include { prepend_sid as prepend_sid_template; prepend_sid as prepend_sid_segmentation; prepend_sid as prepend_sid_template_fa; prepend_sid as prepend_sid_wm_atlas; pvf_to_mask } from '../processes/utils.nf'
 
 workflow segment_nmt_wkf {
     take:
@@ -32,10 +32,12 @@ workflow segment_nmt_wkf {
             params.ants_transform_segmentation_config
         )
         atropos(t1_channel.join(mask_channel).join(nmt_registration_wkf.out.image), "segment")
+        pvf_to_mask(atropos.out.vol_fractions.join(mask_channel))
     emit:
         segmentation = atropos.out.segmentation
         volume_fractions = atropos.out.vol_fractions
-        masks = atropos.out.masks
+        tissue_masks = pvf_to_mask.out.wm_mask.join(pvf_to_mask.out.gm_mask).join(pvf_to_mask.out.csf_mask)
+        safe_wm_mask = pvf_to_mask.out.safe_wm_mask
 }
 
 workflow segment_wm_wkf {
