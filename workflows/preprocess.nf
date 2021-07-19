@@ -439,15 +439,21 @@ workflow preprocess_wkf {
 
         seg_to_tissue_masks = pvf_channel.filter{ !it[1].isEmpty() }
         pvf_to_mask(seg_to_tissue_masks.join(dwi_mask_channel), "preprocess", "segmentation")
-        tissue_masks = pvf_to_mask.out.wm_mask.join(pvf_to_mask.out.gm_mask).join(pvf_to_mask.out.csf_mask).mix(pvf_channel.filter{ it[1].isEmpty() })
+        tissue_masks = pvf_to_mask.out.wm_mask.join(
+            pvf_to_mask.out.gm_mask
+        ).join(
+            pvf_to_mask.out.csf_mask
+        ).mix(
+            pvf_channel.filter{ it[1].isEmpty() }.map{ [it[0], "", "", ""] }
+        )
         safe_wm_mask = pvf_to_mask.out.safe_wm_mask.mix(pvf_channel.filter{ it[1].isEmpty() }.map{ [it[0], ""] })
 
         if ( params.generate_tissue_segmentation ) {
             empty_segmentations = pvf_channel.filter{ it[1].isEmpty() }.map{ [it[0]] }
             segment_nmt_wkf(empty_segmentations.join(t1_channel), empty_segmentations.join(t1_mask_channel))
             pvf_channel = pvf_channel.filter{ !it[1].isEmpty() }.mix(segment_nmt_wkf.out.volume_fractions.map{ [it[0], it[1].reverse()] })
-            tissue_masks = segment_nmt_wkf.out.tissue_masks.mix(tissue_masks.filter{ !it[1].empty() })
-            safe_wm_mask = segment_nmt_wkf.out.safe_wm_mask.mix(safe_wm_mask.filter{ !it[1].empty() })
+            tissue_masks = segment_nmt_wkf.out.tissue_masks.mix(tissue_masks.filter{ it[1] })
+            safe_wm_mask = segment_nmt_wkf.out.safe_wm_mask.mix(safe_wm_mask.filter{ it[1] })
         }
 
         wm_segmentation = Channel.empty()
