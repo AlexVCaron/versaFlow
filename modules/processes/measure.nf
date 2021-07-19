@@ -102,8 +102,9 @@ process scil_dti_and_metrics {
         def args = "--tensor ${sid}_dti_dti.nii.gz --evals ${sid}_dti_evals.nii.gz --evecs ${sid}_dti_evecs.nii.gz"
         args += " --fa ${sid}_dti_fa.nii.gz --ga ${sid}_dti_ga.nii.gz --rgb ${sid}_dti_rgb.nii.gz"
         args += " --md ${sid}_dti_md.nii.gz --ad ${sid}_dti_ad.nii.gz --rd ${sid}_dti_rd.nii.gz --mode ${sid}_dti_mode.nii.gz --norm ${sid}_dti_norm.nii.gz"
+        args += " --residuals ${sid}_dti_residuals.nii.gz"
         if ( params.verbose_outputs )
-            args += " --residual ${sid}_dti_residuals.nii.gz --non-physical ${sid}_dti_non_physical.nii.gz --pulsation ${sid}_dti_pulsation.nii.gz"
+            args += " --non-physical ${sid}_dti_non_physical.nii.gz --pulsation ${sid}_dti_pulsation.nii.gz"
 
         before = ""
         if ( params.max_dti_bvalue ) {
