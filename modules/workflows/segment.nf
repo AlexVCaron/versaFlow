@@ -32,7 +32,7 @@ workflow segment_nmt_wkf {
             params.ants_transform_segmentation_config
         )
         atropos(t1_channel.join(mask_channel).join(nmt_registration_wkf.out.image), "segment")
-        pvf_to_mask(atropos.out.vol_fractions.join(mask_channel), "segment", "segmentation")
+        pvf_to_mask(atropos.out.vol_fractions.map{ [it[0]] + it[1].reverse() }.join(mask_channel), "segment", "segmentation")
     emit:
         segmentation = atropos.out.segmentation
         volume_fractions = atropos.out.vol_fractions

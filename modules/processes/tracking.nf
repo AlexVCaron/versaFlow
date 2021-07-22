@@ -53,7 +53,7 @@ process PFT_tracking {
     output:
         tuple val(sid), path("${sid}_pft_${algo}_seed_${seed}_tracking.trk"), emit: tractogram
     script:
-        compress = params.streamline_compression_factor ? '--compress ' + params.streamline_compression_factor : ''
+        def compress = params.streamline_compression_factor ? '--compress ' + params.streamline_compression_factor : ''
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1

@@ -11,7 +11,7 @@ process scilpy_resample {
     label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> f.contains("metadata") ? null : f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("metadata") ? null : f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(mask), file(metadata)
@@ -25,7 +25,7 @@ process scilpy_resample {
         tuple val(sid), path("${mask.simpleName}__resampled.nii.gz"), optional: true, emit: mask
         tuple val(sid), path("${image.getSimpleName()}__resampled_metadata.py"), optional: true, emit: metadata
     script:
-        after_script = ""
+        def after_script = ""
         if ( !mask.empty() ) {
             after_script += "scil_resample_volume.py $mask mask_resampled.nii.gz --ref ${image.simpleName}__resampled.nii.gz --interp nn --enforce_dimensions\n"
             after_script += "scil_image_math.py round mask_resampled.nii.gz ${mask.simpleName}__resampled.nii.gz --data_type uint8 -f\n"

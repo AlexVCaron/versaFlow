@@ -20,8 +20,8 @@ process atropos {
         tuple val(sid), path("${sid}_segmentation.nii.gz"), emit: segmentation
         tuple val(sid), path("${sid}_{${params.segmentation_classes.join(',')}}_pvf.nii.gz"), emit: vol_fractions
     script:
-        after_script = ""
-        i = 1
+        def after_script = ""
+        def i = 1
         for (cl in params.segmentation_classes) {
             after_script += "mv ${sid}_SegmentationPosteriors0${i}.nii.gz ${sid}_${cl}_pvf.nii.gz\n"
             i += 1

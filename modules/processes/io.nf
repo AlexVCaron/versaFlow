@@ -20,10 +20,10 @@ def metadata_from_params ( reverse ) {
     ].any{ it == null })
         error "Some default acquisition parameters are not set, but are required. Set their values in the nextflow.config file."
 
-    direction = "${params.default_phase_direction}"
+    def direction = "${params.default_phase_direction}"
     if ( "$reverse" == "true" ) direction = direction.reverse()
 
-    margs = "--acq ${params.default_acquisition_tensor_type} --dir $direction --readout ${params.default_readout} --sd ${params.default_slicing_direction}"
+    def margs = "--acq ${params.default_acquisition_tensor_type} --dir $direction --readout ${params.default_readout} --sd ${params.default_slicing_direction}"
     if ( params.default_is_interleaved )
         margs += " --interleaved"
 
@@ -40,12 +40,12 @@ process prepare_metadata {
     output:
         tuple val(sid), path("${image.simpleName}_metadata.py")
     script:
-        args = ""
+        def args = ""
         if ( !metadata.empty() )
             args += "--json $metadata"
-        else {
+        else
             args = metadata_from_params(reverse)
-        }
+
         """
         magic-monkey metadata --in $image $args
         """

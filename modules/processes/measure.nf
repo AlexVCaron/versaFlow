@@ -54,7 +54,7 @@ process scil_compute_dti_fa {
         def remainder_threads = task.cpus - avail_threads
         def args = "--tensor ${sid}_dti_dti.nii.gz"
         args += " --fa ${sid}_dti_fa.nii.gz --md ${sid}_dti_md.nii.gz"
-        before = ""
+        def before = ""
         if ( !mask.empty() ) {
             args += " --mask $mask"
             before += "scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f\n"
@@ -102,7 +102,7 @@ process scil_dti_and_metrics {
         def args = "--tensor ${sid}_dti_dti.nii.gz --evals ${sid}_dti_evals.nii.gz --evecs ${sid}_dti_evecs.nii.gz"
         args += " --fa ${sid}_dti_fa.nii.gz --ga ${sid}_dti_ga.nii.gz --rgb ${sid}_dti_rgb.nii.gz"
         args += " --md ${sid}_dti_md.nii.gz --ad ${sid}_dti_ad.nii.gz --rd ${sid}_dti_rd.nii.gz --mode ${sid}_dti_mode.nii.gz --norm ${sid}_dti_norm.nii.gz"
-        args += " --residuals ${sid}_dti_residuals.nii.gz"
+        args += " --residual ${sid}_dti_residuals.nii.gz"
         if ( params.verbose_outputs )
             args += " --non-physical ${sid}_dti_non_physical.nii.gz --pulsation ${sid}_dti_pulsation.nii.gz"
 
@@ -161,8 +161,8 @@ process odf_metrics {
         tuple val(sid), val("${sid}_fodf_metrics"), emit: prefix
         tuple val(sid), path("${sid}_fodf_metrics*.nii.gz"), emit: metrics
     script:
-        args = ""
-        csf_f = csf_odfs.empty() ? "$wm_odfs" : "$csf_odfs"
+        def args = ""
+        def csf_f = csf_odfs.empty() ? "$wm_odfs" : "$csf_odfs"
         if ( params.ventricles_center )
             args += " --center ${ params.ventricles_center.join(' ') }"
         """

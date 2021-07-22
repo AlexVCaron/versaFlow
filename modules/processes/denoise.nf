@@ -26,11 +26,11 @@ process dwi_denoise {
         tuple val(sid), path("${dwi.simpleName}__dwidenoised.nii.gz"), emit: image
         tuple val(sid), path("${dwi.simpleName}__dwidenoised_metadata.*"), optional: true, emit: metadata
     script:
-        after_denoise = "fslmaths -dt double dwidenoise.nii.gz -thr 0 ${dwi.simpleName}__dwidenoised.nii.gz -odt double\n"
+        def after_denoise = "fslmaths -dt double dwidenoise.nii.gz -thr 0 ${dwi.simpleName}__dwidenoised.nii.gz -odt double\n"
         if ( !metadata.empty() )
             after_denoise += "cp $metadata ${dwi.simpleName}__dwidenoised_metadata.py"
 
-        args = "-nthreads $task.cpus -datatype float64"
+        def args = "-nthreads $task.cpus -datatype float64"
         if ( !mask.empty() )
             args += " -mask $mask"
 
@@ -81,7 +81,7 @@ process ants_gaussian_denoise {
         tuple val(sid), path("${image.simpleName}__ants_denoised.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__ants_denoised_metadata.*"), optional: true, emit: metadata
     script:
-        args = ""
+        def args = ""
         if ( !mask.empty() )
             args += "--mask-image $mask"
 
@@ -108,8 +108,8 @@ process n4_denoise {
         tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
     script:
-        after_denoise = ""
-        args = ""
+        def after_denoise = ""
+        def args = ""
         if ( anat.empty() )
             args += "--in $image"
         else
@@ -150,8 +150,8 @@ process normalize_inter_b0 {
         tuple val(sid), path("${dwi.simpleName}*_metadata.*"), optional: true, emit: dwi_metadata
         tuple val(sid), path("${rev_dwi.simpleName}*_metadata.*"), optional: true, emit: rev_metadata
     script:
-        args = "--in $dwi --bvals $bval"
-        after_script = ""
+        def args = "--in $dwi --bvals $bval"
+        def after_script = ""
         if ( !rev_dwi.empty() )
             args += " --rev $rev_dwi"
         if ( !rev_bval.empty() )
@@ -224,8 +224,8 @@ process prepare_eddy {
         tuple val(sid), path("${sid}*non_zero.bvec"), emit: bvec, optional: true
         tuple val(sid), path("${prefix}__eddy_metadata.*"), emit: metadata, optional: true
     script:
-        args = "--in $prefix --debug"
-        will_gen_acqp = true
+        def args = "--in $prefix --debug"
+        def will_gen_acqp = true
         if ( !topup_acqp.empty() ) {
             args += " --acqp $topup_acqp"
             will_gen_acqp = false
@@ -319,7 +319,7 @@ process gibbs_removal {
         tuple val(sid), path("${dwi.simpleName}__gibbs_corrected.nii.gz"), emit: image
         tuple val(sid), path("${dwi.simpleName}__gibbs_corrected_metadata.*"), optional: true, emit: metadata
     script:
-    after_denoise = "fslmaths -dt double gibbs_corrected.nii.gz -thr 0 ${dwi.simpleName}__gibbs_corrected.nii.gz -odt double\n"
+    def after_denoise = "fslmaths -dt double gibbs_corrected.nii.gz -thr 0 ${dwi.simpleName}__gibbs_corrected.nii.gz -odt double\n"
     if ( metadata )
         after_denoise += "cp $metadata ${dwi.simpleName}__gibbs_corrected_metadata.py"
 

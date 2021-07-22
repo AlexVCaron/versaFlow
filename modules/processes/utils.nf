@@ -61,7 +61,7 @@ process cat_datasets {
         tuple val(sid), path("${sid}_${prefix}__concatenated.bvec"), optional: true, emit: bvec
         tuple val(sid), path("${sid}_${prefix}__concatenated_metadata.*"), optional: true, emit: metadata
     script:
-        args = "--in ${imgs.join(',')}"
+        def args = "--in ${imgs.join(',')}"
 
         if ( bval.size() > 0 )
             args += " --bvals ${bval.join(',')}"
@@ -115,7 +115,7 @@ process apply_topup {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwis), path(bvals), path(bvecs), path(revs), path(topup_params), val(topup_prefix), path(topup_files), path(metadata)
@@ -151,7 +151,7 @@ process convert_float_to_integer {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image)
@@ -177,7 +177,7 @@ process replicate_image {
     output:
         tuple val(sid), path("${img.simpleName}__replicated.nii.gz"), emit: image
     script:
-        args = ""
+        def args = ""
         if ( "$idx_to_rep" )
             args += "--idx $idx_to_rep"
         """
@@ -208,7 +208,7 @@ process pvf_to_mask {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(wm_pvf), path(gm_pvf), path(csf_pvf), path(brain_mask)
@@ -237,7 +237,7 @@ process crop_image {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(mask), file(bounding_box), file(metadata)
@@ -251,10 +251,10 @@ process crop_image {
         tuple val(sid), path("${mask.simpleName}__cropped.nii.gz"), emit: mask, optional: true
         tuple val(sid), path("${image.simpleName}__cropped_metadata.py"), emit: metadata, optional: true
     script:
-        args = ""
-        img = "$image"
-        before_script = []
-        after_script = []
+        def args = ""
+        def img = "$image"
+        def before_script = []
+        def after_script = []
 
         if ( !bounding_box.empty() ) {
             args += "--input_bbox $bounding_box"
@@ -310,9 +310,9 @@ process fit_bounding_box {
     output:
         tuple val(sid), path("${image.simpleName}__bbox.pkl"), emit: bbox, optional: true
     script:
-    """
-    magic-monkey fitbox --in $image --ref $reference --pbox $bounding_box --out ${image.simpleName}__bbox
-    """
+        """
+        magic-monkey fitbox --in $image --ref $reference --pbox $bounding_box --out ${image.simpleName}__bbox
+        """
 }
 
 process average {
@@ -327,10 +327,10 @@ process average {
     output:
         tuple val(sid), path("${base_name}__averaged.nii.gz"), emit: image
     script:
-    """
-    magic-monkey concatenate --in ${images.join(",")} --out cat_images --ts
-    fslmaths cat_images.nii.gz -Tmean ${base_name}__averaged.nii.gz
-    """
+        """
+        magic-monkey concatenate --in ${images.join(",")} --out cat_images --ts
+        fslmaths cat_images.nii.gz -Tmean ${base_name}__averaged.nii.gz
+        """
 }
 
 process merge_masks {
@@ -340,10 +340,10 @@ process merge_masks {
     output:
         tuple val(sid), path("${base_name}__merged.nii.gz"), emit: mask
     script:
-    """
-    magic-monkey concatenate --in ${masks.join(",")} --out cat_images --ts
-    fslmaths cat_images.nii.gz -Tmax ${base_name}__merged.nii.gz
-    """
+        """
+        magic-monkey concatenate --in ${masks.join(",")} --out cat_images --ts
+        fslmaths cat_images.nii.gz -Tmax ${base_name}__merged.nii.gz
+        """
 }
 
 process timeseries_mean {
@@ -353,9 +353,9 @@ process timeseries_mean {
     output:
         tuple val(sid), path("${image.simpleName}__mean.nii.gz"), emit: image
     script:
-    """
-    fslmaths $image -Tmean ${image.simpleName}__mean.nii.gz
-    """
+        """
+        fslmaths $image -Tmean ${image.simpleName}__mean.nii.gz
+        """
 }
 
 process extract_shells {
@@ -370,9 +370,9 @@ process extract_shells {
     output:
         tuple val(sid), path("${dwi.simpleName}__extracted_shells.nii.gz"), path("${dwi.simpleName}__extracted_shells.bval"), path("${dwi.simpleName}__extracted_shells.bvec"), emit: dwi
     script:
-    """
-    magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config
-    """
+        """
+        magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config
+        """
 }
 
 process dilate_mask {
@@ -387,9 +387,9 @@ process dilate_mask {
     output:
         tuple val(sid), path("${mask.simpleName}__dilated.nii.gz")
     script:
-    """
-    scil_image_math.py dilation $mask $dilation_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
-    """
+        """
+        scil_image_math.py dilation $mask $dilation_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
+        """
 }
 
 process segmentation_to_binary {
@@ -408,10 +408,10 @@ process segmentation_to_binary {
         tuple val(sid), path("${segmentation.simpleName}_dgm.nii.gz"), emit: dgm_seg
         tuple val(sid), path("${segmentation.simpleName}_all_gm.nii.gz"), emit: all_gm_seg
     script:
-    """
-    magic-monkey seg2mask --in $segmentation --values 1,2,3,4 --labels csf,gm,dgm,wm --out ${segmentation.simpleName}
-    scil_image_math.py addition ${segmentation.simpleName}_gm.nii.gz ${segmentation.simpleName}_dgm.nii.gz ${segmentation.simpleName}_all_gm.nii.gz --data_type uint8 -f
-    """
+        """
+        magic-monkey seg2mask --in $segmentation --values 1,2,3,4 --labels csf,gm,dgm,wm --out ${segmentation.simpleName}
+        scil_image_math.py addition ${segmentation.simpleName}_gm.nii.gz ${segmentation.simpleName}_dgm.nii.gz ${segmentation.simpleName}_all_gm.nii.gz --data_type uint8 -f
+        """
 }
 
 process prepend_sid {
@@ -466,9 +466,9 @@ process check_odd_dimensions {
         tuple val(sid), path("${mask.simpleName}__even_dims.nii.gz"), optional: true, emit: mask
         tuple val(sid), path("*__even_dims_metadata.*"), optional: true, emit: metadata
     script:
-        args = "--strat ${params.add_odd_dimension ? "add" : "sub"}"
-        after_script = ""
-        assoc = []
+        def args = "--strat ${params.add_odd_dimension ? "add" : "sub"}"
+        def after_script = ""
+        def assoc = []
         if ( !reverse.empty() ) assoc += ["$reverse"]
         if ( !mask.empty() ) assoc += ["$mask"]
         args += " --assoc ${assoc.join(",")}"

@@ -29,6 +29,7 @@ process diamond {
     output:
         tuple val(sid), path("${sid}_diamond*.nii.gz"), emit: diamond
     script:
+        def args = ""
         if ( !mask.empty() )
             args += " --mask $mask"
         if ( params.model_selection_with_tensor )
@@ -60,7 +61,7 @@ process mrtrix_dti {
     output:
         tuple val(sid), path("${sid}_dti_dti.nii.gz"), emit: dti
     script:
-        args = "--in $dwi --bvals $bval --bvecs $bvec"
+        def args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" != "" )
             args += " --mask $mask"
 
@@ -83,7 +84,7 @@ process response {
     output:
         tuple val(sid), path("${sid}_response_*.txt"), emit: responses
     script:
-        args = "--in $dwi --bvals $bval --bvecs $bvec"
+        def args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" != "" )
             args += " --mask $mask"
 
@@ -106,7 +107,7 @@ process csd {
     output:
         tuple val(sid), path("${sid}_csd_*.nii.gz"), emit: odfs
     script:
-        args = "--in $dwi --bvals $bval --bvecs $bvec"
+        def args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" == "" )
             args += " --mask $mask"
 
@@ -128,8 +129,8 @@ process scilpy_response {
     output:
         tuple val(sid), path("${sid}_response.txt"), emit: response
     script:
-        args = ""
-        before_frf = ""
+        def args = ""
+        def before_frf = ""
         if (params.frf_radii)
             args += " --roi_radii $params.frf_radii"
         if (params.frf_center)
@@ -166,12 +167,12 @@ process scilpy_msmt_response {
     output:
     tuple val(sid), path("${sid}_wm_response.txt"), path("${sid}_gm_response.txt"), path("${sid}_csf_response.txt"), emit: response
     script:
-    args = ""
-    if (params.frf_radii)
-        args += " --roi_radii $params.frf_radii"
-    if (params.frf_center)
-        args += " --roi_center ${params.frf_center.join(" ")}"
-    """
+        def args = ""
+        if (params.frf_radii)
+            args += " --roi_radii $params.frf_radii"
+        if (params.frf_center)
+            args += " --roi_center ${params.frf_center.join(" ")}"
+        """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
@@ -214,7 +215,7 @@ process scilpy_msmt_csd {
     tuple val(sid), path("${sid}_wm_fodf.nii.gz"), path("${sid}_gm_fodf.nii.gz"), path("${sid}_csf_fodf.nii.gz"), emit: odfs
     tuple val(sid), path("${sid}_vf.nii.gz"), emit: vf
     script:
-    """
+        """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1

@@ -13,7 +13,7 @@ process ants_register {
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : f.contains("registration_warped.nii.gz") ? publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null : null }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : f.contains("registration_warped.nii.gz") ? publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(moving), path(target), val(reference), file(mask), file(metadata)
@@ -105,7 +105,7 @@ process ants_transform {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({it != null}).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img), path(ref), path(trans), file(bvec), file(metadata)
@@ -119,8 +119,8 @@ process ants_transform {
         tuple val(sid), path("${img.simpleName}__transformed.bvec"), optional: true, emit: bvec
         tuple val(sid), path("${img.simpleName}__transformed_metadata.*"), optional: true, emit: metadata
     script:
-        args = "--in $img --ref $ref"
-        trans_str = (trans instanceof Path) ? trans : trans.join(',')
+        def args = "--in $img --ref $ref"
+        def trans_str = (trans instanceof Path) ? trans : trans.join(',')
         if ( trans && (trans instanceof Path) ? !trans.empty() : !trans.isEmpty() ) {
             args += " --trans $trans_str"
         }

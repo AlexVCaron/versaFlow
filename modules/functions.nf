@@ -120,7 +120,7 @@ def sort_as_with_name ( channel, sorting_channel ) {
 }
 
 def merge_repetitions ( channel, keep_rep_key ) {
-    c = channel.map{ it ->
+    def c = channel.map{ it ->
         def sub_rep = it[0].split("_");
         [sub_rep[0], sub_rep[1..<sub_rep.size()].join("_")] + it.subList(1, it.size())
     }.groupTuple()
@@ -143,12 +143,12 @@ def interleave ( l1, l2 ) {
 }
 
 def merge_channels_non_blocking ( c1, c2 ) {
-    c3 = c1.map{ [it[0], it.subList(1, it.size())] }.join(c2.map{ [it[0], it.subList(1, it.size())] })
+    def c3 = c1.map{ [it[0], it.subList(1, it.size())] }.join(c2.map{ [it[0], it.subList(1, it.size())] })
     return c3.map{ [it[0]] + it.subList(1, 3).transpose() }
 }
 
 def remove_alg_suffixes ( f ) {
-    name = f.split("__")
+    def name = f.split("__")
     if (name.size() == 1) return f
     else return [name[0], extract_extension(f)].join(".")
 }
