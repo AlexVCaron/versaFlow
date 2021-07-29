@@ -309,7 +309,7 @@ workflow preprocess_wkf {
                 dwi_mask_channel,
                 meta_channel,
                 false,
-                false
+                true
             )
             t1_channel = t1_registration_wkf.out.t1
             ants_transform_base_t1(
