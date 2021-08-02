@@ -47,7 +47,6 @@ def display_usage () {
             "b0_threshold" : "$params.b0_threshold",
             "b0_normalization_strategy" : "$params.b0_normalization_strategy",
             "bet_f" : "$params.bet_f",
-            "segmentation_mask_threshold" : "$params.segmentation_mask_threshold ",
             "t1_intensity_normalization" : "$params.t1_intensity_normalization",
             "t1mask2dwi_registration" : "$params.t1mask2dwi_registration",
             "register_t12b0_denoised" : "$params.register_t12b0_denoised",

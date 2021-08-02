@@ -136,8 +136,6 @@ OPTIONAL ARGUMENTS [possible values] (default values)
 
         --bet_f                         Fractional intensity threshold for FSL bet [0 > 1] ($bet_f)
 
-        --segmentation_mask_threshold   Threshold on segmentation volume fractions used to produce masks, under which the mask is set to 0 ($segmentation_mask_threshold)
-
         --max_dti_bvalue                Maximum b-value used to reconstruct the DTI model ($max_dti_bvalue)
 
         --msmt_odf                      Perform multi-shell, multi-tissue CSD [true|false] ($msmt_odf)
