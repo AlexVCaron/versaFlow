@@ -419,7 +419,7 @@ workflow preprocess_wkf {
             crop_raw_dwi(raw_dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).map{ it + [""] }.join(raw_meta_channel.map{ [it[0], it.subList(1, it.size())] }), "preprocess", true, "mask", "raw")
             raw_dwi_channel = replace_dwi_file(raw_dwi_channel, crop_raw_dwi.out.image)
             raw_meta_channel = crop_raw_dwi.out.metadata
-            crop_raw_t1(raw_t1_channel.join(raw_t1_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess", false, "", "")
+            crop_raw_t1(raw_t1_channel.join(raw_t1_mask_channel).join(dwi_bbox_channel).map{ it + [""] }, "preprocess", false, "", "raw")
             raw_t1_channel = crop_raw_t1.out.image
             raw_t1_mask_channel = crop_raw_dwi.out.mask
         }
@@ -484,9 +484,11 @@ workflow t1_preprocess_wkf {
         mask_channel
     main:
         def ref_id_channel = t1_channel.map{ [it[0]] }
+        mask_channel = fill_missing_datapoints(mask_channel, ref_id_channel, 1, [""])
+
         if ( params.denoise_t1 ) {
             if ( params.nlmeans_t1 ) {
-                nlmeans_denoise(t1_channel.join(fill_missing_datapoints(mask_channel, ref_id_channel, 1, [""])).map{ it + [""] }, "preprocess", "true")
+                nlmeans_denoise(t1_channel.join(mask_channel).map{ it + [""] }, "preprocess", "true")
                 t1_channel = nlmeans_denoise.out.image
             }
             else {
@@ -496,7 +498,7 @@ workflow t1_preprocess_wkf {
         }
 
         if ( params.t1_intensity_normalization ) {
-            n4_denoise_wkf(t1_channel, Channel.empty(), Channel.empty(), Channel.empty(), params.t1_n4_normalization_config)
+            n4_denoise_wkf(t1_channel, Channel.empty(), mask_channel, Channel.empty(), params.t1_n4_normalization_config)
             t1_channel = n4_denoise_wkf.out.image
         }
 
