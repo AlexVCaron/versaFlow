@@ -42,7 +42,7 @@ workflow t12b0_registration {
         apply_mask_to_b0_for_reg(extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
         reg_b0_channel = apply_mask_to_b0_for_reg.out.image
 
-        scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess")
+        scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess", false)
 
         apply_mask_to_t1_for_reg(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
         reg_t1_channel = apply_mask_to_t1_for_reg.out.image

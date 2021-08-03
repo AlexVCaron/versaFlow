@@ -45,7 +45,7 @@ workflow segment_wm_wkf {
         dwi_channel
         mask_channel
     main:
-        scil_compute_dti_fa(dwi_channel.join(mask_channel), "segment", "segment")
+        scil_compute_dti_fa(dwi_channel.join(mask_channel), "segment", "segment", false)
         wm_seg_registration_wkf(
             scil_compute_dti_fa.out.fa.map{ [it[0], [it[1]]] },
             prepend_sid_template_fa(scil_compute_dti_fa.out.fa.map{ [it[0], file("${params.wm_segmentation_root}/wm_segmentation_fa.nii.gz")] }).map{ [it[0], [it[1]]] },

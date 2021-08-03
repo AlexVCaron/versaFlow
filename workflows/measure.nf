@@ -48,7 +48,7 @@ workflow measure_wkf {
         if ( params.recons_csd ) {
             scil_compute_dti_fa(
                 dwi_channel.join(mask_channel),
-                "preprocess", "measure"
+                "preprocess", "measure", false
             )
 
             if ( params.msmt_odf )

@@ -214,7 +214,7 @@ workflow preprocess_wkf {
             apply_mask_to_b0_for_reg(existing_t1_mask_ids.join(b0_channel).join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
             reg_b0_channel = apply_mask_to_b0_for_reg.out.image
 
-            scil_compute_dti_fa(existing_t1_mask_ids.join(topup_corrected_dwi.mix(excluded_dwi_channel)).join(dwi_mask_channel), "preprocess", "preprocess")
+            scil_compute_dti_fa(existing_t1_mask_ids.join(topup_corrected_dwi.mix(excluded_dwi_channel)).join(dwi_mask_channel), "preprocess", "preprocess", false)
 
             apply_mask_to_t1_for_reg(existing_t1_mask_ids.join(t1_channel).join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
             reg_t1_channel = apply_mask_to_t1_for_reg.out.image
