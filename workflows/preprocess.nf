@@ -351,7 +351,7 @@ workflow preprocess_wkf {
 
             if ( params.raw_to_processed_space ) {
                 ants_transform_base_raw_t1(
-                    raw_t1_channel.join(t1_channel).join(t1_registration_wkf.out.transform_base.map{ [it[0], it[2]] }).map{ it + ["", ""] },
+                    raw_t1_channel.join(t1_registration_wkf.out.transform_base).map{ it + ["", ""] },
                     "preprocess",
                     "raw",
                     "${!params.register_syn_t12b0}",
@@ -396,7 +396,7 @@ workflow preprocess_wkf {
 
                 if ( params.raw_to_processed_space ) {
                     ants_transform_syn_raw_t1(
-                        raw_t1_channel.join(t1_channel).join(t1_registration_wkf.out.transform_base.map{ [it[0], it[2]] }).map{ it + ["", ""] },
+                        raw_t1_channel.join(t1_registration_wkf.out.transform_syn).map{ it + ["", ""] },
                         "preprocess",
                         "raw",
                         "true",
