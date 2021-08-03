@@ -292,7 +292,7 @@ workflow preprocess_wkf {
                 raw_meta_channel = scilpy_resample_raw_dwi.out.metadata
 
                 scilpy_resample_raw_t1(raw_t1_channel.join(raw_t1_mask_channel).map{ it + [""] }, "preprocess", "lin", false, "", "raw")
-                raw_t1_mask_channel = scilpy_resample_raw_t1.out.image
+                raw_t1_channel = scilpy_resample_raw_t1.out.image
                 raw_t1_mask_channel = t1_mask_channel
             }
 
