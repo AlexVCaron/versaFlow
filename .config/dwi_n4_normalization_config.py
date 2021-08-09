@@ -27,13 +27,13 @@ c.N4BiasCorrectionConfiguration.bins = 200
 
 c.N4BiasCorrectionConfiguration.filter_width = 0.15
 
-c.N4BiasCorrectionConfiguration.iterations = [300, 150, 75, 50]
+c.N4BiasCorrectionConfiguration.iterations = [1000, 500, 250, 100]
 
 c.N4BiasCorrectionConfiguration.noise = 0.01
 
 c.N4BiasCorrectionConfiguration.rescale = True
 
-c.N4BiasCorrectionConfiguration.shrink = 1
+c.N4BiasCorrectionConfiguration.shrink = 4
 
 c.N4BiasCorrectionConfiguration.threshold = 1E-6
 
