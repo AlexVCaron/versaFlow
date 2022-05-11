@@ -34,16 +34,16 @@ def display_run_info () {
     log.info "mrHARDIflow pipeline"
     log.info "==================="
     log.info ""
-    log.info "Start time: $workflow.start"
+    log.info "Start time : $workflow.start"
     log.info ""
     log.info "Run parameters"
     log.info "=============="
     log.info ""
     log.info "I/O :"
-    log.info " - Input root                   : $params.data_root"
-    log.info "    - b0 threshold              : $params.b0_threshold"
-    log.info " - Output root                  : $params.output_root"
-    log.info " - Publish mode                 : $params.publish_mode"
+    log.info " - Input root      : $params.data_root"
+    log.info "    - b0 threshold : ${params.b0_threshold ? params.b0_threshold : 0}"
+    log.info " - Output root     : $params.output_root"
+    log.info " - Publish mode    : $params.publish_mode"
     log.info " - Publish all outputs ${params.publish_all ? "(enabled)" : "(disabled)"}"
     log.info " - Verbose ${params.verbose_outputs ? "(enabled)" : "(disabled)"}"
     log.info "Resources allocation :"
@@ -52,7 +52,7 @@ def display_run_info () {
         log.info "    - Auto-select GPU ${params.eddy_select_gpu ? "(enabled)" : "(disabled)"}"
         log.info "    - Max parallel GPU : $params.cuda_max_parallel"
     }
-    log.info " - Max CPU per process : $params.max_cpu_per_process"
+    log.info " - Max CPU per process : ${params.max_cpu_per_process ? params.max_cpu_per_process : params.processes}"
     log.info ""
     log.info "DWI preprocessing :"
     log.info " - Background denoising ${params.gaussian_noise_correction ? "(enabled)" : "(disabled)"}"
@@ -124,9 +124,9 @@ def display_run_info () {
     }
 
     workflow.onComplete {
-        log.info "Pipeline completed at: $workflow.complete"
-        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
-        log.info "Execution duration: $workflow.duration"
+        log.info "Pipeline completed at : $workflow.complete"
+        log.info "Execution status : ${ workflow.success ? 'OK' : 'failed' }"
+        log.info "Execution duration : $workflow.duration"
     }
 }
 
