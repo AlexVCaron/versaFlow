@@ -1,10 +1,10 @@
-Magic-Monkey Pipeline
-=====================
+mrHARDIflow
+===========
 
 
 Usage
 
-nextflow run [-resume] [-with-singularity <sif> | -with-docker [<docker_image> | avcaron/magic-monkey:latest]] [-w <workdir>] [-profile <profile>] -dsl2 main.nf --data_root <root> [ additional parameters ... ]
+nextflow run [-resume] [-with-singularity <sif> | -with-docker [<docker_image> | avcaron/mrhardi:<latest|nogpu>]] [-w <workdir>] [-profile <profile>] -dsl2 main.nf --data_root <root> [ additional parameters ... ]
 
 DESCRIPTION
 
@@ -18,13 +18,13 @@ DESCRIPTION
                                             |         |-<sub-1-tag>_<ses-1-tag>_dwi.bval
                                             |         |-<sub-1-tag>_<ses-1-tag>_dwi.bvec
                                             |         |-<sub-1-tag>_<ses-1-tag>_dwi_mask.nii.gz     (optional)
-                                            |         |-<sub-1-tag>_<ses-1-tag>_dwi.json            (optional)
+                                            |         |-<sub-1-tag>_<ses-1-tag>_dwi.json            (see below)
                                             |         |-<sub-1-tag>_<ses-1-tag>_t1.nii.gz
                                             |         |-<sub-1-tag>_<ses-1-tag>_t1_mask.nii.gz      (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_rev.nii.gz          (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_rev.bval            (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_rev.bvec            (optional)
-                                            |         |-<sub-1-tag>_<ses-1-tag>_rev.json            (optional)
+                                            |         |-<sub-1-tag>_<ses-1-tag>_rev.json            (see below)
                                             |         |-<sub-1-tag>_<ses-1-tag>_wm_mask.nii.gz      (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_gm_mask.nii.gz      (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_csf_mask.nii.gz     (optional)
@@ -36,7 +36,8 @@ DESCRIPTION
                                             |         |-<sub-1-tag>_<ses-1-tag>_dwi.nii.gz
                                             |         |- ...
 
-    --resampling_resolution                 Final resampling resolution of T1 and diffusion volumes. Required when resampling is enabled
+    --resampling_resolution                 Final resampling resolution of T1 and diffusion volumes. 
+                                            Required when resampling is enabled
 
 DIFFUSION ACQUISITION SPECIFICATION
 

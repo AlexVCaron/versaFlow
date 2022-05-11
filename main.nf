@@ -15,6 +15,7 @@ workflow {
     if (params.help) display_usage()
     else {
         validate_required_parameters()
+        display_run_info()
         dataloader = load_dataset()
         preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.pvf, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
         reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.pvf, preprocess_wkf.out.safe_wm_mask, preprocess_wkf.out.metadata)
@@ -27,6 +28,106 @@ def validate_required_parameters () {
     if ( !params.data_root ) error "Error ~ Input data root not specified, use --data_root"
     if ( params.resample_data && !params.resampling_resolution ) error "Error ~ Resampling is enabled, but resampling resolution is not defined, use --resampling_resolution"
     if ( params.pft_tracking && !params.recons_csd ) error "Error ~ CSD reconstruction is required for tracking step, use --recons_csd to enable fodf reconstruction, or disable tracking with --pft_tracking = false"
+}
+
+def display_run_info () {
+    log.info "mrHARDIflow pipeline"
+    log.info "==================="
+    log.info ""
+    log.info "Start time: $workflow.start"
+    log.info ""
+    log.info "Run parameters"
+    log.info "=============="
+    log.info ""
+    log.info "I/O :"
+    log.info " - Input root                   : $params.data_root"
+    log.info "    - b0 threshold              : $params.b0_threshold"
+    log.info " - Output root                  : $params.output_root"
+    log.info " - Publish mode                 : $params.publish_mode"
+    log.info " - Publish all outputs ${params.publish_all ? "(enabled)" : "(disabled)"}"
+    log.info " - Verbose ${params.verbose_outputs ? "(enabled)" : "(disabled)"}"
+    log.info "Resources allocation :"
+    log.info " - Use GPU ${params.use_cuda ? "(enabled)" : "(disabled)"}"
+    if (params.use_cuda) {
+        log.info "    - Auto-select GPU ${params.eddy_select_gpu ? "(enabled)" : "(disabled)"}"
+        log.info "    - Max parallel GPU : $params.cuda_max_parallel"
+    }
+    log.info " - Max CPU per process : $params.max_cpu_per_process"
+    log.info ""
+    log.info "DWI preprocessing :"
+    log.info " - Background denoising ${params.gaussian_noise_correction ? "(enabled)" : "(disabled)"}"
+    log.info " - Gibbs ringing ${params.gibbs_ringing_correction ? "(enabled)" : "(disabled)"}"
+    log.info " - B0 normalization ${params.normalize_inter_b0 ? "(enabled)" : "(disabled)"}"
+    if (params.normalize_inter_b0) {
+        log.info "    - Normalization strategy : $params.b0_normalization_strategy"
+    }
+    log.info " - Topup ${params.topup_correction ? "(enabled)" : "(disabled)"}"
+    log.info " - Eddy ${params.eddy_correction ? "(enabled)" : "(disabled)"}"
+    if (params.eddy_correction) {
+        log.info "    - DWI shells check ${params.eddy_force_shelled ? "(disabled)" : "(enabled)"}"
+        log.info "    - Use reverse phase ${params.eddy_with_reverse ? "(enabled)" : "(disabled)"}"
+    }
+    log.info " - N4 normalization ${params.dwi_intensity_normalization ? "(enabled)" : "(disabled)"}"
+    log.info "T1 preprocessing :"
+    log.info " - Background denoising ${params.denoise_t1 ? "(enabled)" : "(disabled)"}"
+    if (params.denoise_t1) {
+        log.info "    - Use nlmeans ${params.nlmeans_t1 ? "(enabled)" : "(disabled)"}"
+    }
+    log.info " - N4 normalization ${params.t1_intensity_normalization ? "(enabled)" : "(disabled)"}"
+    log.info "T1 to DWI registration :"
+    log.info " - Register T1 mask ${params.t1mask2dwi_registration ? "(enabled)" : "(disabled)"}"
+    log.info " - Register after denoising ${params.register_t12b0_denoised ? "(enabled)" : "(disabled)"}"
+    if (params.t1mask2dwi_registration || params.register_t12b0_denoised) {
+        log.info " - Use SyN deformation ${params.register_syn_t12b0 ? "(enabled)" : "(disabled)"}"
+        if (params.register_syn_t12b0) {
+            log.info "    - Use masked images ${params.register_syn_t12b0_with_mask ? "(enabled)" : "(disabled)"}"
+        }
+    }
+    log.info "Upscaling :"
+    log.info " - Resample T1 and DWI ${params.resample_data ? "(enabled)" : "(disabled)"}"
+    if (params.resample_data) {
+        log.info "    - Sequential processing ${params.force_resampling_sequential ? "(enabled)" : "(disabled)"}"
+        log.info "    - Resampling resolution : $params.resampling_resolution"
+    }
+    log.info "Segmentation :"
+    log.info " - Segment WM/GM/CSF from T1 ${params.generate_tissue_segmentation ? "(enabled)" : "(disabled)"}"
+    log.info " - Segment WM parcellation ${params.generate_tissue_segmentation ? "(enabled)" : "(disabled)"}"
+    log.info "Diffusion modeling :"
+    log.info " - DTI ${params.recons_dti ? "(enabled)" : "(disabled)"}"
+    if (params.recons_dti) {
+        log.info "    - Maximal b-value : $params.max_dti_bvalue"
+    }
+    if (params.msmt_odf) log.info " - MSMT CSD ${params.recons_csd ? "(enabled)" : "(disabled)"}"
+    else log.info " - SSST CSD ${params.recons_csd ? "(enabled)" : "(disabled)"}"
+    if (params.recons_csd) {
+        log.info "    - Compute FRF on DTI shells ${params.frf_on_dti_shell ? "(enabled)" : "(disabled)"}"
+        log.info "    - Spherical harmonics order           : $params.sh_order"
+        log.info "    - FRF - FA upper threshold            : $params.frf_fa"
+        log.info "    - FRF - FA lower threshold            : $params.frf_min_fa"
+        log.info "    - FRF - Minimal sample size           : $params.frf_min_nvox"
+        log.info "    - FRF - Search radius                 : $params.frf_radii"
+        log.info "    - FRF - Search center                 : $params.frf_center"
+        log.info "    - Ventricles - FA upper threshold     : $params.max_fa_ventricle"
+        log.info "    - Ventricles - MD lower threshold     : $params.min_md_ventricle"
+        log.info "    - Ventricles - Search center          : $params.ventricles_center"
+        log.info "    - Peak filtering - Absolute factor    : $params.fodf_max_absolute_factor"
+        log.info "    - Peak filtering - Relative threshold : $params.fodf_relative_thr"
+    }
+    log.info " - DIAMOND ${params.recons_diamond ? "(enabled)" : "(disabled)"}"
+    if (params.recons_diamond) {
+        log.info "    - Model selection on tensor ${params.model_selection_with_tensor ? "(enabled)" : "(disabled)"}"
+        log.info "    - Estimate restricted fraction ${params.estimate_restriction ? "(enabled)" : "(disabled)"}"
+        log.info "    - Estimate free water fraction ${params.free_water_tensor ? "(enabled)" : "(disabled)"}"
+        log.info "    - Normalize fractions ${params.normalized_fractions ? "(enabled)" : "(disabled)"}"
+        log.info "    - Number of fascicles : $params.n_fascicles"
+        log.info "    - Fascicle model      : $params.fascicle_model"
+    }
+
+    workflow.onComplete {
+        log.info "Pipeline completed at: $workflow.complete"
+        log.info "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+        log.info "Execution duration: $workflow.duration"
+    }
 }
 
 def display_usage () {
