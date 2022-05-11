@@ -76,6 +76,7 @@ def display_usage () {
             "frf_min_nvox" : "$params.frf_min_nvox",
             "frf_radii" : "$params.frf_radii",
             "frf_center" : "$params.frf_center",
+            "frf_on_dti_shell": "$params.frf_on_dti_shell",
             "max_fa_ventricle" : "$params.max_fa_ventricle",
             "min_md_ventricle" : "$params.min_md_ventricle",
             "ventricles_center" : "$params.ventricles_center",

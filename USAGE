@@ -140,6 +140,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
 
         --msmt_odf                      Perform multi-shell, multi-tissue CSD [true|false] ($msmt_odf)
 
+        --frf_on_dti_shell              Use the shell selected for DTI to compute the response function [true|false] ($frf_on_dti_shell)
         --frf_fa                        When building the single-fiber response function, higher FA threshold for valid voxels ($frf_fa)
         --frf_min_fa                    When building the single-fiber response function, lower FA threshold for valid voxels ($frf_min_fa)
         --frf_min_nvox                  Minimal number of voxels to consider for building the single-fiber response function ($frf_min_nvox)
