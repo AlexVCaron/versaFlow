@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 params.resampling_resolution = 1
 params.force_resampling_sequential = false
 
-include { get_size_in_gb; remove_alg_suffixes } from '../functions.nf'
+include { remove_alg_suffixes } from '../functions.nf'
 
 process scilpy_resample {
     label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"

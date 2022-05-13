@@ -27,7 +27,7 @@ use the images tagged `nogpu`.
   - Without GPU : `singularity pull library://avcaron/default/mrhardi:nogpu`
 
 - Docker : [Docker Hub](https://hub.docker.com/r/avcaron/mrhardi)
-  - Nvidia GPU : `docker pull avcaron/mrhardi:latest`
+  - Nvidia GPU  : `docker pull avcaron/mrhardi:latest`
   - Without GPU : `docker pull avcaron/mrhardi:nogpu`
 
 # Data input format

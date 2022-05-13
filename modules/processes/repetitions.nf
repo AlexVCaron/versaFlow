@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-include { get_size_in_gb; remove_alg_suffixes } from '../functions.nf'
+include { remove_alg_suffixes } from '../functions.nf'
 
 
 process ants_register_dwi_repetition {
