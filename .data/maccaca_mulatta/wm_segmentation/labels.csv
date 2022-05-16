@@ -1,0 +1,77 @@
+LabelIndex,RegionName,Abbreviation,Hemisphere
+1,Middle Cerebellar Peduncle ,MCP,N/A
+2,Pontine Crossing Tract ,PCT,N/A
+3,Genu of Corpus Callosum,GCC,N/A
+4,Body of Corpus Callosum,BCC,N/A
+5,Splenium of Corpus Callosum,SCC,N/A
+6,Fornix,FX,N/A
+7,Corticospinal Tract - Right,CST-R,R
+8,Corticospinal Tract - Left,CST-L,L
+9,Medial Lemniscus - Right,ML-R,R
+10,Medial Lemniscus - Left,ML-L,L
+11,Inferior Cerebellar Peduncle - Right,ICP-R,R
+12,Inferior Cerebellar Peduncle - Left,ICP-L,L
+13,Superior Cerebellar Peduncle - Right,SCP-R,R
+14,Superior Cerebellar Peduncle - Left,SCP-L,L
+15,Cerebral Peduncle - Right,CP-R,R
+16,Cerebral Peduncle - Left,CP-L,L
+17,Anterior Limb of the Internal Capsule - Right,ALIC-R,R
+18,Anterior Limb of the Internal Capsule - Left,ALIC-L,L
+19,Posterior Limb of the Internal Capsule - Right,PLIC-R,R
+20,Posterior Limb of the Internal Capsule - Left,PLIC-L,L
+21,Retrolenticular Limb of the Internal Capsule - Right ,RLIC-R,R
+22,Retrolenticular Limb of the Internal Capsule - Left,RLIC-L,L
+23,Anterior Corona Radiata - Right,ACR-R,R
+24,Anterior Corona Radiata - Left,ACR-L,L
+25,Superior Corona Radiata - Right,SCR-R,R
+26,Superior Corona Radiata - Left,SCR-L,L
+27,Posterior Corona Radiata - Right,PCR-R,R
+28,Posterior Corona Radiata - Left,PCR-L,L
+29,Posterior Thalamic Radiation - Right,PTR-R,R
+30,Posterior Thalamic Radiation - Left,PTR-L,L
+31,Sagittal Striatum - Right,SS-R,R
+32,Sagittal Striatum - Left,SS-L,L
+33,External Capsule - Right,EC-R,R
+34,External Capsule - Left,EC-L,L
+35,Superior Cingulum - Right,CgC-R,R
+36,Superior Cingulum - Left,CgC-L,L
+37,Perihippocampal Cingulum - Right,CgH-R,R
+38,Perihippocampal Cingulum - Left,CgH-L,L
+39,Stria Terminalus - Right,ST-R,R
+40,Stria Terminalus - Left,ST-L,L
+41,Superior Longitudinal Fasciculus - Right,SLF-R,R
+42,Superior Longitudinal Fasciculus - Left,SLF-L,L
+43,Superior Fronto-Occipital Fasciculus - Right,SFO-R,R
+44,Superior Fronto-Occipital Fasciculus - Left,SFO-L,L
+45,Uncinate Fasciculus - Right,UNC-R,R
+46,Uncinate Fasciculus - Left,UNC-L,L
+47,Tapetum - Right,TAP-R,R
+48,Tapetum - Left,TAP-L,L
+49,Anterior Commissure,AC,N/A
+50,Dorsal Prefrontal WM - Right,DPF-R,R
+51,Dorsal Prefrontal WM - Left,DPF-L,L
+52,Ventral Prefrontal WM - Right,VPF-R,R
+53,Ventral Prefrontal WM - Left,VPF-L,L
+54,Dorsal Posterior Corona Radiata - Right,DPCR-R,R
+55,Dorsal Posterior Corona Radiata - Left,DPCR-L,L
+56,Medial Longitudinal Fasciculus - Right,MLF-R,R
+57,Medial Longitudinal Fasciculus - Left,MLF-L,L
+58,Central Tegmental - Right,CTG-R,R
+59,Central Tegmental - Left,CTG-L,L
+60,Pyramidal Tracts ,PT,N/A
+61,Olivocerebellar - Right,OC-R,R
+62,Olivocerebellar - Left,OC-L,L
+63,Inferior Frontal Gyrus WM - Right,IFG-WM-R,R
+64,Inferior Frontal Gyrus WM - Left,IFG-WM-L,L
+65,Superior Temporal Gyrus WM - Right,STG-WM-R,R
+66,Superior Temporal Gyrus WM - Left,STG-WM-L,L
+67,Middle Temporal Gyrus WM - Right,MTG-WM-R,R
+68,Middle Temporal Gyrus WM - Left,MTG-WM-L,L
+69,Adjacent Thalamus WM - Right,AT-WM-R,R
+70,Adjacent Thalamus WM - Left,AT-WM-L,L
+71,Adjacent Amygdala White Matter - Right,AA-WM-R,R
+72,Adjacent Amygdala White Matter - Left,AA-WM-L,L
+73,Midbrain White Matter WM - Right,MB-WM-R,R
+74,Midbrain White Matter WM - Left,MB-WM-L,L
+75,Anterior Cingulum WM - Right,ACg-WM-R,R
+76,Anterior Cingulum WM - Left,ACg-WM-L,L

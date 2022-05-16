@@ -2,8 +2,8 @@
 
 nextflow.enable.dsl=2
 
-params.tissue_segmentation_root = "$projectDir/.data/segmentation"
-params.wm_segmentation_root = "$projectDir/.data/wm_segmentation"
+params.tissue_segmentation_root = "$projectDir/.data/macacca_mulatta/tissue_segmentation"
+params.wm_segmentation_root = "$projectDir/.data/macacca_mulatta/wm_segmentation"
 
 params.segmentation_registration_config = file("$projectDir/.config/segmentation_registration_config.py")
 params.ants_transform_segmentation_config = file("$projectDir/.config/ants_transform_segmentation_config.py")
