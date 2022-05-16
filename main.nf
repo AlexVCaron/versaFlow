@@ -93,9 +93,13 @@ def display_run_info () {
     }
     log.info "Segmentation :"
     log.info " - Segment WM/GM/CSF from T1 ${params.generate_tissue_segmentation ? "(enabled)" : "(disabled)"}"
-    log.info "     - Template directory : ${params.tissue_segmentation_root}"
+    if (params.generate_tissue_segmentation) {
+        log.info "     - Template directory : ${params.tissue_segmentation_root}"
+    }
     log.info " - Segment WM parcellation ${params.generate_wm_segmentation ? "(enabled)" : "(disabled)"}"
-    log.info "     - Atlas directory : ${params.wm_segmentation_root}"
+    if (params.generate_wm_segmentation) {
+        log.info "     - Atlas directory : ${params.wm_segmentation_root}"
+    }
     log.info "Diffusion modeling :"
     log.info " - DTI ${params.recons_dti ? "(enabled)" : "(disabled)"}"
     if (params.recons_dti) {
