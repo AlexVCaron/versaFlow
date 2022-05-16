@@ -1,10 +1,10 @@
-Magic-Monkey Pipeline
-=====================
+mrHARDIflow
+===========
 
 
 Usage
 
-nextflow run [-resume] [-with-singularity <sif> | -with-docker [<docker_image> | avcaron/magic-monkey:latest]] [-w <workdir>] [-profile <profile>] -dsl2 main.nf --data_root <root> [ additional parameters ... ]
+nextflow run [-resume] [-with-singularity <sif> | -with-docker [<docker_image> | avcaron/mrhardi:<latest|nogpu>]] [-w <workdir>] [-profile <profile>] -dsl2 main.nf --data_root <root> [ additional parameters ... ]
 
 DESCRIPTION
 
@@ -18,13 +18,13 @@ DESCRIPTION
                                             |         |-<sub-1-tag>_<ses-1-tag>_dwi.bval
                                             |         |-<sub-1-tag>_<ses-1-tag>_dwi.bvec
                                             |         |-<sub-1-tag>_<ses-1-tag>_dwi_mask.nii.gz     (optional)
-                                            |         |-<sub-1-tag>_<ses-1-tag>_dwi.json            (optional)
+                                            |         |-<sub-1-tag>_<ses-1-tag>_dwi.json            (see below)
                                             |         |-<sub-1-tag>_<ses-1-tag>_t1.nii.gz
                                             |         |-<sub-1-tag>_<ses-1-tag>_t1_mask.nii.gz      (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_rev.nii.gz          (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_rev.bval            (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_rev.bvec            (optional)
-                                            |         |-<sub-1-tag>_<ses-1-tag>_rev.json            (optional)
+                                            |         |-<sub-1-tag>_<ses-1-tag>_rev.json            (see below)
                                             |         |-<sub-1-tag>_<ses-1-tag>_wm_mask.nii.gz      (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_gm_mask.nii.gz      (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_csf_mask.nii.gz     (optional)
@@ -36,23 +36,27 @@ DESCRIPTION
                                             |         |-<sub-1-tag>_<ses-1-tag>_dwi.nii.gz
                                             |         |- ...
 
-    --resampling_resolution                 Final resampling resolution of T1 and diffusion volumes. Required when resampling is enabled
+    --resampling_resolution                 Final resampling resolution of T1 and diffusion volumes. 
+                                            Required when resampling is enabled using --resample_data.
+
+    In the case no .json files specifying the diffusion acquisition are provided with the input DWI images, the 
+    following parameters are required :
+
+    --default_readout                   Default readout value to assign to datasets missing it
+
+    --default_multiband_factor          Default multiband factor to assign to datasets missing it. In case multiband is not used, this parameter must be 1
+
+    --default_is_interleaved            Specify input images as slice interleaved if not specified for a dataset [true|false]
+
+    --default_slicing_direction         Default slicing direction of input volumes to assign to datasets missing it [IS|SI|AP|PA|RL|LR]
+
+    --default_phase_direction           Default phase encoding direction to assign to datasets missing it. This value
+                                        will be automatically reversed for reverse phase images [IS|SI|AP|PA|RL|LR]
 
 DIFFUSION ACQUISITION SPECIFICATION
 
-There is two ways of specifying the diffusion acquisition parameters for a given subject. In the case of uniform specification
-across subjects, one can use parameters in the nextflow.config file (or pass them through the command line). Those are :
-
-    --default_readout                   Default readout value to assign to datasets missing it
-    --default_multiband_factor          Default multiband factor to assign to datasets missing it. In case multiband is not used, this parameter must be 1
-    --default_is_interleaved            Specify input images as slice interleaved if not specified for a dataset [true|false]
-    --default_slicing_direction         Default slicing direction of input volumes to assign to datasets missing it [IS|SI|AP|PA|RL|LR]
-    --default_phase_direction           Default phase encoding direction to assign to datasets missing it. This value
-                                        will be automatically reversed for reverse phase images [IS|SI|AP|PA|RL|LR]
-    --default_acquisition_tensor_type   Default b-tensor shape to assign to datasets missing it [Linear|Planar|Spherical]
-
-For varying specification across subjects, one can place in the subject input path, a json file containing the information. For a subject <sub-i>,
-and a session <ses-j>, the file must be named <sub-i>_<ses-i>_[dwi|rev].json, and contain :
+The .json file supplied with each DWI volumes describes some parameters of the diffusion acquisition 
+protocol required for the pipeline to run. For a subject <sub-i> and a session <ses-j>, the file must be named <sub-i>_<ses-i>_[dwi|rev].json, and contain :
 
 {
     "direction" : <phase encoding direction>,
@@ -140,6 +144,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
 
         --msmt_odf                      Perform multi-shell, multi-tissue CSD [true|false] ($msmt_odf)
 
+        --frf_on_dti_shell              Use the shell selected for DTI to compute the response function [true|false] ($frf_on_dti_shell)
         --frf_fa                        When building the single-fiber response function, higher FA threshold for valid voxels ($frf_fa)
         --frf_min_fa                    When building the single-fiber response function, lower FA threshold for valid voxels ($frf_min_fa)
         --frf_min_nvox                  Minimal number of voxels to consider for building the single-fiber response function ($frf_min_nvox)

@@ -46,14 +46,6 @@ def expand_path( short_path ) {
     return file( short_path ).toAbsolutePath()
 }
 
-def get_size_in_gb( files ) {
-    if ( files instanceof List ) {
-        return (files.sum{ f -> f.size() / 1073741824 }).GB
-    }
-    def fs = files.size() / 1073741824
-    return (fs < 1 ? 1 : fs).GB
-}
-
 def prevent_sci_notation ( float_number ) {
     return String.format("%f", float_number)
 }

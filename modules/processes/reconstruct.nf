@@ -13,6 +13,7 @@ params.model_selection_with_tensor = false
 params.estimate_restriction = false
 params.restriction_tensor = false
 params.normalized_fractions = true
+params.frf_on_dti_shell = false
 params.max_dti_bvalue = 1300
 params.random_seed = 1234
 
@@ -135,7 +136,7 @@ process scilpy_response {
             args += " --roi_radii $params.frf_radii"
         if (params.frf_center)
             args += " --roi_center ${params.frf_center.join(" ")}"
-        if (params.max_dti_bvalue)
+        if (params.frf_on_dti_shell && params.max_dti_bvalue)
             before_frf += "magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_frf_shells --with_b0\n"
         else {
             before_frf += "cp $dwi dwi_frf_shells.nii.gz\n"

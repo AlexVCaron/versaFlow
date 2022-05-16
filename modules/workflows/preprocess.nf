@@ -238,7 +238,8 @@ workflow eddy_wkf {
         }
 
         dwi_channel = dwi_channel.join(mask_channel).join(topup_channel.map { [it[0], it[2], it[3]] })
-        eddy_in = prepare_eddy.out.config.join(prepare_eddy.out.slspec)
+        slspec_channel = fill_missing_datapoints(prepare_eddy.out.slspec, ref_id_channel, 1, "")
+        eddy_in = prepare_eddy.out.config.join(slspec_channel)
 
         eddy(eddy_in.join(dwi_channel).join(metadata_channel), "preprocess")
         check_dwi_conformity(eddy.out.dwi.join(eddy.out.bval).join(eddy.out.bvec).join(eddy.out.metadata), "fix", "preprocess")

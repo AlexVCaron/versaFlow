@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 params.add_odd_dimension = false
 params.bet_f = 0.5
 
-include { get_size_in_gb; remove_alg_suffixes; add_suffix } from '../functions.nf'
+include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 
 process apply_mask {
     label "res_single_cpu"
