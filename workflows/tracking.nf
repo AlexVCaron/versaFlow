@@ -16,19 +16,17 @@ workflow tracking_wkf {
         fodfs
         volume_fractions
     main:
-        if ( params.pft_tracking ) {
-            wm_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_wm") }] }
-            gm_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_gm") }] }
-            csf_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_csf") }] }
+        wm_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_wm") }] }
+        gm_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_gm") }] }
+        csf_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_csf") }] }
 
-            PFT_maps(wm_vf.join(gm_vf).join(csf_vf), "tracking")
-            PFT_tracking(
-                fodfs.join(PFT_maps.out.maps).join(PFT_maps.out.wm_gm_interface),
-                "tracking",
-                pft_random_seed,
-                tracking_algorithm
-            )
-        }
+        PFT_maps(wm_vf.join(gm_vf).join(csf_vf), "tracking")
+        PFT_tracking(
+            fodfs.join(PFT_maps.out.maps).join(PFT_maps.out.wm_gm_interface),
+            "tracking",
+            pft_random_seed,
+            tracking_algorithm
+        )
     emit:
         tractogram = PFT_tracking.out.tractogram
         maps = PFT_maps.out.maps
