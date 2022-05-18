@@ -64,6 +64,9 @@ following naming convention :
       - \<key\>_rev.bval *(optional, unrequired if reverse acquisition is only a b0)*
       - \<key\>_rev.bvec *(optional, unrequired if reverse acquisition is only a b0)*
       - \<key\>_rev.json *(see [here](#alternative-specification-of-the-diffusion-acquisition-parameters))*
+      - \<key\>_wm_pvf.nii.gz *(optional, will also be used to generate tissues mask)*
+      - \<key\>_gm_pvf.nii.gz *(optional, will also be used to generate tissues mask)*
+      - \<key\>_csf_pvf.nii.gz *(optional, will also be used to generate tissues mask)*
 
 ____
 

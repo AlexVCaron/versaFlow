@@ -25,9 +25,9 @@ DESCRIPTION
                                             |         |-<sub-1-tag>_<ses-1-tag>_rev.bval            (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_rev.bvec            (optional)
                                             |         |-<sub-1-tag>_<ses-1-tag>_rev.json            (see below)
-                                            |         |-<sub-1-tag>_<ses-1-tag>_wm_mask.nii.gz      (optional)
-                                            |         |-<sub-1-tag>_<ses-1-tag>_gm_mask.nii.gz      (optional)
-                                            |         |-<sub-1-tag>_<ses-1-tag>_csf_mask.nii.gz     (optional)
+                                            |         |-<sub-1-tag>_<ses-1-tag>_wm_pvf.nii.gz       (optional)
+                                            |         |-<sub-1-tag>_<ses-1-tag>_gm_pvf.nii.gz       (optional)
+                                            |         |-<sub-1-tag>_<ses-1-tag>_csf_pvf.nii.gz      (optional)
                                             |    |-<ses-2-tag>
                                             |         |-<sub-1-tag>_<ses-2-tag>_dwi.nii.gz
                                             |         |- ...
