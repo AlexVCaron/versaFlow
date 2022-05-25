@@ -14,7 +14,7 @@ params.extract_shell_greater_than_one_config = file("$projectDir/.config/extract
 
 include { diamond; mrtrix_dti; csd; response; scilpy_response; scilpy_msmt_response; scilpy_csd; scilpy_msmt_csd } from '../processes/reconstruct.nf'
 include { scil_dti_and_metrics } from '../processes/measure.nf'
-include { tournier2descoteaux_odf; extract_shells } from '../processes/utils.nf'
+include { tournier2descoteaux_odf; extract_shells; check_for_duplicates } from '../processes/utils.nf'
 
 workflow csd_wkf {
     take:
@@ -25,6 +25,10 @@ workflow csd_wkf {
     main:
         response_channel = Channel.empty()
         odfs_channel = Channel.empty()
+
+        check_for_duplicates(dwi_channel.map{ it + [""] }, "reconstruct")
+        dwi_channel = check_for_duplicates.out.dwi
+
         if ( params.reconstruct_use_mrtrix && !params.msmt_odf ) {
             response(dwi_channel.join(mask_channel), "reconstruct", params.reconstruct_mrtrix_frf_config)
             csd(response.out.responses.join(dwi_channel.join(mask_channel)), "reconstruct", params.reconstruct_mrtrix_csd_config)
