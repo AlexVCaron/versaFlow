@@ -45,7 +45,7 @@ process diamond {
             args += " --iso-tensor"
 
         """
-        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}_diamond --n $params.n_fascicles --f $params.fascicle_model --config $config
+        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}_diamond --n $params.n_fascicles --f $params.fascicle_model --p $task.cpus --config $config
         """
 }
 
