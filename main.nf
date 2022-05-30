@@ -124,9 +124,12 @@ def display_run_info () {
     log.info " - DIAMOND ${params.recons_diamond ? "(enabled)" : "(disabled)"}"
     if (params.recons_diamond) {
         log.info "    - Model selection on tensor ${params.model_selection_with_tensor ? "(enabled)" : "(disabled)"}"
-        log.info "    - Estimate restricted fraction ${params.estimate_restriction ? "(enabled)" : "(disabled)"}"
-        log.info "    - Estimate free water fraction ${params.free_water_tensor ? "(enabled)" : "(disabled)"}"
+        log.info "    - Estimate ISOR - restricted isotropic diffusion fraction ${params.estimate_restriction ? "(enabled)" : "(disabled)"}"
+        log.info "    - Estimate ICVF - hindered diffusion fraction per fascicle ${params.estimate_hindered ? "(enabled)" : "(disabled)"}"
+        log.info "    - Use FW tensor model ${params.free_water_tensor ? "(enabled)" : "(disabled)"}"
+        log.info "    - Use ISOR tensor model ${params.restriction_tensor ? "(enabled)" : "(disabled)"}"
         log.info "    - Normalize fractions ${params.normalized_fractions ? "(enabled)" : "(disabled)"}"
+        log.info "    - Optimize # parameters ${params.strict_n_parameters ? "(disabled)" : "(enabled)"}"
         log.info "    - Number of fascicles : $params.n_fascicles"
         log.info "    - Fascicle model      : $params.fascicle_model"
     }
@@ -197,8 +200,10 @@ def display_usage () {
             "fascicle_model" : "$params.fascicle_model",
             "model_selection_with_tensor" : "$params.model_selection_with_tensor",
             "estimate_restriction" : "$params.estimate_restriction",
+            "estimate_hindered": "$params.estimate_hindered",
             "normalized_fractions" : "$params.normalized_fractions",
             "free_water_tensor" : "$params.free_water_tensor",
+            "strict_n_parameters": "$params.strict_n_parameters",
             "pft_random_seed" : "$params.pft_random_seed",
             "tracking_algorithm" : "$params.tracking_algorithm",
             "streamline_compression_factor" : "$params.streamline_compression_factor",
