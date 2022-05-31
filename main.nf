@@ -19,7 +19,7 @@ workflow {
         dataloader = load_dataset()
         preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.pvf, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
         reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.pvf, preprocess_wkf.out.safe_wm_mask, preprocess_wkf.out.metadata)
-        measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.metadata)
+        measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.diamond_summary, preprocess_wkf.out.metadata)
         if ( params.pft_tracking ) {
             tracking_wkf(reconstruct_wkf.out.csd, preprocess_wkf.out.pvf)
         }

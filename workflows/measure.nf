@@ -20,6 +20,7 @@ workflow measure_wkf {
         dwi_channel
         data_channel
         mask_channel
+        diamond_summary_channel
         metadata_channel
     main:
         dti_channel = Channel.empty()
@@ -41,7 +42,11 @@ workflow measure_wkf {
             metadata = rename(metadata_channel, "diamond_metadata")
             mask_diamond = rename(mask_channel, "diamond_mask")
             prefix_channel = data_diamond.map{ [it[0], "${it[0]}_diamond"] }
-            diamond_metrics(prefix_channel.join(mask_diamond).join(data_diamond).join(metadata), "measure", params.measures_on_diamond_config)
+            diamond_metrics(
+                prefix_channel.join(mask_diamond).join(data_diamond).join(diamond_summary_channel).join(metadata),
+                "measure",
+                params.measures_on_diamond_config
+            )
             diamond_channel = diamond_metrics.out.metrics
         }
 

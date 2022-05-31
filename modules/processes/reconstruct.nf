@@ -32,6 +32,7 @@ process diamond {
         path(config)
     output:
         tuple val(sid), path("${sid}_diamond*.nii.gz"), emit: diamond
+        tuple val(sid), path("${sid}_diamond.xml"), emit: xml_summary
     script:
         def args = ""
         if ( !mask.empty() )

@@ -132,7 +132,7 @@ process diamond_metrics {
     publishDir "${params.output_root}/${sid}/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-        tuple val(sid), val(input_prefix), file(mask), path(data), path(metadata)
+        tuple val(sid), val(input_prefix), file(mask), path(data), path(xml_summary), path(metadata)
         val(caller_name)
         path(config)
     output:
@@ -144,7 +144,7 @@ process diamond_metrics {
             args += " --mask $mask"
         }
         """
-        magic-monkey diamond_metrics $args --out ${sid}_diamond_metrics --config $config
+        magic-monkey diamond_metrics $args --out ${sid}_diamond_metrics --xml-config $xml_summary --config $config
         """
 }
 
