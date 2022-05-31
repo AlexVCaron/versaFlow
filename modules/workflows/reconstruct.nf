@@ -88,4 +88,5 @@ workflow diamond_wkf {
         diamond(dwi_image.join(mask_channel).join(other_files), "reconstruct", params.reconstruct_diamond_config)
     emit:
         diamond = diamond.out.diamond
+        xml_summary = diamond.out.xml_summary
 }
