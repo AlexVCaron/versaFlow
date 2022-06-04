@@ -87,6 +87,6 @@ workflow diamond_wkf {
         other_files = dwi_channel.map{ [it[0], it.subList(2, it.size()).inject([]){ c, t -> c + t }] }
         diamond(dwi_image.join(mask_channel).join(other_files), "reconstruct", params.reconstruct_diamond_config)
     emit:
-        diamond = diamond.out.diamond
+        data = diamond.out.diamond
         xml_summary = diamond.out.xml_summary
 }

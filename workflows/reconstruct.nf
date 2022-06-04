@@ -34,7 +34,7 @@ workflow reconstruct_wkf {
 
         if ( params.recons_diamond  ) {
             diamond_wkf(dwi_channel, mask_channel)
-            out_channels += [diamond_wkf.out.diamond, diamond_wkf.out.xml_summary]
+            out_channels += [diamond_wkf.out.data, diamond_wkf.out.xml_summary]
         }
         else
             out_channels += [null, null]
