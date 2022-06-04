@@ -178,19 +178,17 @@ def separate_b0_from_dwi( data_channel ) {
 LIBRARY_ROOT_NAME = "mmy-nextflow"
 
 def get_data_path () {
-    def current_dir = file("$projectDir/main.nf").parent
+    def current_dir = file("$projectDir")
     while ( current_dir.name != LIBRARY_ROOT_NAME ) {
         current_dir = current_dir.parent
     }
-    current_dir.append(".data")
-    return current_dir.getAbsolutePath()
+    return "$current_dir/.data"
 }
 
 def get_config_path () {
-    def current_dir = file("$projectDir/main.nf").parent
+    def current_dir = file("$projectDir")
     while ( current_dir.name != LIBRARY_ROOT_NAME ) {
         current_dir = current_dir.parent
     }
-    current_dir.append(".config")
-    return current_dir.getAbsolutePath()
+    return "$current_dir/.config"
 }
