@@ -3,12 +3,12 @@
 nextflow.enable.dsl=2
 
 params.register_syn_t12b0 = true
-params.tissue_segmentation_root = "$projectDir/.data/maccaca_mulatta/tissue_segmentation"
+params.tissue_segmentation_root = "$moduleDir/../../.data/maccaca_mulatta/tissue_segmentation"
 
-params.ants_transform_base_config = file("$projectDir/.config/ants_transform_base_config.py")
-params.t1_registration_extract_b0_config = file("$projectDir/.config/extract_mean_b0_base_config.py")
-params.t1_to_template_registration_config = file("$projectDir/.config/t1_to_template_registration_config.py")
-params.b0_to_template_registration_config = file("$projectDir/.config/b0_to_template_registration_config.py")
+params.ants_transform_base_config = file("$moduleDir/../../.config/ants_transform_base_config.py")
+params.t1_registration_extract_b0_config = file("$moduleDir/../../.config/extract_mean_b0_base_config.py")
+params.t1_to_template_registration_config = file("$moduleDir/../../.config/t1_to_template_registration_config.py")
+params.b0_to_template_registration_config = file("$moduleDir/../../.config/b0_to_template_registration_config.py")
 
 include {
     extract_b0;
@@ -42,13 +42,13 @@ workflow t12b0_registration {
         publish_t1
     main:
         extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
-        apply_mask_to_b0_for_reg(extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
-        apply_mask_to_t1_for_reg(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         if ( !is_data(dwi_mask_channel) )
             dwi_mask_channel = bet_mask(extract_b0.out.b0, "preprocess", "false")
 
-        compute_powder_average(dwi_channel.subList(0, 3).join(dwi_mask_channel), "preprocess")
+        apply_mask_to_b0_for_reg(extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
+        apply_mask_to_t1_for_reg(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
+        compute_powder_average(dwi_channel.map{ it.subList(0, 3) }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
         scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess", false)
 
         b0_metadata = extract_b0.out.metadata
@@ -71,6 +71,7 @@ workflow t12b0_registration {
             "",
             "",
             params.t1_to_template_registration_config,
+            params.ants_transform_base_config
         )
 
         b0_to_template_registration_wkf(
@@ -85,6 +86,7 @@ workflow t12b0_registration {
             "",
             "",
             params.b0_to_template_registration_config,
+            params.ants_transform_base_config
         )
 
         ants_transform_t1_to_b0(

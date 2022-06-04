@@ -16,9 +16,8 @@ process compute_powder_average {
         tuple val(sid), path(dwi), path(bval), file(mask), file(metadata)
         val(caller_name)
         val(publish)
-        path(config)
     output:
-        tuple val(sid), path("${dwi.simpleName}_pd_avg.nii.gz"), emit: pd_avg
+        tuple val(sid), path("${dwi.simpleName}_pd_avg.nii.gz"), emit: image
         tuple val(sid), path("${dwi.simpleName}_pd_avg_metadata.*"), optional: true, emit: metadata
     script:
         def after_script = ""
