@@ -60,8 +60,8 @@ workflow t12b0_registration {
         template_channel = prepend_sid_template(t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_t1.nii.gz")] }).map{ [it[0], [it[1]]] }
 
         t1_to_template_registration_wkf(
-            moving_channel,
             template_channel,
+            moving_channel,
             t1_mask_channel,
             null,
             null,
@@ -75,8 +75,8 @@ workflow t12b0_registration {
         )
 
         b0_to_template_registration_wkf(
-            target_channel,
             template_channel,
+            target_channel,
             null,
             null,
             null,
