@@ -2,14 +2,6 @@
 
 nextflow.enable.dsl=2
 
-params.register_syn_t12b0 = true
-params.tissue_segmentation_root = "$moduleDir/../../.data/maccaca_mulatta/tissue_segmentation"
-
-params.ants_transform_base_config = file("$moduleDir/../../.config/ants_transform_base_config.py")
-params.t1_registration_extract_b0_config = file("$moduleDir/../../.config/extract_mean_b0_base_config.py")
-params.t1_to_template_registration_config = file("$moduleDir/../../.config/t1_to_template_registration_config.py")
-params.b0_to_template_registration_config = file("$moduleDir/../../.config/b0_to_template_registration_config.py")
-
 include {
     extract_b0;
     compute_powder_average
@@ -30,6 +22,17 @@ include {
     prepend_sid as prepend_sid_template;
     bet_mask
 } from '../processes/utils.nf'
+include {
+    get_data_path; get_config_path
+} from "../functions.nf"
+
+params.register_syn_t12b0 = true
+params.tissue_segmentation_root = "${get_data_path()}/maccaca_mulatta/tissue_segmentation"
+
+params.ants_transform_base_config = file("${get_config_path()}/ants_transform_base_config.py")
+params.t1_registration_extract_b0_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
+params.t1_to_template_registration_config = file("${get_config_path()}/t1_to_template_registration_config.py")
+params.b0_to_template_registration_config = file("${get_config_path()}/b0_to_template_registration_config.py")
 
 workflow t12b0_registration {
     take:

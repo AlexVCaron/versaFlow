@@ -1,3 +1,7 @@
+#!/usr/bin/env nextflow
+
+nextflow.enable.dsl=2
+
 params.data_root = false
 
 include { t12b0_registration } from "../modules/workflows/t1_registration.nf"

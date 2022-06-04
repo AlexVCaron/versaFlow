@@ -174,3 +174,23 @@ def exclude_missing_datapoints( data_channel, filter_index, missing_value ) {
 def separate_b0_from_dwi( data_channel ) {
     return [exclude_missing_datapoints(data_channel, 2, ""), filter_datapoints(data_channel, { it[2] == "" })]
 }
+
+LIBRARY_ROOT_NAME = "mmy-nextflow"
+
+def get_data_path () {
+    def current_file = file("SprojectDir")
+    while ( current_file.name != LIBRARY_ROOT_NAME ) {
+        current_file = current_file.parent
+    }
+    current_file.append(".data")
+    return current_file.getAbsolutePath()
+}
+
+def get_config_path () {
+    def current_file = file("SprojectDir")
+    while ( current_file.name != LIBRARY_ROOT_NAME ) {
+        current_file = current_file.parent
+    }
+    current_file.append(".config")
+    return current_file.getAbsolutePath()
+}
