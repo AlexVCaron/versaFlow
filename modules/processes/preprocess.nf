@@ -6,6 +6,32 @@ params.b0_threshold = false
 
 include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 
+process compute_powder_average {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_b0") : null }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(dwi), path(bval), file(mask), file(metadata)
+        val(caller_name)
+        val(publish)
+        path(config)
+    output:
+        tuple val(sid), path("${dwi.simpleName}_pd_avg.nii.gz"), emit: pd_avg
+        tuple val(sid), path("${dwi.simpleName}_pd_avg_metadata.*"), optional: true, emit: metadata
+    script:
+        def after_script = ""
+        if (!metadata.empty()) {
+            after_script += "cp $metadata ${dwi.simpleName}_pd_avg_metadata.py"
+        }
+        """
+        scil_compute_powder_average.py $dwi $bval ${dwi.simpleName}_pd_avg.nii.gz ${mask.empty() ? "" : "--mask $mask"}
+        $after_script
+        """
+
+}
+
 process extract_b0 {
     label "res_single_cpu"
 
@@ -13,7 +39,7 @@ process extract_b0 {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_b0") : null }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(dwi), path(bval), path(metadata)
+        tuple val(sid), path(dwi), path(bval), file(metadata)
         val(caller_name)
         val(publish)
         path(config)

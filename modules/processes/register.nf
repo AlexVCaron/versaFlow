@@ -25,6 +25,7 @@ process ants_register {
     output:
         tuple val(sid), path("${moving[0].simpleName}__registration_ref.nii.gz"), emit: reference
         tuple val(sid), path("${moving[0].simpleName}__[A-Z]_registration_*.*"), emit: transformation
+        tuple val(sid), path("${moving[0].simpleName}__[A-Z]_inv_registration_*.*"), emit: inverse_transformation
         tuple val(sid), path("${moving[0].simpleName}__registration_warped.nii.gz"), optional: true, emit: image
         tuple val(sid), path("${moving[0].simpleName}__registration_warped_metadata.*"), optional: true, emit: metadata
     script:
@@ -45,18 +46,21 @@ process ants_register {
         while true
         do
             found=false
+            warp_found=false
             if [ -f ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ]
             then
                 printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
                 (( ++cnt2 ))
-                mv ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ${moving[0].simpleName}__\${letter}_registration_rigid.mat
+                cp ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ${moving[0].simpleName}__\${letter}_registration_rigid.mat
+                cp ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ${moving[0].simpleName}__\${letter}_inv_registration_rigid.mat
                 found=true
             fi
             if [ -f ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ]
             then
                 printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
                 (( ++cnt2 ))
-                mv ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ${moving[0].simpleName}__\${letter}_registration_affine.mat
+                cp ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ${moving[0].simpleName}__\${letter}_registration_affine.mat
+                cp ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ${moving[0].simpleName}__\${letter}_inv_registration_affine.mat
                 found=true
             fi
             if [ -f ${moving[0].simpleName}__registration\${cnt1}Warp.nii.gz ]
@@ -64,7 +68,8 @@ process ants_register {
                 printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
                 (( ++cnt2 ))
                 mv ${moving[0].simpleName}__registration\${cnt1}Warp.nii.gz ${moving[0].simpleName}__\${letter}_registration_syn.nii.gz
-                found=true
+                mv ${moving[0].simpleName}__registration\${cnt1}InverseWarp.nii.gz ${moving[0].simpleName}__\${letter}_inv_registration_syn_inverse.nii.gz
+                warp_found=true
             fi
             
             if \$found
