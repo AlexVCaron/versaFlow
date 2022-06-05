@@ -33,6 +33,8 @@ params.ants_transform_base_config = file("${get_config_path()}/ants_transform_ba
 params.t1_registration_extract_b0_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
 params.t1_to_template_registration_config = file("${get_config_path()}/t1_to_template_registration_config.py")
 params.b0_to_template_registration_config = file("${get_config_path()}/b0_to_template_registration_config.py")
+params.t1_to_template_registration_quick_config = file("${get_config_path()}/t1_to_template_registration_quick_config.py")
+params.b0_to_template_registration_quick_config = file("${get_config_path()}/b0_to_template_registration_quick_config.py")
 
 workflow t12b0_registration {
     take:
@@ -43,6 +45,7 @@ workflow t12b0_registration {
         meta_channel
         publish_mask
         publish_t1
+        use_quick
     main:
         extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
 
@@ -73,7 +76,7 @@ workflow t12b0_registration {
             false,
             "",
             "",
-            params.t1_to_template_registration_config,
+            use_quick ? params.t1_to_template_registration_quick_config : params.t1_to_template_registration_config,
             params.ants_transform_base_config
         )
 
@@ -88,7 +91,7 @@ workflow t12b0_registration {
             false,
             "",
             "",
-            params.b0_to_template_registration_config,
+            use_quick ? params.b0_to_template_registration_quick_config : params.b0_to_template_registration_config,
             params.ants_transform_base_config
         )
 

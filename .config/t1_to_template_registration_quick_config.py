@@ -37,8 +37,8 @@ c.AntsConfiguration.match_histogram = True
 
 c.AntsConfiguration.passes = [{
     "conv_eps": 1e-6,
-    "conv_max_iter": [400, 200, 100, 50],
-    "conv_win": 10,
+    "conv_max_iter": [400, 200, 100],
+    "conv_win": 30,
     "grad_step": 0.2,
     "klass": "magic_monkey.traits.ants.AntsRigid",
     "metrics": [
@@ -49,26 +49,24 @@ c.AntsConfiguration.passes = [{
                 1.0,
                 64,
                 "Regular",
-                0.6
+                0.5
             ],
             "klass": "magic_monkey.traits.ants.MetricMI"
         }
     ],
     "shrinks": [
+        12,
         8,
-        4,
-        2,
-        1
+        4
     ],
     "smoothing": [
-        3,
-        2,
-        1,
-        0
+        6,
+        4,
+        2
     ]
 }, {
-    "conv_eps": 1e-7,
-    "conv_max_iter": [500, 300, 150, 75],
+    "conv_eps": 1e-6,
+    "conv_max_iter": [500, 300, 200, 100],
     "conv_win": 20,
     "grad_step": 0.2,
     "klass": "magic_monkey.traits.ants.AntsAffine",
@@ -86,21 +84,21 @@ c.AntsConfiguration.passes = [{
         }
     ],
     "shrinks": [
+        12,
         8,
+        4,
+        2
+    ],
+    "smoothing": [
+        6,
         4,
         2,
         1
-    ],
-    "smoothing": [
-        3,
-        2,
-        1,
-        0
     ]
 }, {
-    "conv_eps": 1e-8,
-    "conv_max_iter": [1000, 500, 200],
-    "conv_win": 20,
+    "conv_eps": 1e-7,
+    "conv_max_iter": [200, 200, 100, 100, 10],
+    "conv_win": 10,
     "grad_step": 0.3,
     "var_penality": 0,
     "var_total": 3,
@@ -119,11 +117,15 @@ c.AntsConfiguration.passes = [{
         }
     ],
     "shrinks": [
+        12,
+        8,
         4,
         2,
         1
     ],
     "smoothing": [
+        6,
+        4,
         2,
         1,
         0
