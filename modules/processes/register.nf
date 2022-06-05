@@ -39,7 +39,14 @@ process ants_register {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
-        magic-monkey ants_registration --moving ${moving.join(",")} --target ${target.join(",")} --out ${moving[0].simpleName}__registration $mask_arg --config $config
+
+        magic-monkey ants_registration \
+            --moving ${moving.join(",")} \
+            --target ${target.join(",")} \
+            --out ${moving[0].simpleName}__registration $mask_arg \
+            ${params.verbose_outputs ? "--verbose" : ""} \
+            --config $config
+
         cp ${file(reference).name} ${moving[0].simpleName}__registration_ref.nii.gz
         cnt1=0
         cnt2=1
@@ -69,7 +76,7 @@ process ants_register {
                 (( ++cnt2 ))
                 mv ${moving[0].simpleName}__registration\${cnt1}Warp.nii.gz ${moving[0].simpleName}__\${letter}_registration_syn.nii.gz
                 mv ${moving[0].simpleName}__registration\${cnt1}InverseWarp.nii.gz ${moving[0].simpleName}__\${letter}_inv_registration_syn_inverse.nii.gz
-                warp_found=true
+                found=true
             fi
             
             if \$found
