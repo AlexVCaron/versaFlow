@@ -2,35 +2,8 @@
 
 nextflow.enable.dsl=2
 
-// Preprocess workflow parameters
-params.gaussian_noise_correction = true
-params.gibbs_ringing_correction = true
-params.t1mask2dwi_registration = true
-params.topup_correction = true
-params.eddy_correction = true
-params.dwi_intensity_normalization = true
-params.resample_data = true
-params.register_t12b0_denoised = true
-params.register_syn_t12b0 = false
-params.generate_tissue_segmentation = false
-params.generate_wm_segmentation = true
-params.raw_to_processed_space = false
-
-// T1 preprocess workflow parameters
-params.denoise_t1 = true
-params.nlmeans_t1 = true
-params.t1_intensity_normalization = true
-
-params.b02t1_mask_registration_config = file("$projectDir/.config/b02t1_mask_registration_config.py")
-params.t1_mask_to_topup_b0_registration_config = file("$projectDir/.config/t1_mask_to_topup_b0_registration_config.py")
-params.ants_transform_base_config = file("$projectDir/.config/ants_transform_base_config.py")
-params.extract_mean_b0_base_config = file("$projectDir/.config/extract_mean_b0_base_config.py")
-params.dwi_n4_normalization_config = file("$projectDir/.config/dwi_n4_normalization_config.py")
-params.t1_n4_normalization_config = file("$projectDir/.config/t1_n4_normalization_config.py")
-params.b0_to_b0_normalization_config = file("$projectDir/.config/b0_to_b0_normalization_config.py")
-
 include {
-    merge_channels_non_blocking; replace_dwi_file; uniformize_naming; exclude_missing_datapoints; fill_missing_datapoints; filter_datapoints
+    merge_channels_non_blocking; replace_dwi_file; uniformize_naming; exclude_missing_datapoints; fill_missing_datapoints; filter_datapoints; get_config_path
 } from '../modules/functions.nf'
 include { extract_b0 as dwi_b0; extract_b0 as extract_topup_b0; extract_b0 as extract_b0_preprocessed } from '../modules/processes/preprocess.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
@@ -63,6 +36,34 @@ include {
 } from "../modules/workflows/preprocess.nf"
 include { t12b0_registration as mask_registration_wkf; t12b0_registration as t1_registration_wkf } from '../modules/workflows/t1_registration.nf'
 include { segment_nmt_wkf; segment_wm_wkf } from '../modules/workflows/segment.nf'
+
+// Preprocess workflow parameters
+params.gaussian_noise_correction = true
+params.gibbs_ringing_correction = true
+params.t1mask2dwi_registration = true
+params.topup_correction = true
+params.eddy_correction = true
+params.dwi_intensity_normalization = true
+params.resample_data = true
+params.register_t12b0_denoised = true
+params.register_syn_t12b0 = false
+params.generate_tissue_segmentation = false
+params.generate_wm_segmentation = true
+params.raw_to_processed_space = false
+
+// T1 preprocess workflow parameters
+params.denoise_t1 = true
+params.nlmeans_t1 = true
+params.t1_intensity_normalization = true
+
+params.b02t1_mask_registration_config = file("${get_config_path()}/b02t1_mask_registration_config.py")
+params.t1_mask_to_topup_b0_registration_config = file("${get_config_path()}/t1_mask_to_topup_b0_registration_config.py")
+params.ants_transform_base_config = file("${get_config_path()}/ants_transform_base_config.py")
+params.extract_mean_b0_base_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
+params.dwi_n4_normalization_config = file("${get_config_path()}/dwi_n4_normalization_config.py")
+params.t1_n4_normalization_config = file("${get_config_path()}/t1_n4_normalization_config.py")
+params.b0_to_b0_normalization_config = file("${get_config_path()}/b0_to_b0_normalization_config.py")
+
 
 workflow preprocess_wkf {
     take:

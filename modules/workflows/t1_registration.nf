@@ -82,7 +82,7 @@ workflow t12b0_registration {
 
         b0_to_template_registration_wkf(
             template_channel,
-            target_channel,
+            target_channel.map{ [it[0], it[1..-1]] },
             null,
             null,
             null,
@@ -97,12 +97,14 @@ workflow t12b0_registration {
 
         ants_transform_t1_to_b0(
             t1_to_template_registration_wkf.out.registration.join(b0_to_template_registration_wkf.out.inverse_transform),
+            "false",
             "preprocess",
             "","$publish_mask", "mask",
             params.ants_transform_base_config
         )
         ants_transform_t1_mask_to_b0(
             t1_to_template_registration_wkf.out.image.join(b0_to_template_registration_wkf.out.inverse_transform),
+            "true",
             "preprocess",
             "","$publish_mask", "mask",
             params.ants_transform_base_config

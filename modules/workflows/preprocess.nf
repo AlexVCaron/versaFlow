@@ -2,21 +2,9 @@
 
 nextflow.enable.dsl=2
 
-params.eddy_with_reverse = true
-params.use_cuda = false
-
-params.ants_registration_base_config = file("$projectDir/.config/ants_registration_base_config.py")
-params.ants_transform_base_config = file("$projectDir/.config/ants_transform_base_config.py")
-params.preproc_extract_b0_topup_config = file("$projectDir/.config/extract_mean_b0_base_config.py")
-params.preproc_squash_b0_config = file("$projectDir/.config/preproc_squash_b0_config.py")
-params.prepare_topup_base_config = file("$projectDir/.config/prepare_topup_base_config.py")
-params.prepare_eddy_base_config = file("$projectDir/.config/prepare_eddy_base_config.py")
-params.prepare_eddy_cuda_base_config = file("$projectDir/.config/prepare_eddy_cuda_base_config.py")
-params.concatenate_base_config = file("$projectDir/.config/concatenate_base_config.py")
-
 include {
     filter_datapoints; separate_b0_from_dwi; exclude_missing_datapoints; fill_missing_datapoints;
-    merge_channels_non_blocking; join_optional; sort_as_with_name; is_data
+    merge_channels_non_blocking; join_optional; sort_as_with_name; is_data; get_config_path
 } from '../functions.nf'
 include { extract_b0 as b0_topup; extract_b0 as b0_topup_rev; squash_b0 as squash_dwi; squash_b0 as squash_rev } from '../processes/preprocess.nf'
 include { n4_denoise; dwi_denoise; nlmeans_denoise; prepare_topup; topup; prepare_eddy; eddy } from '../processes/denoise.nf'
@@ -25,6 +13,18 @@ include {
     cat_datasets; cat_datasets as cat_topup; cat_datasets as cat_eddy_on_rev;
     apply_topup; check_dwi_conformity; generate_b0_bval
 } from '../processes/utils.nf'
+
+params.eddy_with_reverse = true
+params.use_cuda = false
+
+params.ants_registration_base_config = file("${get_config_path()}/ants_registration_base_config.py")
+params.ants_transform_base_config = file("${get_config_path()}/ants_transform_base_config.py")
+params.preproc_extract_b0_topup_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
+params.preproc_squash_b0_config = file("${get_config_path()}/preproc_squash_b0_config.py")
+params.prepare_topup_base_config = file("${get_config_path()}/prepare_topup_base_config.py")
+params.prepare_eddy_base_config = file("${get_config_path()}/prepare_eddy_base_config.py")
+params.prepare_eddy_cuda_base_config = file("${get_config_path()}/prepare_eddy_cuda_base_config.py")
+params.concatenate_base_config = file("${get_config_path()}/concatenate_base_config.py")
 
 
 workflow registration_wkf {
@@ -77,7 +77,7 @@ workflow registration_wkf {
         image = img
         registration = ants_register.out.image
         transform = ants_register.out.reference.join(ants_register.out.transformation)
-        inverse_transform = ants_register.out.reference.join(ants_register.out.inverse_transformation.map{ [it[0], it[1], it[2].reverse()] })
+        inverse_transform = ants_register.out.reference.join(ants_register.out.inverse_transformation.map{ [it[0], it[1].reverse()] })
 }
 
 // TODO : Here there is probably some metadatas from squashed process being tangled in i/o. The

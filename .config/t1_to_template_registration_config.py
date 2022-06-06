@@ -33,7 +33,7 @@ c.AntsConfiguration.interpolation = "Linear"
 
 c.AntsConfiguration.klass = "magic_monkey.config.ants.AntsConfiguration"
 
-c.AntsConfiguration.match_histogram = True
+c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
     "conv_eps": 1e-6,

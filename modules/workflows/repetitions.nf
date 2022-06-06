@@ -2,16 +2,17 @@
 
 nextflow.enable.dsl=2
 
-params.reps_registration_extract_b0_config = file("$projectDir/.config/extract_mean_b0_base_config.py")
-params.reps_registration_b0_registration_config = file("$projectDir/.config/reps_registration_b0_registration_config.py")
-params.reps_registration_apply_registration_config = file("$projectDir/.config/reps_registration_apply_registration_config.py")
-params.reps_registration_t1_registration_config = file("$projectDir/.config/reps_registration_t1_registration_config.py")
-params.concatenate_base_config = file("$projectDir/.config/concatenate_base_config.py")
-
 include { extract_b0 as extract_rep_b0 } from '../processes/preprocess.nf'
-include { merge_repetitions } from '../functions.nf'
+include { merge_repetitions; get_config_path } from '../functions.nf'
 include { ants_register_dwi_repetition; ants_register_dwi_repetition as ants_register_rev_repetition; ants_register_t1_repetition } from '../processes/repetitions.nf'
 include { cat_datasets as cat_repetitions } from '../processes/utils.nf'
+
+params.reps_registration_extract_b0_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
+params.reps_registration_b0_registration_config = file("${get_config_path()}/reps_registration_b0_registration_config.py")
+params.reps_registration_apply_registration_config = file("${get_config_path()}/reps_registration_apply_registration_config.py")
+params.reps_registration_t1_registration_config = file("${get_config_path()}/reps_registration_t1_registration_config.py")
+params.concatenate_base_config = file("${get_config_path()}/concatenate_base_config.py")
+
 
 workflow register_dwi_repetitions_wkf {
     take:

@@ -121,6 +121,7 @@ process ants_transform {
 
     input:
         tuple val(sid), path(img), path(ref), path(trans), file(bvec), file(metadata)
+        val(inverse)
         val(caller_name)
         val(additional_publish_path)
         val(publish)
@@ -138,6 +139,9 @@ process ants_transform {
         }
         if ( !bvec.empty() ) {
             args += " --bvecs $bvec"
+        }
+        if ("$inverse" == "true") {
+            args += " --inverse"
         }
         """
         export ANTS_RANDOM_SEED=$params.random_seed
