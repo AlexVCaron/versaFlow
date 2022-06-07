@@ -122,8 +122,8 @@ c.AntsConfiguration.passes = [{
     "conv_max_iter": [200, 200, 100, 100, 10],
     "conv_win": 10,
     "grad_step": 0.3,
-    "var_penality": 0,
-    "var_total": 3,
+    "var_penality": 3,
+    "var_total": 0,
     "klass": "magic_monkey.traits.ants.AntsSyN",
     "metrics": [
         {
