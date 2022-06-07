@@ -95,25 +95,36 @@ workflow t12b0_registration {
             params.ants_transform_base_config
         )
 
+        inverse_transform = b0_to_template_registration_wkf.out.inverse_transform
+            .map{ [it[0], it[1], it[1].collect{ f -> f.contains("InverseWarp") ? "false": "true" }] }
+
         ants_transform_t1_to_b0(
-            t1_to_template_registration_wkf.out.registration.join(b0_to_template_registration_wkf.out.inverse_transform),
-            "false",
+            t1_to_template_registration_wkf.out.registration
+                .join(extract_b0.out.b0)
+                .join(inverse_transform)
+                .map{ it + ["", ""] },
             "preprocess",
             "","$publish_mask", "mask",
             params.ants_transform_base_config
         )
         ants_transform_t1_mask_to_b0(
-            t1_to_template_registration_wkf.out.image.join(b0_to_template_registration_wkf.out.inverse_transform),
-            "true",
+            t1_to_template_registration_wkf.out.image
+                .join(extract_b0.out.b0)
+                .join(inverse_transform)
+                .map{ it + ["", ""] },
             "preprocess",
             "","$publish_mask", "mask",
             params.ants_transform_base_config
         )
 
-        trans = t1_to_template_registration_wkf.out.transform.join(b0_to_template_registration_wkf.out.inverse_transform)
+        transformation = t1_to_template_registration_wkf.out.transform
+            .map{ [it[0], it[1], it[1].collect{ "false" }] }
+            .join(inverse_transform)
+            .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
     emit:
         t1 = ants_transform_t1_to_b0.out.image
         mask = ants_transform_t1_mask_to_b0.out.image
-        transform = trans.map{ [it[0], it[1] + it[2]] }
+        transform = transformation
+        reference = extract_b0.out.b0
 }

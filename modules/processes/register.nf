@@ -120,8 +120,7 @@ process ants_transform {
     publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(img), path(ref), path(trans), file(bvec), file(metadata)
-        val(inverse)
+        tuple val(sid), path(img), path(ref), path(trans), val(invert), file(bvec), file(metadata)
         val(caller_name)
         val(additional_publish_path)
         val(publish)
@@ -140,8 +139,8 @@ process ants_transform {
         if ( !bvec.empty() ) {
             args += " --bvecs $bvec"
         }
-        if ("$inverse" == "true") {
-            args += " --inverse"
+        if ("$invert") {
+            args += " --inv ${invert.join(",")}"
         }
         """
         export ANTS_RANDOM_SEED=$params.random_seed

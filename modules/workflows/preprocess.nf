@@ -76,8 +76,9 @@ workflow registration_wkf {
     emit:
         image = img
         registration = ants_register.out.image
-        transform = ants_register.out.reference.join(ants_register.out.transformation)
-        inverse_transform = ants_register.out.reference.join(ants_register.out.inverse_transformation.map{ [it[0], it[1].reverse()] })
+        reference = ants_register.out.reference
+        transform = ants_register.out.transformation
+        inverse_transform = ants_register.out.inverse_transformation.map{ [it[0], it[1].reverse()] }
 }
 
 // TODO : Here there is probably some metadatas from squashed process being tangled in i/o. The
