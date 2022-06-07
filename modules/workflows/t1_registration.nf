@@ -96,7 +96,7 @@ workflow t12b0_registration {
         )
 
         inverse_transform = b0_to_template_registration_wkf.out.inverse_transform
-            .map{ [it[0], it[1], it[1].collect{ f -> f.contains("InverseWarp") ? "false": "true" }] }
+            .map{ [it[0], it[1], it[1].collect{ f -> f.contains("syn_inverse") ? "false": "true" }] }
 
         ants_transform_t1_to_b0(
             t1_to_template_registration_wkf.out.registration
