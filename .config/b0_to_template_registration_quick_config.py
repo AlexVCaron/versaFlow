@@ -36,7 +36,7 @@ c.AntsConfiguration.klass = "magic_monkey.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-6,
+    "conv_eps": 1e-5,
     "conv_max_iter": [400, 200, 100],
     "conv_win": 30,
     "grad_step": 0.2,
@@ -118,7 +118,7 @@ c.AntsConfiguration.passes = [{
         1
     ]
 }, {
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-6,
     "conv_max_iter": [200, 200, 100, 100, 10],
     "conv_win": 10,
     "grad_step": 0.3,
