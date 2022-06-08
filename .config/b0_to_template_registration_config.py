@@ -121,9 +121,9 @@ c.AntsConfiguration.passes = [{
     ]
 }, {
     "conv_eps": 1e-7,
-    "conv_max_iter": [1000, 500, 300],
+    "conv_max_iter": [1000, 500, 300, 100],
     "conv_win": 30,
-    "grad_step": 0.3,
+    "grad_step": 0.1,
     "var_penality": 0,
     "var_total": 3,
     "klass": "magic_monkey.traits.ants.AntsSyN",
@@ -163,11 +163,13 @@ c.AntsConfiguration.passes = [{
         }
     ],
     "shrinks": [
+        8,
         4,
         2,
         1
     ],
     "smoothing": [
+        3,
         2,
         1,
         0

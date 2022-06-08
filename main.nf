@@ -77,13 +77,13 @@ def display_run_info () {
     }
     log.info " - N4 normalization ${params.t1_intensity_normalization ? "(enabled)" : "(disabled)"}"
     log.info "T1 to DWI registration :"
-    log.info " - Register T1 mask ${params.t1mask2dwi_registration ? "(enabled)" : "(disabled)"}"
-    log.info " - Register after denoising ${params.register_t12b0_denoised ? "(enabled)" : "(disabled)"}"
-    if (params.t1mask2dwi_registration || params.register_t12b0_denoised) {
-        log.info " - Use SyN deformation ${params.register_syn_t12b0 ? "(enabled)" : "(disabled)"}"
-        if (params.register_syn_t12b0) {
-            log.info "    - Use masked images ${params.register_syn_t12b0_with_mask ? "(enabled)" : "(disabled)"}"
-        }
+    log.info " - Register T1 mask to DWI ${params.dwi_mask_from_t1_mask ? "(enabled)" : "(disabled)"}"
+    if (params.dwi_mask_from_t1_mask) {
+        log.info " - Use Quick T1 mask to DWI ${params.quick_t1_mask_registration ? "(enabled)" : "(disabled)"}"
+    }
+    log.info " - Register T1 to DWI ${params.register_t1_to_dwi ? "(enabled)" : "(disabled)"}"
+    if (params.register_t1_to_dwi) {
+        log.info " - Use Quick T1 to DWI ${params.quick_denoised_t1_registration ? "(enabled)" : "(disabled)"}"
     }
     log.info "Upscaling :"
     log.info " - Resample T1 and DWI ${params.resample_data ? "(enabled)" : "(disabled)"}"
@@ -160,10 +160,10 @@ def display_usage () {
             "b0_normalization_strategy" : "$params.b0_normalization_strategy",
             "bet_f" : "$params.bet_f",
             "t1_intensity_normalization" : "$params.t1_intensity_normalization",
-            "t1mask2dwi_registration" : "$params.t1mask2dwi_registration",
-            "register_t12b0_denoised" : "$params.register_t12b0_denoised",
-            "register_syn_t12b0" : "$params.register_syn_t12b0",
-            "register_syn_t12b0_with_mask" : "$params.register_syn_t12b0_with_mask",
+            "dwi_mask_from_t1_mask" : "$params.dwi_mask_from_t1_mask",
+            "register_t1_to_dwi" : "$params.register_t1_to_dwi",
+            "quick_t1_mask_registration" : "$params.quick_t1_mask_registration",
+            "quick_denoised_t1_registration" : "$params.quick_denoised_t1_registration",
             "denoise_t1" : "$params.denoise_t1",
             "nlmeans_t1" : "$params.nlmeans_t1",
             "generate_tissue_segmentation" : "$params.generate_tissue_segmentation",

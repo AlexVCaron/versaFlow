@@ -61,7 +61,7 @@ workflow registration_wkf {
         if ( is_data(trans_channel) ) {
             in_ants_trans = trans_channel
                 .join(ants_register.out.reference)
-                .join(ants_register.out.transformation)
+                .join(ants_register.out.transformation.map{ [it[0], it[1].reverse()] })
                 .map{ it + [""] }
 
             in_ants_trans = join_optional(in_ants_trans, bvecs_channel)
