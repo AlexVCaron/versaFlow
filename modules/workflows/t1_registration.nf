@@ -19,6 +19,7 @@ include { merge_channels_non_blocking; is_data } from '../functions.nf'
 include {
     apply_mask as apply_mask_to_b0_for_reg;
     apply_mask as apply_mask_to_t1_for_reg;
+    apply_mask as apply_mask_to_pdavg_for_reg;
     prepend_sid as prepend_sid_template;
     bet_mask
 } from '../processes/utils.nf'
@@ -49,11 +50,12 @@ workflow t12b0_registration {
         extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
         apply_mask_to_b0_for_reg(extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
         apply_mask_to_t1_for_reg(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
-        compute_powder_average(dwi_channel.map{ it.subList(0, 3) }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
+        compute_powder_average(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
+        apply_mask_to_pdavg_for_reg(compute_powder_average.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
         scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess", false)
 
         target_channel = apply_mask_to_b0_for_reg.out.image
-            .join(compute_powder_average.out.image)
+            .join(apply_mask_to_pdavg_for_reg.out.image)
             .join(scil_compute_dti_fa.out.fa)
             .map{ [it[0], it[1..-1]] }
         moving_channel = apply_mask_to_t1_for_reg.out.image

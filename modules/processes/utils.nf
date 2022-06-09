@@ -38,7 +38,7 @@ process bet_mask {
         val(caller_name)
         val(publish)
     output:
-        tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz")
+        tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz"), emit: mask
     script:
         """
         fslmaths $img -Tmean mean_image.nii.gz

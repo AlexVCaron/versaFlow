@@ -6,7 +6,7 @@ include { registration_wkf as nmt_registration_wkf; registration_wkf as wm_seg_r
 include { atropos } from '../processes/segment.nf'
 include { scil_compute_dti_fa } from '../processes/measure.nf'
 include { prepend_sid as prepend_sid_template; prepend_sid as prepend_sid_segmentation; prepend_sid as prepend_sid_template_fa; prepend_sid as prepend_sid_wm_atlas; pvf_to_mask } from '../processes/utils.nf'
-include { get_config_path; get_data_path } from '.../functions.nf'
+include { get_config_path; get_data_path } from '../functions.nf'
 
 params.tissue_segmentation_root = "${get_data_path()}/maccaca_mulatta/tissue_segmentation"
 params.wm_segmentation_root = "${get_data_path()}/maccaca_mulatta/wm_segmentation"
