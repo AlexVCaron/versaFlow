@@ -2,24 +2,26 @@
 
 nextflow.enable.dsl=2
 
+include { dti_metrics; dti_metrics as dti_for_odfs_metrics; diamond_metrics; odf_metrics; scil_compute_dti_fa } from '../modules/processes/measure.nf'
+include { uniformize_naming; replace_naming_to_underscore; rename_according_to; rename; get_config_path } from '../modules/functions.nf'
+include { dti_wkf } from './reconstruct.nf'
+
 params.reconstruct_use_mrtrix = false
 params.recons_dti = true
 params.recons_csd = true
 params.recons_diamond = true
 params.msmt_odf = false
 
-params.measures_on_diamond_config = file("$projectDir/.config/measures_on_diamond_config.py")
-params.measures_on_dti_config = file("$projectDir/.config/measures_on_dti_config.py")
+params.measures_on_diamond_config = file("${get_config_path()}/measures_on_diamond_config.py")
+params.measures_on_dti_config = file("${get_config_path()}/measures_on_dti_config.py")
 
-include { dti_metrics; dti_metrics as dti_for_odfs_metrics; diamond_metrics; odf_metrics; scil_compute_dti_fa } from '../modules/processes/measure.nf'
-include { uniformize_naming; replace_naming_to_underscore; rename_according_to; rename } from '../modules/functions.nf'
-include { dti_wkf } from './reconstruct.nf'
 
 workflow measure_wkf {
     take:
         dwi_channel
         data_channel
         mask_channel
+        diamond_summary_channel
         metadata_channel
     main:
         dti_channel = Channel.empty()
@@ -41,7 +43,11 @@ workflow measure_wkf {
             metadata = rename(metadata_channel, "diamond_metadata")
             mask_diamond = rename(mask_channel, "diamond_mask")
             prefix_channel = data_diamond.map{ [it[0], "${it[0]}_diamond"] }
-            diamond_metrics(prefix_channel.join(mask_diamond).join(data_diamond).join(metadata), "measure", params.measures_on_diamond_config)
+            diamond_metrics(
+                prefix_channel.join(mask_diamond).join(data_diamond).join(diamond_summary_channel).join(metadata),
+                "measure",
+                params.measures_on_diamond_config
+            )
             diamond_channel = diamond_metrics.out.metrics
         }
 

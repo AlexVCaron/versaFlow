@@ -2,16 +2,18 @@
 
 nextflow.enable.dsl=2
 
-params.tissue_segmentation_root = "$projectDir/.data/segmentation"
-params.wm_segmentation_root = "$projectDir/.data/wm_segmentation"
-
-params.segmentation_registration_config = file("$projectDir/.config/segmentation_registration_config.py")
-params.ants_transform_segmentation_config = file("$projectDir/.config/ants_transform_segmentation_config.py")
-
 include { registration_wkf as nmt_registration_wkf; registration_wkf as wm_seg_registration_wkf } from "./preprocess.nf"
 include { atropos } from '../processes/segment.nf'
 include { scil_compute_dti_fa } from '../processes/measure.nf'
 include { prepend_sid as prepend_sid_template; prepend_sid as prepend_sid_segmentation; prepend_sid as prepend_sid_template_fa; prepend_sid as prepend_sid_wm_atlas; pvf_to_mask } from '../processes/utils.nf'
+include { get_config_path; get_data_path } from '../functions.nf'
+
+params.tissue_segmentation_root = "${get_data_path()}/maccaca_mulatta/tissue_segmentation"
+params.wm_segmentation_root = "${get_data_path()}/maccaca_mulatta/wm_segmentation"
+
+params.segmentation_registration_config = file("${get_config_path()}/segmentation_registration_config.py")
+params.ants_transform_segmentation_config = file("${get_config_path()}/ants_transform_segmentation_config.py")
+
 
 workflow segment_nmt_wkf {
     take:

@@ -30,10 +30,10 @@ process bet_mask {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_bet_mask") }, mode: params.publish_mode
 
     input:
-    tuple val(sid), path(img)
-    val(caller_name)
+        tuple val(sid), path(img)
+        val(caller_name)
     output:
-    tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz")
+        tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz"), emit: mask
     script:
         """
         fslmaths $img -Tmean mean_image.nii.gz

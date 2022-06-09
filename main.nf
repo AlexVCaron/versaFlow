@@ -19,8 +19,10 @@ workflow {
         dataloader = load_dataset()
         preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.pvf, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
         reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.pvf, preprocess_wkf.out.safe_wm_mask, preprocess_wkf.out.metadata)
-        measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.metadata)
-        tracking_wkf(reconstruct_wkf.out.csd, preprocess_wkf.out.pvf)
+        measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, reconstruct_wkf.out.diamond_summary, preprocess_wkf.out.metadata)
+        if ( params.pft_tracking ) {
+            tracking_wkf(reconstruct_wkf.out.csd, preprocess_wkf.out.pvf)
+        }
     }
 }
 
@@ -75,13 +77,13 @@ def display_run_info () {
     }
     log.info " - N4 normalization ${params.t1_intensity_normalization ? "(enabled)" : "(disabled)"}"
     log.info "T1 to DWI registration :"
-    log.info " - Register T1 mask ${params.t1mask2dwi_registration ? "(enabled)" : "(disabled)"}"
-    log.info " - Register after denoising ${params.register_t12b0_denoised ? "(enabled)" : "(disabled)"}"
-    if (params.t1mask2dwi_registration || params.register_t12b0_denoised) {
-        log.info " - Use SyN deformation ${params.register_syn_t12b0 ? "(enabled)" : "(disabled)"}"
-        if (params.register_syn_t12b0) {
-            log.info "    - Use masked images ${params.register_syn_t12b0_with_mask ? "(enabled)" : "(disabled)"}"
-        }
+    log.info " - Register T1 mask to DWI ${params.dwi_mask_from_t1_mask ? "(enabled)" : "(disabled)"}"
+    if (params.dwi_mask_from_t1_mask) {
+        log.info " - Use Quick T1 mask to DWI ${params.quick_t1_mask_registration ? "(enabled)" : "(disabled)"}"
+    }
+    log.info " - Register T1 to DWI ${params.register_t1_to_dwi ? "(enabled)" : "(disabled)"}"
+    if (params.register_t1_to_dwi) {
+        log.info " - Use Quick T1 to DWI ${params.quick_denoised_t1_registration ? "(enabled)" : "(disabled)"}"
     }
     log.info "Upscaling :"
     log.info " - Resample T1 and DWI ${params.resample_data ? "(enabled)" : "(disabled)"}"
@@ -91,7 +93,13 @@ def display_run_info () {
     }
     log.info "Segmentation :"
     log.info " - Segment WM/GM/CSF from T1 ${params.generate_tissue_segmentation ? "(enabled)" : "(disabled)"}"
-    log.info " - Segment WM parcellation ${params.generate_tissue_segmentation ? "(enabled)" : "(disabled)"}"
+    if (params.generate_tissue_segmentation) {
+        log.info "     - Template directory : ${params.tissue_segmentation_root}"
+    }
+    log.info " - Segment WM parcellation ${params.generate_wm_segmentation ? "(enabled)" : "(disabled)"}"
+    if (params.generate_wm_segmentation) {
+        log.info "     - Atlas directory : ${params.wm_segmentation_root}"
+    }
     log.info "Diffusion modeling :"
     log.info " - DTI ${params.recons_dti ? "(enabled)" : "(disabled)"}"
     if (params.recons_dti) {
@@ -116,9 +124,12 @@ def display_run_info () {
     log.info " - DIAMOND ${params.recons_diamond ? "(enabled)" : "(disabled)"}"
     if (params.recons_diamond) {
         log.info "    - Model selection on tensor ${params.model_selection_with_tensor ? "(enabled)" : "(disabled)"}"
-        log.info "    - Estimate restricted fraction ${params.estimate_restriction ? "(enabled)" : "(disabled)"}"
-        log.info "    - Estimate free water fraction ${params.free_water_tensor ? "(enabled)" : "(disabled)"}"
+        log.info "    - Estimate ISOR - restricted isotropic diffusion fraction ${params.estimate_restriction ? "(enabled)" : "(disabled)"}"
+        log.info "    - Estimate ICVF - hindered diffusion fraction per fascicle ${params.estimate_hindered ? "(enabled)" : "(disabled)"}"
+        log.info "    - Use FW tensor model ${params.free_water_tensor ? "(enabled)" : "(disabled)"}"
+        log.info "    - Use ISOR tensor model ${params.restriction_tensor ? "(enabled)" : "(disabled)"}"
         log.info "    - Normalize fractions ${params.normalized_fractions ? "(enabled)" : "(disabled)"}"
+        log.info "    - Optimize # parameters ${params.strict_n_parameters ? "(disabled)" : "(enabled)"}"
         log.info "    - Number of fascicles : $params.n_fascicles"
         log.info "    - Fascicle model      : $params.fascicle_model"
     }
@@ -149,10 +160,10 @@ def display_usage () {
             "b0_normalization_strategy" : "$params.b0_normalization_strategy",
             "bet_f" : "$params.bet_f",
             "t1_intensity_normalization" : "$params.t1_intensity_normalization",
-            "t1mask2dwi_registration" : "$params.t1mask2dwi_registration",
-            "register_t12b0_denoised" : "$params.register_t12b0_denoised",
-            "register_syn_t12b0" : "$params.register_syn_t12b0",
-            "register_syn_t12b0_with_mask" : "$params.register_syn_t12b0_with_mask",
+            "dwi_mask_from_t1_mask" : "$params.dwi_mask_from_t1_mask",
+            "register_t1_to_dwi" : "$params.register_t1_to_dwi",
+            "quick_t1_mask_registration" : "$params.quick_t1_mask_registration",
+            "quick_denoised_t1_registration" : "$params.quick_denoised_t1_registration",
             "denoise_t1" : "$params.denoise_t1",
             "nlmeans_t1" : "$params.nlmeans_t1",
             "generate_tissue_segmentation" : "$params.generate_tissue_segmentation",
@@ -189,8 +200,10 @@ def display_usage () {
             "fascicle_model" : "$params.fascicle_model",
             "model_selection_with_tensor" : "$params.model_selection_with_tensor",
             "estimate_restriction" : "$params.estimate_restriction",
+            "estimate_hindered": "$params.estimate_hindered",
             "normalized_fractions" : "$params.normalized_fractions",
             "free_water_tensor" : "$params.free_water_tensor",
+            "strict_n_parameters": "$params.strict_n_parameters",
             "pft_random_seed" : "$params.pft_random_seed",
             "tracking_algorithm" : "$params.tracking_algorithm",
             "streamline_compression_factor" : "$params.streamline_compression_factor",

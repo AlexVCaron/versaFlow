@@ -2,19 +2,21 @@
 
 nextflow.enable.dsl=2
 
+include { diamond; mrtrix_dti; csd; response; scilpy_response; scilpy_msmt_response; scilpy_csd; scilpy_msmt_csd } from '../processes/reconstruct.nf'
+include { scil_dti_and_metrics } from '../processes/measure.nf'
+include { tournier2descoteaux_odf; extract_shells; check_for_duplicates } from '../processes/utils.nf'
+include { get_config_path } from '../functions.nf'
+
 params.reconstruct_use_mrtrix = false
 params.convert_tournier2descoteaux = true
 params.msmt_odf = false
 
-params.reconstruct_diamond_config = file("$projectDir/.config/reconstruct_diamond_config.py")
-params.reconstruct_mrtrix_dti_config = file("$projectDir/.config/reconstruct_mrtrix_dti_config.py")
-params.reconstruct_mrtrix_csd_config = file("$projectDir/.config/reconstruct_mrtrix_csd_config.py")
-params.reconstruct_mrtrix_frf_config = file("$projectDir/.config/reconstruct_mrtrix_frf_config.py")
-params.extract_shell_greater_than_one_config = file("$projectDir/.config/extract_shell_greater_than_one_config.py")
+params.reconstruct_diamond_config = file("${get_config_path()}/reconstruct_diamond_config.py")
+params.reconstruct_mrtrix_dti_config = file("${get_config_path()}/reconstruct_mrtrix_dti_config.py")
+params.reconstruct_mrtrix_csd_config = file("${get_config_path()}/reconstruct_mrtrix_csd_config.py")
+params.reconstruct_mrtrix_frf_config = file("${get_config_path()}/reconstruct_mrtrix_frf_config.py")
+params.extract_shell_greater_than_one_config = file("${get_config_path()}/extract_shell_greater_than_one_config.py")
 
-include { diamond; mrtrix_dti; csd; response; scilpy_response; scilpy_msmt_response; scilpy_csd; scilpy_msmt_csd } from '../processes/reconstruct.nf'
-include { scil_dti_and_metrics } from '../processes/measure.nf'
-include { tournier2descoteaux_odf; extract_shells } from '../processes/utils.nf'
 
 workflow csd_wkf {
     take:
@@ -25,6 +27,10 @@ workflow csd_wkf {
     main:
         response_channel = Channel.empty()
         odfs_channel = Channel.empty()
+
+        check_for_duplicates(dwi_channel.map{ it + [""] }, "reconstruct")
+        dwi_channel = check_for_duplicates.out.dwi
+
         if ( params.reconstruct_use_mrtrix && !params.msmt_odf ) {
             response(dwi_channel.join(mask_channel), "reconstruct", params.reconstruct_mrtrix_frf_config)
             csd(response.out.responses.join(dwi_channel.join(mask_channel)), "reconstruct", params.reconstruct_mrtrix_csd_config)
@@ -83,5 +89,6 @@ workflow diamond_wkf {
         other_files = dwi_channel.map{ [it[0], it.subList(2, it.size()).inject([]){ c, t -> c + t }] }
         diamond(dwi_image.join(mask_channel).join(other_files), "reconstruct", params.reconstruct_diamond_config)
     emit:
-        diamond = diamond.out.diamond
+        data = diamond.out.diamond
+        xml_summary = diamond.out.xml_summary
 }

@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 params.add_odd_dimension = false
 params.bet_f = 0.5
+params.duplicates_merge_method = "mean"
 
 include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 
@@ -37,7 +38,7 @@ process bet_mask {
         val(caller_name)
         val(publish)
     output:
-        tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz")
+        tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz"), emit: mask
     script:
         """
         fslmaths $img -Tmean mean_image.nii.gz
@@ -479,5 +480,23 @@ process check_odd_dimensions {
         cp $bval ${dwi.simpleName}__even_dims.bval
         cp $bvec ${dwi.simpleName}__even_dims.bvec
         $after_script
+        """
+}
+
+process check_for_duplicates {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(dwi), path(bval), path(bvec), file(metadata)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${dwi.simpleName}__${params.duplicates_merge_method}_duplicates.nii.gz"), path("${dwi.simpleName}__${params.duplicates_merge_method}_duplicates.bval"), path("${dwi.simpleName}__${params.duplicates_merge_method}_duplicates.bvec"), emit: dwi
+        tuple val(sid), path("*__${params.duplicates_merge_method}_duplicates_metadata.*"), optional: true, emit: metadata   
+    script:
+        """
+        magic-monkey duplicates --in $dwi --bvals $bval --bvecs $bvec --merge $params.duplicates_merge_method --out ${dwi.simpleName}__${params.duplicates_merge_method}_duplicates
         """
 }

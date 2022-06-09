@@ -34,14 +34,15 @@ workflow reconstruct_wkf {
 
         if ( params.recons_diamond  ) {
             diamond_wkf(dwi_channel, mask_channel)
-            out_channels += [diamond_wkf.out.diamond]
+            out_channels += [diamond_wkf.out.data, diamond_wkf.out.xml_summary]
         }
         else
-            out_channels += [null]
+            out_channels += [null, null]
 
     emit:
         dti = out_channels[0]
         csd = out_channels[1]
         diamond = out_channels[2]
-        all = out_channels.subList(1, out_channels.size()).inject(out_channels[0]){ c, n -> n ? c.join(n, remainder: true) : c }
+        diamond_summary = out_channels[3]
+        all = out_channels[1..-1].inject(out_channels[0]){ c, n -> n ? c.join(n, remainder: true) : c }
 }

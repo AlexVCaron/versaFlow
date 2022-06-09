@@ -11,8 +11,11 @@ params.n_fascicles = 3
 params.fascicle_model = "diamondNCcyl"
 params.model_selection_with_tensor = false
 params.estimate_restriction = false
+params.estimate_hindered = false
 params.restriction_tensor = false
+params.free_water_tensor = false
 params.normalized_fractions = true
+params.strict_parameters = true
 params.frf_on_dti_shell = false
 params.max_dti_bvalue = 1300
 params.random_seed = 1234
@@ -29,6 +32,7 @@ process diamond {
         path(config)
     output:
         tuple val(sid), path("${sid}_diamond*.nii.gz"), emit: diamond
+        tuple val(sid), path("${sid}_diamond.xml"), emit: xml_summary
     script:
         def args = ""
         if ( !mask.empty() )
@@ -43,9 +47,13 @@ process diamond {
             args += " --nosum-fractions"
         if ( params.free_water_tensor )
             args += " --iso-tensor"
+        if ( params.estimate_hindered )
+            args += " --hindered"
+        if ( !params.strict_parameters )
+            args += " --lenient-params"
 
         """
-        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}_diamond --n $params.n_fascicles --f $params.fascicle_model --config $config
+        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}_diamond --n $params.n_fascicles --f $params.fascicle_model --p $task.cpus --config $config
         """
 }
 

@@ -25,6 +25,7 @@ process ants_register {
     output:
         tuple val(sid), path("${moving[0].simpleName}__registration_ref.nii.gz"), emit: reference
         tuple val(sid), path("${moving[0].simpleName}__[A-Z]_registration_*.*"), emit: transformation
+        tuple val(sid), path("${moving[0].simpleName}__[A-Z]_inv_registration_*.*"), emit: inverse_transformation
         tuple val(sid), path("${moving[0].simpleName}__registration_warped.nii.gz"), optional: true, emit: image
         tuple val(sid), path("${moving[0].simpleName}__registration_warped_metadata.*"), optional: true, emit: metadata
     script:
@@ -38,25 +39,35 @@ process ants_register {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
-        magic-monkey ants_registration --moving ${moving.join(",")} --target ${target.join(",")} --out ${moving[0].simpleName}__registration $mask_arg --config $config
+
+        magic-monkey ants_registration \
+            --moving ${moving.join(",")} \
+            --target ${target.join(",")} \
+            --out ${moving[0].simpleName}__registration $mask_arg \
+            ${params.verbose_outputs ? "--verbose" : ""} \
+            --config $config
+
         cp ${file(reference).name} ${moving[0].simpleName}__registration_ref.nii.gz
         cnt1=0
         cnt2=1
         while true
         do
             found=false
+            warp_found=false
             if [ -f ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ]
             then
                 printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
                 (( ++cnt2 ))
-                mv ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ${moving[0].simpleName}__\${letter}_registration_rigid.mat
+                cp ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ${moving[0].simpleName}__\${letter}_registration_rigid.mat
+                cp ${moving[0].simpleName}__registration\${cnt1}GenericRigid.mat ${moving[0].simpleName}__\${letter}_inv_registration_rigid.mat
                 found=true
             fi
             if [ -f ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ]
             then
                 printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
                 (( ++cnt2 ))
-                mv ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ${moving[0].simpleName}__\${letter}_registration_affine.mat
+                cp ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ${moving[0].simpleName}__\${letter}_registration_affine.mat
+                cp ${moving[0].simpleName}__registration\${cnt1}GenericAffine.mat ${moving[0].simpleName}__\${letter}_inv_registration_affine.mat
                 found=true
             fi
             if [ -f ${moving[0].simpleName}__registration\${cnt1}Warp.nii.gz ]
@@ -64,6 +75,7 @@ process ants_register {
                 printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
                 (( ++cnt2 ))
                 mv ${moving[0].simpleName}__registration\${cnt1}Warp.nii.gz ${moving[0].simpleName}__\${letter}_registration_syn.nii.gz
+                mv ${moving[0].simpleName}__registration\${cnt1}InverseWarp.nii.gz ${moving[0].simpleName}__\${letter}_inv_registration_syn_inverse.nii.gz
                 found=true
             fi
             
@@ -108,7 +120,7 @@ process ants_transform {
     publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(img), path(ref), path(trans), file(bvec), file(metadata)
+        tuple val(sid), path(img), path(ref), path(trans), val(invert), file(bvec), file(metadata)
         val(caller_name)
         val(additional_publish_path)
         val(publish)
@@ -126,6 +138,9 @@ process ants_transform {
         }
         if ( !bvec.empty() ) {
             args += " --bvecs $bvec"
+        }
+        if ("$invert") {
+            args += " --inv ${invert.join(",")}"
         }
         """
         export ANTS_RANDOM_SEED=$params.random_seed

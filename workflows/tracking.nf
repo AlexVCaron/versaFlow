@@ -16,21 +16,27 @@ workflow tracking_wkf {
         fodfs
         volume_fractions
     main:
-        if ( params.pft_tracking ) {
-            wm_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_wm") }] }
-            gm_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_gm") }] }
-            csf_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_csf") }] }
+        out_tractogram = Channel.empty()
+        out_maps = Channel.empty()
+        out_interface = Channel.empty()
 
-            PFT_maps(wm_vf.join(gm_vf).join(csf_vf), "tracking")
-            PFT_tracking(
-                fodfs.join(PFT_maps.out.maps).join(PFT_maps.out.wm_gm_interface),
-                "tracking",
-                pft_random_seed,
-                tracking_algorithm
-            )
-        }
+        wm_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_wm") }] }
+        gm_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_gm") }] }
+        csf_vf = volume_fractions.map { [it[0], it[1].find{ i -> i.simpleName.contains("_csf") }] }
+
+        PFT_maps(wm_vf.join(gm_vf).join(csf_vf), "tracking")
+        PFT_tracking(
+            fodfs.join(PFT_maps.out.maps).join(PFT_maps.out.wm_gm_interface),
+            "tracking",
+            pft_random_seed,
+            tracking_algorithm
+        )
+
+        out_tractogram = PFT_tracking.out.tractogram
+        out_maps = PFT_maps.out.maps
+        out_interface = PFT_maps.out.wm_gm_interface
     emit:
-        tractogram = PFT_tracking.out.tractogram
-        maps = PFT_maps.out.maps
-        wm_gm_interface = PFT_maps.out.wm_gm_interface
+        tractogram = out_tractogram
+        maps = out_maps
+        wm_gm_interface = out_interface
 }

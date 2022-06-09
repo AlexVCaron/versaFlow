@@ -1,11 +1,13 @@
 # mrHARDIflow
 
 mrHARDIflow is a diffusion MRI processing pipeline configured to handle high 
-angular and spatial resolution data. It's pre-processing workflow contains a 
-collection of steps focussed at increasing SNR and CNR of noisy diffusion data 
-and improving the alignment of longitudinal acquisitions, using state-of-the-art 
-algorithms such as MP-PCA denoising, Eddy and Topup, and libraries like Scipy, 
-Dipy, Mrtrix, FSL and ANTs.
+angular and spatial resolution data. By default it is configured to process 
+Maccaca Mulatta brain images; profiles to handle other types of primates, as 
+well as the human brain are being developped. The pipeline's pre-processing 
+workflow contains a collection of steps focussed at increasing SNR and CNR of 
+noisy diffusion data and improving the alignment of longitudinal acquisitions, 
+using state-of-the-art algorithms such as MP-PCA denoising, Eddy and Topup, and 
+libraries like Scipy, Dipy, Mrtrix, FSL and ANTs.
 
 ## Requirements
 
@@ -62,6 +64,9 @@ following naming convention :
       - \<key\>_rev.bval *(optional, unrequired if reverse acquisition is only a b0)*
       - \<key\>_rev.bvec *(optional, unrequired if reverse acquisition is only a b0)*
       - \<key\>_rev.json *(see [here](#alternative-specification-of-the-diffusion-acquisition-parameters))*
+      - \<key\>_wm_pvf.nii.gz *(optional, will also be used to generate tissues mask)*
+      - \<key\>_gm_pvf.nii.gz *(optional, will also be used to generate tissues mask)*
+      - \<key\>_csf_pvf.nii.gz *(optional, will also be used to generate tissues mask)*
 
 ____
 

@@ -9,6 +9,7 @@ params.eddy_force_shelled = true
 params.b0_threshold = false
 params.b0_normalization_strategy = "linear"
 params.random_seed = 1234
+params.verbose_outputs = false
 
 include { remove_alg_suffixes } from '../functions.nf'
 
@@ -224,7 +225,7 @@ process prepare_eddy {
         tuple val(sid), path("${sid}*non_zero.bvec"), emit: bvec, optional: true
         tuple val(sid), path("${prefix}__eddy_metadata.*"), emit: metadata, optional: true
     script:
-        def args = "--in $prefix --debug"
+        def args = "--in $prefix"
         def will_gen_acqp = true
         if ( !topup_acqp.empty() ) {
             args += " --acqp $topup_acqp"
@@ -241,6 +242,10 @@ process prepare_eddy {
             if ( !params.eddy_select_gpu ) {
                 args += " --dont_gpu"
             }
+        }
+
+        if ( params.verbose_outputs ) {
+            args += " --debug"
         }
 
         if ( params.eddy_force_shelled )
