@@ -61,7 +61,10 @@ workflow registration_wkf {
         if ( is_data(trans_channel) ) {
             in_ants_trans = trans_channel
                 .join(ants_register.out.reference)
-                .join(ants_register.out.transformation.map{ [it[0], it[1].reverse()] })
+                .join(ants_register.out.transformation.map{ [
+                    it[0],
+                    it[1] instanceof ArrayList ? it[1].reverse() : [it[1]]
+                ] })
                 .map{ it + [""] }
 
             in_ants_trans = join_optional(in_ants_trans, bvecs_channel)
@@ -81,7 +84,9 @@ workflow registration_wkf {
         image = img
         registration = ants_register.out.image
         reference = ants_register.out.reference
-        transform = ants_register.out.transformation.map{ [it[0], it[1].reverse()] }
+        transform = ants_register.out.transformation.map{ [
+            it[0], it[1] instanceof ArrayList ? it[1].reverse() : [it[1]]
+        ] }
         inverse_transform = ants_register.out.inverse_transformation
 }
 
