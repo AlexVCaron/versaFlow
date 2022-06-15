@@ -53,7 +53,7 @@ process diamond {
             args += " --lenient-params"
 
         """
-        magic-monkey diamond --in $input_dwi --mask $mask --out ${sid}_diamond --n $params.n_fascicles --f $params.fascicle_model --p $task.cpus --config $config $args
+        magic-monkey diamond --in $input_dwi --out ${sid}_diamond --n $params.n_fascicles --f $params.fascicle_model --p $task.cpus --config $config $args
         """
 }
 
