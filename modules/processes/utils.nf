@@ -222,11 +222,41 @@ process pvf_to_mask {
         tuple val(sid), path("${sid}_safe_wm_mask.nii.gz"), emit: safe_wm_mask
     script:
         """
-        scil_image_math.py round $wm_pvf ${sid}_wm_mask.nii.gz --data_type uint8
-        scil_image_math.py round $gm_pvf ${sid}_gm_mask.nii.gz --data_type uint8
-        scil_image_math.py round $csf_pvf ${sid}_csf_mask.nii.gz --data_type uint8
+        python3 - <<'END_SCRIPT'
+        import nibabel as nib
+        import numpy as np
+        wm_pvf = nib.load("$wm_pvf").get_fdata()
+        gm_pvf = nib.load("$gm_pvf").get_fdata()
+        csf_pvf = nib.load("$csf_pvf")
+        affine = csf_pvf.affine
+        csf_pvf = csf_pvf.get_fdata()
 
-        scil_image_math.py lower_threshold_eq $csf_pvf 0.001 csf_map.nii.gz
+        wm_background = wm_pvf < 0.001
+        wm_pvf[wm_background] = 0.
+        gm_background = gm_pvf < 0.001
+        gm_pvf[gm_background] = 0.
+        csf_background = csf_pvf < 0.001
+        csf_pvf[csf_background] = 0.
+
+        data = np.concatenate(
+            (wm_pvf[..., None], gm_pvf[..., None], csf_pvf[..., None]),
+            axis=-1
+        )
+        maxes = np.argmax(data, axis=-1)
+
+        wm_mask = maxes == 0
+        wm_mask[wm_background] = False
+        gm_mask = maxes == 1
+        gm_mask[gm_background] = False
+        csf_mask = maxes == 2
+        csf_mask[csf_background] = False
+
+        nib.save(nib.Nifti1Image(csf_mask.astype(np.uint8), affine), "${sid}_csf_mask.nii.gz")
+        nib.save(nib.Nifti1Image(gm_mask.astype(np.uint8), affine), "${sid}_gm_mask.nii.gz")
+        nib.save(nib.Nifti1Image(wm_mask.astype(np.uint8), affine), "${sid}_wm_mask.nii.gz")
+        END_SCRIPT
+
+        scil_image_math.py lower_threshold_eq $csf_pvf 0.01 csf_map.nii.gz
         scil_image_math.py dilation csf_map.nii.gz 1 csf_map.nii.gz -f --data_type uint8
         scil_image_math.py difference ${sid}_wm_mask.nii.gz csf_map.nii.gz ${sid}_safe_wm_mask.nii.gz
         scil_image_math.py difference ${sid}_safe_wm_mask.nii.gz ${sid}_gm_mask.nii.gz ${sid}_safe_wm_mask.nii.gz -f
