@@ -13,8 +13,8 @@ libraries like Scipy, Dipy, Mrtrix, FSL and ANTs.
 
 To run the pipeline, the following tools must be installed :
 
-- Nextflow (we recommend installing the last available release of version 21)
-- Singularity 3.7.1 or higher, or Docker
+- [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html) (we recommend installing the last available release of version 21)
+- [Singularity](https://docs.sylabs.io/guides/3.0/user-guide/installation.html) 3.7.1 or higher, or [Docker](https://docs.docker.com/engine/install/)
 
 ## Dependencies
 
@@ -24,9 +24,9 @@ and require a Nvidia GPU to execute. For usage on a machine without a Nvidia GPU
 use the images tagged `nogpu`.
 
 
-- Singularity : [Singularity Cloud](https://cloud.sylabs.io/library/avcaron/default/mrhardi)
-  - Nvidia GPU  : `singularity pull library://avcaron/default/mrhardi:latest`
-  - Without GPU : `singularity pull library://avcaron/default/mrhardi:nogpu`
+- Singularity :
+  - Nvidia GPU  : `singularity pull docker://avcaron/mrhardi:latest`
+  - Without GPU : `singularity pull docker://avcaron/mrhardi:nogpu`
 
 - Docker : [Docker Hub](https://hub.docker.com/r/avcaron/mrhardi)
   - Nvidia GPU  : `docker pull avcaron/mrhardi:latest`
