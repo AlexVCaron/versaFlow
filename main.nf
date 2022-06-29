@@ -95,6 +95,11 @@ def display_run_info () {
     log.info " - Segment WM/GM/CSF from T1 ${params.generate_tissue_segmentation ? "(enabled)" : "(disabled)"}"
     if (params.generate_tissue_segmentation) {
         log.info "     - Template directory : ${params.tissue_segmentation_root}"
+        log.info "     - Min PVF threshold          : ${params.min_pvf_threshold}"
+        log.info "     - Max safe CSF PVF threshold : ${params.max_safe_csf_pvf_threshold}"
+        log.info "     - Max safe GM PVF thresfold  : ${params.max_safe_gm_pvf_threshold}"
+        log.info "     - Safe CSF mask dilation     : ${params.safe_csf_mask_dilation}"
+        log.info "     - Safe GM mask dilation      : ${params.safe_gm_mask_dilation}"
     }
     log.info " - Segment WM parcellation ${params.generate_wm_segmentation ? "(enabled)" : "(disabled)"}"
     if (params.generate_wm_segmentation) {
@@ -159,6 +164,11 @@ def display_usage () {
             "b0_threshold" : "$params.b0_threshold",
             "b0_normalization_strategy" : "$params.b0_normalization_strategy",
             "bet_f" : "$params.bet_f",
+            "min_pvf_threshold": "$params.min_pvf_threshold",
+            "max_safe_csf_pvf_threshold": "$params.max_safe_csf_pvf_threshold",
+            "max_safe_gm_pvf_threshold": "$params.max_safe_gm_pvf_threshold",
+            "safe_csf_mask_dilation": "$params.safe_csf_mask_dilation",
+            "safe_gm_mask_dilation": "$params.safe_gm_mask_dilation",
             "t1_intensity_normalization" : "$params.t1_intensity_normalization",
             "dwi_mask_from_t1_mask" : "$params.dwi_mask_from_t1_mask",
             "register_t1_to_dwi" : "$params.register_t1_to_dwi",
