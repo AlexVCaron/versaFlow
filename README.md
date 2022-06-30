@@ -25,8 +25,8 @@ use the images tagged `nogpu`.
 
 
 - Singularity :
-  - Nvidia GPU  : `singularity pull docker://avcaron/mrhardi:latest`
-  - Without GPU : `singularity pull docker://avcaron/mrhardi:nogpu`
+  - Nvidia GPU  : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:latest`
+  - Without GPU : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:nogpu`
 
 - Docker : [Docker Hub](https://hub.docker.com/r/avcaron/mrhardi)
   - Nvidia GPU  : `docker pull avcaron/mrhardi:latest`

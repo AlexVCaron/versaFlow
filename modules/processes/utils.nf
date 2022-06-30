@@ -4,6 +4,11 @@ nextflow.enable.dsl=2
 
 params.add_odd_dimension = false
 params.bet_f = 0.5
+params.min_pvf_threshold = 0.001
+params.max_safe_csf_pvf_threshold = 0.01
+params.max_safe_gm_pvf_threshold = 0.01
+params.safe_csf_mask_dilation = 1
+params.safe_gm_mask_dilation = 1
 params.duplicates_merge_method = "mean"
 
 include { remove_alg_suffixes; add_suffix } from '../functions.nf'
@@ -231,11 +236,11 @@ process pvf_to_mask {
         affine = csf_pvf.affine
         csf_pvf = csf_pvf.get_fdata()
 
-        wm_background = wm_pvf < 0.001
+        wm_background = wm_pvf < $params.min_pvf_threshold
         wm_pvf[wm_background] = 0.
-        gm_background = gm_pvf < 0.001
+        gm_background = gm_pvf < $params.min_pvf_threshold
         gm_pvf[gm_background] = 0.
-        csf_background = csf_pvf < 0.001
+        csf_background = csf_pvf < $params.min_pvf_threshold
         csf_pvf[csf_background] = 0.
 
         data = np.concatenate(
@@ -256,10 +261,19 @@ process pvf_to_mask {
         nib.save(nib.Nifti1Image(wm_mask.astype(np.uint8), affine), "${sid}_wm_mask.nii.gz")
         END_SCRIPT
 
-        scil_image_math.py lower_threshold_eq $csf_pvf 0.01 csf_map.nii.gz
-        scil_image_math.py dilation csf_map.nii.gz 1 csf_map.nii.gz -f --data_type uint8
+        scil_image_math.py lower_threshold_eq $csf_pvf $params.max_safe_csf_pvf_threshold csf_map.nii.gz --data_type uint8
+        if [[ $params.safe_csf_mask_dilation > 0 ]]
+        then
+            scil_image_math.py dilation csf_map.nii.gz $params.safe_csf_mask_dilation csf_map.nii.gz -f --data_type uint8
+        fi
+        scil_image_math.py lower_threshold_eq $gm_pvf $params.max_safe_gm_pvf_threshold gm_map.nii.gz --data_type uint8
+        if [[ $params.safe_gm_mask_dilation > 0 ]]
+        then
+            scil_image_math.py dilation gm_map.nii.gz $params.safe_gm_mask_dilation gm_map.nii.gz -f --data_type uint8
+        fi
+
         scil_image_math.py difference ${sid}_wm_mask.nii.gz csf_map.nii.gz ${sid}_safe_wm_mask.nii.gz
-        scil_image_math.py difference ${sid}_safe_wm_mask.nii.gz ${sid}_gm_mask.nii.gz ${sid}_safe_wm_mask.nii.gz -f
+        scil_image_math.py difference ${sid}_safe_wm_mask.nii.gz gm_map.nii.gz ${sid}_safe_wm_mask.nii.gz -f
         scil_image_math.py intersection ${sid}_safe_wm_mask.nii.gz $brain_mask ${sid}_safe_wm_mask.nii.gz -f
         """
 }
