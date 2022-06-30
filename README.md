@@ -1,3 +1,6 @@
+[![Release build](https://github.com/AlexVCaron/mrHARDI/actions/workflows/build-release.yml/badge.svg)](https://github.com/AlexVCaron/mrHARDI/actions/workflows/build-release.yml)
+[![Docker containers](https://img.shields.io/badge/Docker%20images-dockerhub-blue?style=plaflat&logo=docker&labelColor=2e343b)](https://hub.docker.com/repository/docker/avcaron/mrhardi)
+
 # mrHARDIflow
 
 mrHARDIflow is a diffusion MRI processing pipeline configured to handle high 
