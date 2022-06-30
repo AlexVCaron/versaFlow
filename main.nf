@@ -94,7 +94,10 @@ def display_run_info () {
     log.info "Segmentation :"
     log.info " - Segment WM/GM/CSF from T1 ${params.generate_tissue_segmentation ? "(enabled)" : "(disabled)"}"
     if (params.generate_tissue_segmentation) {
-        log.info "     - Template directory : ${params.tissue_segmentation_root}"
+        if (params.tissue_segmentation_root) {
+            log.info "     - Custom template directory : ${params.tissue_segmentation_root}"
+        }
+        
         log.info "     - Min PVF threshold          : ${params.min_pvf_threshold}"
         log.info "     - Max safe CSF PVF threshold : ${params.max_safe_csf_pvf_threshold}"
         log.info "     - Max safe GM PVF thresfold  : ${params.max_safe_gm_pvf_threshold}"
@@ -103,7 +106,9 @@ def display_run_info () {
     }
     log.info " - Segment WM parcellation ${params.generate_wm_segmentation ? "(enabled)" : "(disabled)"}"
     if (params.generate_wm_segmentation) {
-        log.info "     - Atlas directory : ${params.wm_segmentation_root}"
+        if (params.wm_segmentation_root) {
+            log.info "     - Custom WM atlas directory : ${params.wm_segmentation_root}"
+        }
     }
     log.info "Diffusion modeling :"
     log.info " - DTI ${params.recons_dti ? "(enabled)" : "(disabled)"}"
