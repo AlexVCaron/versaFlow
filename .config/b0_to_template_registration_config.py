@@ -174,6 +174,57 @@ c.AntsConfiguration.passes = [{
         1,
         0
     ]
+}, {
+    "conv_eps": 1e-7,
+    "conv_max_iter": [100, 40],
+    "conv_win": 20,
+    "grad_step": 0.1,
+    "var_penality": 3,
+    "var_total": 0,
+    "klass": "magic_monkey.traits.ants.AntsSyN",
+    "metrics": [
+        {
+            "target_index": 0,
+            "moving_index": 0,
+            "args": [
+                0.1,
+                8,
+                "Regular",
+                0.5
+            ],
+            "klass": "magic_monkey.traits.ants.MetricCC"
+        },
+        {
+            "target_index": 0,
+            "moving_index": 1,
+            "args": [
+                0.6,
+                8,
+                "Regular",
+                0.7
+            ],
+            "klass": "magic_monkey.traits.ants.MetricCC"
+        },
+        {
+            "target_index": 0,
+            "moving_index": 2,
+            "args": [
+                0.3,
+                8,
+                "Regular",
+                0.7
+            ],
+            "klass": "magic_monkey.traits.ants.MetricCC"
+        }
+    ],
+    "shrinks": [
+        2,
+        1
+    ],
+    "smoothing": [
+        1,
+        0
+    ]
 }]
 
 c.AntsConfiguration.use_float = False
