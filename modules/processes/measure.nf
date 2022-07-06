@@ -167,9 +167,29 @@ process odf_metrics {
         if ( params.ventricles_center )
             args += " --center ${ params.ventricles_center.join(' ') }"
         """
-        scil_compute_fodf_max_in_ventricles.py $csf_f $fa $md --max_value_output vmax.txt --sh_basis descoteaux07 --fa_t $params.max_fa_ventricle --md_t $params.min_md_ventricle --mask_output vmask.nii.gz -f $args
-        abs_threshold=\$(echo $params.fodf_max_absolute_factor*\$(cat vmax.txt)|bc)
-        scil_compute_fodf_metrics.py --rt $params.fodf_relative_thr --at \${abs_threshold} --sh_basis $basis --mask $mask --afd_max ${sid}_fodf_metrics_afd.nii.gz --afd_total ${sid}_fodf_metrics_afdt.nii.gz --afd_sum ${sid}_fodf_metrics_afds.nii.gz --nufo ${sid}_fodf_metrics_nufo.nii.gz --peaks ${sid}_fodf_metrics_peaks.nii.gz --rgb ${sid}_fodf_metrics_rgb.nii.gz --peak_values ${sid}_fodf_metrics_peaks_values.nii.gz --peak_indices ${sid}_fodf_metrics_peaks_indices.nii.gz $wm_odfs
+        scil_compute_fodf_max_in_ventricles.py $csf_f $fa $md \
+            --max_value_output ${sid}_ventricles_fodf_max.txt \
+            --sh_basis descoteaux07 \
+            --fa_t $params.max_fa_ventricle \
+            --md_t $params.min_md_ventricle \
+            --mask_output ${sid}_ventricles_mask.nii.gz \
+            $args \
+            -f
+
+        abs_threshold=\$(echo $params.fodf_max_absolute_factor*\$(cat ${sid}_ventricles_fodf_max.txt)|bc)
+        scil_compute_fodf_metrics.py $wm_odfs \
+            --rt $params.fodf_relative_thr \
+            --at \${abs_threshold} \
+            --sh_basis $basis \
+            --mask $mask \
+            --afd_max ${sid}_fodf_metrics_afd.nii.gz \
+            --afd_total ${sid}_fodf_metrics_afdt.nii.gz \
+            --afd_sum ${sid}_fodf_metrics_afds.nii.gz \
+            --nufo ${sid}_fodf_metrics_nufo.nii.gz \
+            --peaks ${sid}_fodf_metrics_peaks.nii.gz \
+            --rgb ${sid}_fodf_metrics_rgb.nii.gz \
+            --peak_values ${sid}_fodf_metrics_peaks_values.nii.gz \
+            --peak_indices ${sid}_fodf_metrics_peaks_indices.nii.gz
         """
 }
 
