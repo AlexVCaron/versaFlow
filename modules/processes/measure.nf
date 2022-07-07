@@ -161,6 +161,7 @@ process odf_metrics {
     output:
         tuple val(sid), val("${sid}_fodf_metrics"), emit: prefix
         tuple val(sid), path("${sid}_fodf_metrics*.nii.gz"), emit: metrics
+        tuple val(sid), path("${sid}_ventricles_mask.nii.gz"), path("${sid}_ventricles_fodf_max.txt"), emit: ventricles
     script:
         def args = ""
         def csf_f = csf_odfs.empty() ? "$wm_odfs" : "$csf_odfs"
