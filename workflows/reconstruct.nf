@@ -12,7 +12,7 @@ workflow reconstruct_wkf {
     take:
         dwi_channel
         mask_channel
-        pvf_channel
+        tissue_masks_channel
         safe_wm_mask_channel
         metadata_channel
     main:
@@ -26,7 +26,7 @@ workflow reconstruct_wkf {
             out_channels += [null]
 
         if ( params.recons_csd  ) {
-            csd_wkf(dwi_channel, mask_channel, pvf_channel, safe_wm_mask_channel)
+            csd_wkf(dwi_channel, mask_channel, tissue_masks_channel, safe_wm_mask_channel)
             out_channels += [csd_wkf.out.odfs.map{ [it[0], it.subList(1, it.size())] }]
         }
         else
