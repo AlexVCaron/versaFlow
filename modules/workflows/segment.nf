@@ -38,7 +38,7 @@ workflow segment_nmt_wkf {
     emit:
         segmentation = atropos.out.segmentation
         volume_fractions = atropos.out.vol_fractions
-        tissue_masks = pvf_to_mask.out.wm_mask.join(pvf_to_mask.out.gm_mask).join(pvf_to_mask.out.csf_mask)
+        tissue_masks = pvf_to_mask.out.wm_mask.join(pvf_to_mask.out.gm_mask).join(pvf_to_mask.out.csf_mask).map{ [ it[0], it[1..-1] ]}
         safe_wm_mask = pvf_to_mask.out.safe_wm_mask
 }
 

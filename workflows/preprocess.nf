@@ -381,8 +381,10 @@ workflow preprocess_wkf {
             pvf_to_mask.out.gm_mask
         ).join(
             pvf_to_mask.out.csf_mask
-        ).mix(
-            pvf_channel.filter{ it[1].isEmpty() }.map{ [it[0], "", "", ""] }
+        ).map{
+            [it[0], it[1..-1]]
+        }.mix(
+            pvf_channel.filter{ it[1].isEmpty() }.map{ [it[0], []] }
         )
         safe_wm_mask = pvf_to_mask.out.safe_wm_mask.mix(pvf_channel.filter{ it[1].isEmpty() }.map{ [it[0], ""] })
 
