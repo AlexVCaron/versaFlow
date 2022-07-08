@@ -30,8 +30,6 @@ c.CSD.base_config_file = ""
 
 c.CSDConfiguration.klass = "magic_monkey.config.csd.CSDConfiguration"
 
-c.CSDConfiguration.lmax = 0
-
 c.CSDConfiguration.shells = []
 
 c.CSDConfiguration.strides = []

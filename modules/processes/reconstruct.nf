@@ -8,6 +8,7 @@ params.frf_min_nvox = 300
 params.frf_radii = false
 params.frf_center = false
 params.n_fascicles = 3
+params.sh_order = 8
 params.fascicle_model = "diamondNCcyl"
 params.model_selection_with_tensor = false
 params.estimate_restriction = false
@@ -96,6 +97,8 @@ process response {
         def args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" != "" )
             args += " --mask $mask"
+        if ( params.sh_order )
+            args += " --lmax $params.sh_order"
 
         """
         export MRTRIX_RNG_SEED=$params.random_seed
@@ -119,6 +122,8 @@ process csd {
         def args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" == "" )
             args += " --mask $mask"
+        if ( params.sh_order )
+            args += " --lmax $params.sh_order"
 
         """
         export MRTRIX_RNG_SEED=$params.random_seed
