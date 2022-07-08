@@ -181,6 +181,8 @@ process scilpy_msmt_response {
             args += " --roi_radii $params.frf_radii"
         if (params.frf_center)
             args += " --roi_center ${params.frf_center.join(" ")}"
+        if (params.max_dti_bvalue)
+            args += " --dti_bval_limit $params.max_dti_bvalue"
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1

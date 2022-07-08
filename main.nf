@@ -26,6 +26,12 @@ workflow {
     }
 }
 
+workflow.onComplete {
+        log.info "Pipeline completed at : $workflow.complete"
+        log.info "Execution status : ${ workflow.success ? 'OK' : 'failed' }"
+        log.info "Execution duration : $workflow.duration"
+    }
+
 def validate_required_parameters () {
     if ( !params.data_root ) error "Error ~ Input data root not specified, use --data_root"
     if ( params.resample_data && !params.resampling_resolution ) error "Error ~ Resampling is enabled, but resampling resolution is not defined, use --resampling_resolution"
@@ -143,12 +149,6 @@ def display_run_info () {
         log.info "    - Number of fascicles : $params.n_fascicles"
         log.info "    - Fascicle model      : $params.fascicle_model"
     }
-
-    workflow.onComplete {
-        log.info "Pipeline completed at : $workflow.complete"
-        log.info "Execution status : ${ workflow.success ? 'OK' : 'failed' }"
-        log.info "Execution duration : $workflow.duration"
-    }
 }
 
 def display_usage () {
@@ -192,12 +192,11 @@ def display_usage () {
             "eddy_with_reverse" : "$params.eddy_with_reverse",
             "eddy_select_gpu" : "$params.eddy_select_gpu",
             "dwi_intensity_normalization" : "$params.dwi_intensity_normalization",
-            "reconstruct_use_mrtrix" : "$params.reconstruct_use_mrtrix",
             "recons_dti" : "$params.recons_dti",
             "recons_csd" : "$params.recons_csd",
             "max_dti_bvalue": "$params.max_dti_bvalue",
             "msmt_odf" : "$params.msmt_odf",
-            "convert_tournier2descoteaux" : "$params.convert_tournier2descoteaux",
+            "use_mrtrix_csd" : "$params.use_mrtrix_csd",
             "frf_fa" : "$params.frf_fa",
             "frf_min_fa" : "$params.frf_min_fa",
             "frf_min_nvox" : "$params.frf_min_nvox",
