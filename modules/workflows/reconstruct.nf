@@ -15,7 +15,7 @@ params.reconstruct_diamond_config = file("${get_config_path()}/reconstruct_diamo
 params.reconstruct_mrtrix_dti_config = file("${get_config_path()}/reconstruct_mrtrix_dti_config.py")
 params.reconstruct_mrtrix_csd_config = file("${get_config_path()}/reconstruct_mrtrix_csd_config.py")
 params.reconstruct_mrtrix_frf_config = file("${get_config_path()}/reconstruct_mrtrix_frf_config.py")
-params.extract_shell_greater_than_one_config = file("${get_config_path()}/extract_shell_greater_than_one_config.py")
+params.extract_shell_greater_equal_six_config = file("${get_config_path()}/extract_shell_greater_equal_six_config.py")
 
 
 workflow csd_wkf {
@@ -43,7 +43,7 @@ workflow csd_wkf {
         }
         else {
             if ( params.msmt_odf ) {
-                dwi_channel = extract_shells(dwi_channel, "reconstruct", params.extract_shell_greater_than_one_config)
+                dwi_channel = extract_shells(dwi_channel, "reconstruct", params.extract_shell_greater_equal_six_config)
                 scilpy_msmt_response(dwi_channel.join(mask_channel).join(tissue_masks_channel), "reconstruct")
                 scilpy_msmt_csd(dwi_channel.join(scilpy_msmt_response.out.response).join(mask_channel), "reconstruct")
                 response_channel = scilpy_msmt_response.out.response
