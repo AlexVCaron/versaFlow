@@ -22,7 +22,7 @@ workflow csd_wkf {
     take:
         dwi_channel
         mask_channel
-        pvf_channel
+        tissue_masks_channel
         safe_wm_mask_channel
     main:
         response_channel = Channel.empty()
@@ -44,7 +44,7 @@ workflow csd_wkf {
         else {
             if ( params.msmt_odf ) {
                 dwi_channel = extract_shells(dwi_channel, "reconstruct", params.extract_shell_greater_than_one_config)
-                scilpy_msmt_response(dwi_channel.join(mask_channel).join(pvf_channel), "reconstruct")
+                scilpy_msmt_response(dwi_channel.join(mask_channel).join(tissue_masks_channel), "reconstruct")
                 scilpy_msmt_csd(dwi_channel.join(scilpy_msmt_response.out.response).join(mask_channel), "reconstruct")
                 response_channel = scilpy_msmt_response.out.response
                 odfs_channel = scilpy_msmt_csd.out.odfs

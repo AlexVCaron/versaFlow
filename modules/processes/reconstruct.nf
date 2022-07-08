@@ -171,7 +171,7 @@ process scilpy_msmt_response {
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-    tuple val(sid), path(dwi), path(bval), path(bvec), path(mask), path(seg)
+    tuple val(sid), path(dwi), path(bval), path(bvec), path(mask), path(tissue_masks)
     val(caller_name)
     output:
     tuple val(sid), path("${sid}_wm_response.txt"), path("${sid}_gm_response.txt"), path("${sid}_csf_response.txt"), emit: response
@@ -186,7 +186,16 @@ process scilpy_msmt_response {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
-        scil_compute_msmt_frf.py $dwi $bval $bvec ${sid}_wm_response.txt ${sid}_gm_response.txt ${sid}_csf_response.txt --mask mask4scil.nii.gz --mask_wm ${seg[0]} --mask_gm ${seg[1]} --mask_csf ${seg[2]} --fa_thr_wm $params.frf_fa --min_nvox $params.frf_min_nvox $args
+        scil_compute_msmt_frf.py $dwi $bval $bvec \
+            ${sid}_wm_response.txt \
+            ${sid}_gm_response.txt \
+            ${sid}_csf_response.txt \
+            --mask mask4scil.nii.gz \
+            --mask_wm ${tissue_masks[0]} \
+            --mask_gm ${tissue_masks[1]} \
+            --mask_csf ${tissue_masks[2]} \
+            --fa_thr_wm $params.frf_fa \
+            --min_nvox $params.frf_min_nvox $args
         """
 }
 
