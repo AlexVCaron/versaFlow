@@ -37,6 +37,7 @@ workflow csd_wkf {
 
         check_for_duplicates(dwi_channel.map{ it + [""] }, "reconstruct")
         dwi_channel = check_for_duplicates.out.dwi
+        dwi_channel = extract_shells(dwi_channel, "reconstruct", params.extract_shell_greater_equal_six_config)
 
         if ( params.use_mrtrix_csd ) {
             if ( params.msmt_odf ) {
@@ -56,7 +57,6 @@ workflow csd_wkf {
             }
         }
         else {
-            dwi_channel = extract_shells(dwi_channel, "reconstruct", params.extract_shell_greater_equal_six_config)
             if ( params.msmt_odf ) {
                 scilpy_msmt_response(dwi_channel.join(mask_channel).join(tissue_masks_channel), "reconstruct")
                 scilpy_msmt_csd(dwi_channel.join(scilpy_msmt_response.out.response).join(mask_channel), "reconstruct")
