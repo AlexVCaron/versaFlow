@@ -42,7 +42,7 @@ workflow csd_wkf {
         if ( params.use_mrtrix_csd ) {
             if ( params.msmt_odf ) {
                 response(dwi_channel.join(mask_channel), "reconstruct", params.reconstruct_mrtrix_msmt_frf_config)
-                csd(response.out.responses.join(dwi_channel.join(mask_channel)), "reconstruct", params.reconstruct_mrtrix_msmt_csd_config)
+                csd(response.out.responses.map{ [it[0], it[1].reverse()] }.join(dwi_channel.join(mask_channel)), "reconstruct", params.reconstruct_mrtrix_msmt_csd_config)
                 change_wm_fodf_basis(csd.out.odfs.map{ [it[0], it[1][2]] }, "reconstruct")
                 change_gm_fodf_basis(csd.out.odfs.map{ [it[0], it[1][1]] }, "reconstruct")
                 change_csf_fodf_basis(csd.out.odfs.map{ [it[0], it[1][0]] }, "reconstruct")
