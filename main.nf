@@ -19,7 +19,7 @@ workflow {
         dataloader = load_dataset()
         preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.pvf, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
         reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.tissue_masks, preprocess_wkf.out.safe_wm_mask, preprocess_wkf.out.metadata)
-        measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, reconstruct_wkf.out.diamond_summary, preprocess_wkf.out.metadata)
+        measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.tissue_masks, reconstruct_wkf.out.diamond_summary, preprocess_wkf.out.metadata)
         if ( params.pft_tracking ) {
             tracking_wkf(reconstruct_wkf.out.csd, preprocess_wkf.out.pvf)
         }
@@ -125,17 +125,19 @@ def display_run_info () {
     else log.info " - SSST CSD ${params.recons_csd ? "(enabled)" : "(disabled)"}"
     if (params.recons_csd) {
         log.info "    - Compute FRF on DTI shells ${params.frf_on_dti_shell ? "(enabled)" : "(disabled)"}"
-        log.info "    - Spherical harmonics order           : $params.sh_order"
-        log.info "    - FRF - FA upper threshold            : $params.frf_fa"
-        log.info "    - FRF - FA lower threshold            : $params.frf_min_fa"
-        log.info "    - FRF - Minimal sample size           : $params.frf_min_nvox"
-        log.info "    - FRF - Search radius                 : ${params.frf_radii ? params.frf_radii: "none"}"
-        log.info "    - FRF - Search center                 : ${params.frf_center ? params.frf_center: "none"}"
-        log.info "    - Ventricles - FA upper threshold     : $params.max_fa_ventricle"
-        log.info "    - Ventricles - MD lower threshold     : $params.min_md_ventricle"
-        log.info "    - Ventricles - Search center          : ${params.ventricles_center ? params.frf_center: "none"}"
-        log.info "    - Peak filtering - Absolute factor    : $params.fodf_max_absolute_factor"
-        log.info "    - Peak filtering - Relative threshold : $params.fodf_relative_thr"
+        log.info "    - Spherical harmonics order              : $params.sh_order"
+        log.info "    - FRF - FA upper threshold               : $params.frf_fa"
+        log.info "    - FRF - FA lower threshold               : $params.frf_min_fa"
+        log.info "    - FRF - Minimal sample size              : $params.frf_min_nvox"
+        log.info "    - FRF - Search radius                    : ${params.frf_radii ? params.frf_radii: "none"}"
+        log.info "    - FRF - Search center                    : ${params.frf_center ? params.frf_center: "none"}"
+        log.info "    - Ventricles - FA upper threshold        : $params.max_fa_ventricle"
+        log.info "    - Ventricles - MD lower threshold        : $params.min_md_ventricle"
+        log.info "    - Ventricles - Search center             : ${params.ventricles_center ? params.frf_center: "none"}"
+        log.info "    - WM peak filtering - Absolute factor    : $params.fodf_wm_max_absolute_factor"
+        log.info "    - WM Peak filtering - Relative threshold : $params.fodf_wm_relative_thr"
+        log.info "    - GM peak filtering - Absolute factor    : $params.fodf_gm_max_absolute_factor"
+        log.info "    - GM Peak filtering - Relative threshold : $params.fodf_gm_relative_thr"
     }
     log.info " - DIAMOND ${params.recons_diamond ? "(enabled)" : "(disabled)"}"
     if (params.recons_diamond) {
@@ -206,8 +208,10 @@ def display_usage () {
             "max_fa_ventricle" : "$params.max_fa_ventricle",
             "min_md_ventricle" : "$params.min_md_ventricle",
             "ventricles_center" : "$params.ventricles_center",
-            "fodf_max_absolute_factor" : "$params.fodf_max_absolute_factor",
-            "fodf_relative_thr" : "$params.fodf_relative_thr",
+            "fodf_wm_max_absolute_factor" : "$params.fodf_wm_max_absolute_factor",
+            "fodf_wm_relative_thr" : "$params.fodf_wm_relative_thr",
+            "fodf_gm_max_absolute_factor" : "$params.fodf_gm_max_absolute_factor",
+            "fodf_gm_relative_thr" : "$params.fodf_gm_relative_thr",
             "sh_order" : "$params.sh_order",
             "recons_diamond" : "$params.recons_diamond",
             "n_fascicles" : "$params.n_fascicles",

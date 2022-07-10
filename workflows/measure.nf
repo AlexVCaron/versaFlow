@@ -20,6 +20,7 @@ workflow measure_wkf {
         dwi_channel
         data_channel
         mask_channel
+        tissue_masks_channel
         diamond_summary_channel
         metadata_channel
     main:
@@ -43,12 +44,12 @@ workflow measure_wkf {
             scil_compute_dti_fa(dwi_channel.join(mask_channel), "preprocess", "measure", false)
 
             if ( params.msmt_odf )
-                data_odfs = data_channel.map{ [it[0], it[2][0], it[2][2]] }
+                data_odfs = data_channel.map{ [it[0]] + it[2] }
             else
-                data_odfs = data_channel.map{ [it[0], it[2][0], ""] }
+                data_odfs = data_channel.map{ [it[0], it[2][0], "", ""] }
 
             data_odfs = data_odfs.join(scil_compute_dti_fa.out.fa).join(scil_compute_dti_fa.out.md)
-            odf_metrics(data_odfs.join(mask_channel).filter{ !it.contains(null) }, "measure", "descoteaux07")
+            odf_metrics(data_odfs.join(tissue_masks_channel.map{ it[0..-2] }).filter{ !it.contains(null) }, "measure", "descoteaux07")
             odfs_channel = odf_metrics.out.metrics
         }
     emit:
