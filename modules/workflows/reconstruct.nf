@@ -50,7 +50,6 @@ workflow csd_wkf {
                 odfs_channel = change_wm_fodf_basis.out.odfs
                     .join(change_gm_fodf_basis.out.odfs)
                     .join(change_csf_fodf_basis.out.odfs)
-                    .map{ [it[0], it[1..-1]] }
             }
             else {
                 response(dwi_channel.join(mask_channel), "reconstruct", params.reconstruct_mrtrix_ssst_frf_config)
