@@ -49,7 +49,7 @@ workflow measure_wkf {
                 data_odfs = data_channel.map{ [it[0], it[2][0], "", ""] }
 
             data_odfs = data_odfs.join(scil_compute_dti_fa.out.fa).join(scil_compute_dti_fa.out.md)
-            odf_metrics(data_odfs.join(tissue_masks_channel.map{ it[0..-2] }).filter{ !it.contains(null) }, "measure", "descoteaux07")
+            odf_metrics(data_odfs.join(tissue_masks_channel.map{ it[0] + it[1][0..-2] }).filter{ !it.contains(null) }, "measure", "descoteaux07")
             odfs_channel = odf_metrics.out.metrics
         }
     emit:
