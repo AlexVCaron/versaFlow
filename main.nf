@@ -139,7 +139,7 @@ def display_run_info () {
         log.info "    - Use FW tensor model ${params.free_water_tensor ? "(enabled)" : "(disabled)"}"
         log.info "    - Use ISOR tensor model ${params.restriction_tensor ? "(enabled)" : "(disabled)"}"
         log.info "    - Normalize fractions ${params.normalized_fractions ? "(enabled)" : "(disabled)"}"
-        log.info "    - Optimize # parameters ${params.strict_n_parameters ? "(disabled)" : "(enabled)"}"
+        log.info "    - Optimize # parameters ${params.strict_parameters ? "(disabled)" : "(enabled)"}"
         log.info "    - Number of fascicles : $params.n_fascicles"
         log.info "    - Fascicle model      : $params.fascicle_model"
     }
@@ -218,7 +218,7 @@ def display_usage () {
             "estimate_hindered": "$params.estimate_hindered",
             "normalized_fractions" : "$params.normalized_fractions",
             "free_water_tensor" : "$params.free_water_tensor",
-            "strict_n_parameters": "$params.strict_n_parameters",
+            "strict_parameters": "$params.strict_parameters",
             "pft_random_seed" : "$params.pft_random_seed",
             "tracking_algorithm" : "$params.tracking_algorithm",
             "streamline_compression_factor" : "$params.streamline_compression_factor",
