@@ -30,14 +30,12 @@ c.CSD.base_config_file = ""
 
 c.CSDConfiguration.klass = "magic_monkey.config.csd.CSDConfiguration"
 
-c.CSDConfiguration.lmax = 0
-
 c.CSDConfiguration.shells = []
 
 c.CSDConfiguration.strides = []
 
 c.CSDConfiguration.algorithm = {
-    "klass": "magic_monkey.traits.csd.CSDAlgorithm",
+    "klass": "magic_monkey.traits.csd.MSMTCSDAlgorithm",
     "max_iter": 50,
     "non_neg_lambda": 1.0,
     "norm_lambda": 1.0,

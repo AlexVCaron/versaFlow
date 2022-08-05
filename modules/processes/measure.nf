@@ -3,8 +3,10 @@
 nextflow.enable.dsl=2
 
 params.verbose_outputs = true
-params.fodf_max_absolute_factor = 2.0
-params.fodf_relative_thr = 0.1
+params.fodf_wm_max_absolute_factor = 2.0
+params.fodf_wm_relative_thr = 0.1
+params.fodf_gm_max_absolute_factor = 1.0
+params.fodf_gm_relative_thr = 0.6
 params.ventricles_center = false
 params.max_fa_ventricle = 0.1
 params.min_md_ventricle = 0.003
@@ -155,7 +157,7 @@ process odf_metrics {
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(wm_odfs), file(csf_odfs), path(fa), path(md), path(mask)
+        tuple val(sid), path(wm_odfs), file(gm_odfs), file(csf_odfs), path(fa), path(md), path(wm_mask), path(gm_mask)
         val(caller_name)
         val(basis)
     output:
@@ -165,6 +167,7 @@ process odf_metrics {
     script:
         def args = ""
         def csf_f = csf_odfs.empty() ? "$wm_odfs" : "$csf_odfs"
+        def gm_f = gm_odfs.empty() ? "$wm_odfs" : "$gm_odfs"
         if ( params.ventricles_center )
             args += " --center ${ params.ventricles_center.join(' ') }"
         """
@@ -177,20 +180,36 @@ process odf_metrics {
             $args \
             -f
 
-        abs_threshold=\$(echo $params.fodf_max_absolute_factor*\$(cat ${sid}_ventricles_fodf_max.txt)|bc)
+        wm_abs_threshold=\$(echo $params.fodf_wm_max_absolute_factor*\$(cat ${sid}_ventricles_fodf_max.txt)|bc)
+        gm_abs_threshold=\$(echo $params.fodf_gm_max_absolute_factor*\$(cat ${sid}_ventricles_fodf_max.txt)|bc)
+
         scil_compute_fodf_metrics.py $wm_odfs \
-            --rt $params.fodf_relative_thr \
-            --at \${abs_threshold} \
+            --rt $params.fodf_wm_relative_thr \
+            --at \${wm_abs_threshold} \
             --sh_basis $basis \
-            --mask $mask \
-            --afd_max ${sid}_fodf_metrics_afd.nii.gz \
-            --afd_total ${sid}_fodf_metrics_afdt.nii.gz \
-            --afd_sum ${sid}_fodf_metrics_afds.nii.gz \
-            --nufo ${sid}_fodf_metrics_nufo.nii.gz \
-            --peaks ${sid}_fodf_metrics_peaks.nii.gz \
-            --rgb ${sid}_fodf_metrics_rgb.nii.gz \
-            --peak_values ${sid}_fodf_metrics_peaks_values.nii.gz \
-            --peak_indices ${sid}_fodf_metrics_peaks_indices.nii.gz
+            --mask $wm_mask \
+            --afd_max ${sid}_fodf_metrics_wm_afd.nii.gz \
+            --afd_total ${sid}_fodf_metrics_wm_afdt.nii.gz \
+            --afd_sum ${sid}_fodf_metrics_wm_afds.nii.gz \
+            --nufo ${sid}_fodf_metrics_wm_nufo.nii.gz \
+            --peaks ${sid}_fodf_metrics_wm_peaks.nii.gz \
+            --rgb ${sid}_fodf_metrics_wm_rgb.nii.gz \
+            --peak_values ${sid}_fodf_metrics_wm_peaks_values.nii.gz \
+            --peak_indices ${sid}_fodf_metrics_wm_peaks_indices.nii.gz
+
+        scil_compute_fodf_metrics.py $gm_f \
+            --rt $params.fodf_gm_relative_thr \
+            --at \${gm_abs_threshold} \
+            --sh_basis $basis \
+            --mask $gm_mask \
+            --afd_max ${sid}_fodf_metrics_gm_afd.nii.gz \
+            --afd_total ${sid}_fodf_metrics_gm_afdt.nii.gz \
+            --afd_sum ${sid}_fodf_metrics_gm_afds.nii.gz \
+            --nufo ${sid}_fodf_metrics_gm_nufo.nii.gz \
+            --peaks ${sid}_fodf_metrics_gm_peaks.nii.gz \
+            --rgb ${sid}_fodf_metrics_gm_rgb.nii.gz \
+            --peak_values ${sid}_fodf_metrics_gm_peaks_values.nii.gz \
+            --peak_indices ${sid}_fodf_metrics_gm_peaks_indices.nii.gz
         """
 }
 

@@ -8,6 +8,7 @@ params.frf_min_nvox = 300
 params.frf_radii = false
 params.frf_center = false
 params.n_fascicles = 3
+params.sh_order = 8
 params.fascicle_model = "diamondNCcyl"
 params.model_selection_with_tensor = false
 params.estimate_restriction = false
@@ -96,6 +97,8 @@ process response {
         def args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" != "" )
             args += " --mask $mask"
+        if ( params.sh_order )
+            args += " --lmax $params.sh_order"
 
         """
         export MRTRIX_RNG_SEED=$params.random_seed
@@ -119,6 +122,8 @@ process csd {
         def args = "--in $dwi --bvals $bval --bvecs $bvec"
         if ( "${mask}" == "" )
             args += " --mask $mask"
+        if ( params.sh_order )
+            args += " --lmax $params.sh_order"
 
         """
         export MRTRIX_RNG_SEED=$params.random_seed
@@ -181,6 +186,8 @@ process scilpy_msmt_response {
             args += " --roi_radii $params.frf_radii"
         if (params.frf_center)
             args += " --roi_center ${params.frf_center.join(" ")}"
+        if (params.max_dti_bvalue)
+            args += " --dti_bval_limit $params.max_dti_bvalue"
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
@@ -231,13 +238,22 @@ process scilpy_msmt_csd {
     val(caller_name)
     output:
     tuple val(sid), path("${sid}_wm_fodf.nii.gz"), path("${sid}_gm_fodf.nii.gz"), path("${sid}_csf_fodf.nii.gz"), emit: odfs
-    tuple val(sid), path("${sid}_vf.nii.gz"), emit: vf
+    tuple val(sid), path("${sid}_vf.nii.gz"), path("${sid}_vf_rgb.nii.gz"), emit: vf
     script:
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
-        scil_compute_msmt_fodf.py $dwi $bval $bvec $wm_response $gm_response $csf_response --wm_out_fODF ${sid}_wm_fodf.nii.gz --gm_out_fODF ${sid}_gm_fodf.nii.gz --csf_out_fODF ${sid}_csf_fodf.nii.gz --vf ${sid}_vf.nii.gz --mask mask4scil.nii.gz --force_b0_threshold --sh_order $params.sh_order --processes $task.cpus
+        scil_compute_msmt_fodf.py $dwi $bval $bvec $wm_response $gm_response $csf_response \
+            --wm_out_fODF ${sid}_wm_fodf.nii.gz \
+            --gm_out_fODF ${sid}_gm_fodf.nii.gz \
+            --csf_out_fODF ${sid}_csf_fodf.nii.gz \
+            --vf ${sid}_vf.nii.gz \
+            --vf_rgb ${sid}_vf_rgb.nii.gz \
+            --mask mask4scil.nii.gz \
+            --force_b0_threshold \
+            --sh_order $params.sh_order \
+            --processes $task.cpus
         """
 }
