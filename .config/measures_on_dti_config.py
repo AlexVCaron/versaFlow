@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# TensorMetrics(MagicMonkeyBaseApplication) configuration
+# TensorMetrics(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 c.TensorMetrics.metrics = ['fa', 'md', 'ad', 'rd', 'peaks']
 

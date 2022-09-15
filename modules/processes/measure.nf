@@ -30,7 +30,7 @@ process dti_metrics {
     script:
         """
         export MRTRIX_RNG_SEED=$params.random_seed
-        magic-monkey dti_metrics --in $input_prefix --out ${sid}_dti_metrics --config $config
+        mrhardi dti_metrics --in $input_prefix --out ${sid}_dti_metrics --config $config
         """
 }
 
@@ -64,7 +64,7 @@ process scil_compute_dti_fa {
         }
 
         if ( params.max_dti_bvalue ) {
-            before += "magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0\n"
+            before += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0\n"
         }
         else {
             before += "cp $dwi dwi_for_dti.nii.gz\ncp $bval dwi_for_dti.bval\ncp $bvec dwi_for_dti.bvec"
@@ -111,7 +111,7 @@ process scil_dti_and_metrics {
 
         before = ""
         if ( params.max_dti_bvalue ) {
-            before += "magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0\n"
+            before += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0\n"
         }
         else {
             before += "cp $dwi dwi_for_dti.nii.gz\ncp $bval dwi_for_dti.bval\ncp $bvec dwi_for_dti.bvec"
@@ -146,7 +146,7 @@ process diamond_metrics {
             args += " --mask $mask"
         }
         """
-        magic-monkey diamond_metrics $args --out ${sid}_diamond_metrics --xml-config $xml_summary --config $config
+        mrhardi diamond_metrics $args --out ${sid}_diamond_metrics --xml-config $xml_summary --config $config
         """
 }
 

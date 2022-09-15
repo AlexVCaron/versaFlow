@@ -1,12 +1,12 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# N4BiasCorrection(MagicMonkeyBaseApplication) configuration
+# N4BiasCorrection(mrHARDIBaseApplication) configuration
 #
 # Description :
-#  Magic Monkey configuration manager
+#  mrHARDI configuration manager
 c.N4BiasCorrection.base_config_file = ""
 
 
@@ -22,7 +22,7 @@ c.N4BiasCorrection.weights = ""
 
 
 # -----------------------------------------------------------------------------
-# N4BiasCorrectionConfiguration(MagicMonkeyConfigurable) configuration
+# N4BiasCorrectionConfiguration(mrHARDIConfigurable) configuration
 c.N4BiasCorrectionConfiguration.bins = 200
 
 c.N4BiasCorrectionConfiguration.filter_width = 0.075
@@ -41,6 +41,6 @@ c.N4BiasCorrectionConfiguration.threshold = 1E-6
 
 # Base traits configuration
 
-c.N4BiasCorrectionConfiguration.klass = "magic_monkey.config.n4bias.N4BiasCorrectionConfiguration"
+c.N4BiasCorrectionConfiguration.klass = "mrHARDI.config.n4bias.N4BiasCorrectionConfiguration"
 
 

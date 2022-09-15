@@ -28,7 +28,7 @@ process atropos {
         }
         """
         export ANTS_RANDOM_SEED=$params.random_seed
-        magic-monkey seg2mask --in $segmentation --values 1,2,3,4,5 --labels 01,02,04,03,05 --out ${segmentation.simpleName}
+        mrhardi seg2mask --in $segmentation --values 1,2,3,4,5 --labels 01,02,04,03,05 --out ${segmentation.simpleName}
         scil_image_math.py addition ${segmentation.simpleName}_02.nii.gz ${segmentation.simpleName}_04.nii.gz ${segmentation.simpleName}_02.nii.gz --data_type uint8 -f
         scil_image_math.py addition ${segmentation.simpleName}_01.nii.gz ${segmentation.simpleName}_05.nii.gz ${segmentation.simpleName}_01.nii.gz --data_type uint8 -f
         rm ${segmentation.simpleName}_04.nii.gz ${segmentation.simpleName}_05.nii.gz

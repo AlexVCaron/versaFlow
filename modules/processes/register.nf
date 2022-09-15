@@ -40,7 +40,7 @@ process ants_register {
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
 
-        magic-monkey ants_registration \
+        mrhardi ants_registration \
             --moving ${moving.join(",")} \
             --target ${target.join(",")} \
             --out ${moving[0].simpleName}__registration $mask_arg \
@@ -109,7 +109,7 @@ process ants_correct_motion {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
-        magic-monkey ants_motion --moving ${moving.join(",")} --target ${target.join(",")} --out ${sid}__motion_correct --config $config
+        mrhardi ants_motion --moving ${moving.join(",")} --target ${target.join(",")} --out ${sid}__motion_correct --config $config
         """
 }
 
@@ -144,6 +144,6 @@ process ants_transform {
         }
         """
         export ANTS_RANDOM_SEED=$params.random_seed
-        magic-monkey ants_transform $args --out ${img.simpleName}__transformed --config $config
+        mrhardi ants_transform $args --out ${img.simpleName}__transformed --config $config
         """
 }

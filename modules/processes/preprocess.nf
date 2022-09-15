@@ -48,7 +48,7 @@ process extract_b0 {
     script:
         def extra_args = params.b0_threshold ? "--ceil ${params.b0_threshold}" : ""
         """
-        magic-monkey b0 extract --in $dwi --bvals $bval --out ${dwi.simpleName}_b0 --config $config $extra_args
+        mrhardi b0 extract --in $dwi --bvals $bval --out ${dwi.simpleName}_b0 --config $config $extra_args
         """
 }
 
@@ -70,6 +70,6 @@ process squash_b0 {
     script:
         def extra_args = params.b0_threshold ? "--ceil ${params.b0_threshold}" : ""
         """
-        magic-monkey b0 squash --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__b0_squashed --config $config $extra_args
+        mrhardi b0 squash --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__b0_squashed --config $config $extra_args
         """
 }

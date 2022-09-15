@@ -31,7 +31,7 @@ process scilpy_resample {
             after_script += "scil_image_math.py round mask_resampled.nii.gz ${mask.simpleName}__resampled.nii.gz --data_type uint8 -f\n"
         }
         if ( !metadata.empty() )
-            after_script += "magic-monkey metadata --in ${image.getSimpleName()}__resampled.nii.gz --update_affine --metadata $metadata\n"
+            after_script += "mrhardi metadata --in ${image.getSimpleName()}__resampled.nii.gz --update_affine --metadata $metadata\n"
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1

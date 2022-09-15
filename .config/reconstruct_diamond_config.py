@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# Diamond(MagicMonkeyBaseApplication) configuration
+# Diamond(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 
 c.Diamond.initial_dti = ""
@@ -22,7 +22,7 @@ c.Diamond.base_config_file = ""
 
 
 # -----------------------------------------------------------------------------
-# DiamondConfiguration(MagicMonkeyConfigurable) configuration
+# DiamondConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
 c.DiamondConfiguration.bounding_box = None
@@ -41,7 +41,7 @@ c.DiamondConfiguration.initial_stick = None
 
 c.DiamondConfiguration.iso_no_fascicle = True
 
-c.DiamondConfiguration.klass = "magic_monkey.config.diamond.DiamondConfiguration"
+c.DiamondConfiguration.klass = "mrHARDI.config.diamond.DiamondConfiguration"
 
 c.DiamondConfiguration.little_angles = False
 

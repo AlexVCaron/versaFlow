@@ -130,7 +130,7 @@ process n4_denoise {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
-        magic-monkey n4 $args --out n4denoise --config $config
+        mrhardi n4 $args --out n4denoise --config $config
         $after_denoise
         """
 }
@@ -169,7 +169,7 @@ process normalize_inter_b0 {
             args += " --ceil ${params.b0_threshold}"
 
         """
-        magic-monkey b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized --ref $params.b0_normalization_strategy
+        mrhardi b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized --ref $params.b0_normalization_strategy
         $after_script
         """
 }
@@ -186,7 +186,7 @@ process prepare_topup {
         tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_topup
     script:
         """
-        magic-monkey topup \
+        mrhardi topup \
             --b0s $b0s \
             --bvals ${dwi_bval.join(',')} \
             --rev_bvals ${rev_bval.join(',')} \
@@ -260,11 +260,11 @@ process prepare_eddy {
 
         if ( will_gen_acqp )
             """
-            magic-monkey eddy $args --out ${prefix}__eddy --config $config --seed
+            mrhardi eddy $args --out ${prefix}__eddy --config $config --seed
             """
         else
             """
-            magic-monkey eddy $args --out ${prefix}__eddy --config $config --seed && cp $topup_acqp "${prefix}__eddy_acqp.txt"
+            mrhardi eddy $args --out ${prefix}__eddy --config $config --seed && cp $topup_acqp "${prefix}__eddy_acqp.txt"
             """
 }
 
