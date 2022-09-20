@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 params.data_root = false
 
 include { prepare_metadata as pmeta_dwi; prepare_metadata as pmeta_rev } from "../modules/processes/io.nf"
-include { fill_missing_datapoints; exclude_missing_datapoints } from "../modules/functions.nf"
+include { fill_missing_datapoints; exclude_missing_datapoints; separate_b0_from_dwi } from "../modules/functions.nf"
 
 workflow load_dataset {
     main:
@@ -78,4 +78,40 @@ workflow load_dataset {
         pvf = pvf_channel
         metadata = dwi_meta_channel
         rev_metadata = rev_meta_channel
+}
+
+workflow anat_validation_wkf {
+    take:
+        anat_channel
+        mask_channel
+        other_channel
+    main:
+        compare_channel = mask_channel.mix(other_channel.transpose())
+        anat_validate_affine(anat_channel.combine(compare_channel, by: 0))
+
+        errors = anat_validate_affine.out.errors
+        error_channel = anat_validate_affine.out.errors
+    emit:
+        error_count = errors.count()
+        error_per_subject = errors.countBy()
+        errors = error_channel
+}
+
+workflow dwi_validation_wkf {
+    take:
+        dwi_channel
+        rev_channel
+        mask_channel
+    main:
+        compare_channel = mask_channel.mix(rev_channel.map{ it[0..2] })
+        dwi_validate_affine(dwi_channel.map{ it[0..2] }.combine(compare_channel, by: 0))
+        (rev_dwi_channel, rev_b0_channel) = separate_b0_from_dwi(rev_channel)
+        validate_dwi_acquisition(dwi_channel.mix(rev_dwi_channel))
+
+        errors = dwi_validate_affine.out.errors.mix(validate_dwi_acquisition.out.errors)
+        error_channel = dwi_validate_affine.out.errors.mix(validate_dwi_acquisition.out.errors)
+    emit:
+        error_count = errors.count()
+        error_per_subject = errors.countBy()
+        errors = error_channel
 }

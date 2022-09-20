@@ -5,7 +5,7 @@ nextflow.enable.dsl=2
 params.help = false
 
 //include { print_channel } from "./modules/debug.nf" // For debugging purpose only
-include { load_dataset } from "./workflows/io.nf"
+include { load_dataset; dwi_validation_wkf; anat_validation_wkf } from "./workflows/io.nf"
 include { preprocess_wkf } from "./workflows/preprocess.nf"
 include { reconstruct_wkf } from "./workflows/reconstruct.nf"
 include { measure_wkf } from "./workflows/measure.nf"
@@ -15,8 +15,9 @@ workflow {
     if (params.help) display_usage()
     else {
         validate_required_parameters()
-        display_run_info()
         dataloader = load_dataset()
+        validate_input_data(dataloader)
+        display_run_info()
         preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.pvf, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
         reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.tissue_masks, preprocess_wkf.out.safe_wm_mask, preprocess_wkf.out.metadata)
         measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.tissue_masks, reconstruct_wkf.out.diamond_summary, preprocess_wkf.out.metadata)
@@ -31,6 +32,30 @@ workflow.onComplete {
         log.info "Execution status : ${ workflow.success ? 'OK' : 'failed' }"
         log.info "Execution duration : $workflow.duration"
     }
+
+def validate_input_data (dataloader) {
+    dwi_validation_wkf(dataloader.dwi, dataloader.rev, dataloader.dwi_mask)
+    anat_validation_wkf(dataloader.anat, dataloader.anat_mask, dataloader.pvf)
+
+    error_per_subject = dwi_validation_wkf.out.error_per_subject
+        .join(anat_validation_wkf.out.error_per_subject, remainer: true)
+        .map{ [it[0], it[1..-1].sum()] }
+    errors = dwi_validation_wkf.out.error.mix(anat_validation_wkf.out.error)
+
+    dwi_validation_wkf.out.error_count
+        .mix(anat_validation_wkf.out.error_count)
+        .sum()
+        .subscribe onNext: {
+            if (it > 0) {
+                println "Number of errors found : $it"
+                errors.subscribe onComplete: { error "Pipeline finished in error" }
+                error_per_subject.subscribe onComplete: { errors.take(-1) }
+                error_per_subject.take(-1)
+            }
+            
+        }
+        .take( -1 )
+}
 
 def validate_required_parameters () {
     if ( !params.data_root ) error "Error ~ Input data root not specified, use --data_root"
