@@ -16,7 +16,7 @@ workflow {
     else {
         validate_required_parameters()
         dataloader = load_dataset()
-        validate_input_data(dataloader)
+        validate_input_data(dataloader.dwi, dataloader.rev, dataloader.dwi_mask, dataloader.anat, dataloader.anat_mask, dataloader.pvf)
         display_run_info()
         preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.pvf, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
         reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.tissue_masks, preprocess_wkf.out.safe_wm_mask, preprocess_wkf.out.metadata)
@@ -33,9 +33,9 @@ workflow.onComplete {
         log.info "Execution duration : $workflow.duration"
     }
 
-def validate_input_data (dataloader) {
-    dwi_validation_wkf(dataloader.dwi, dataloader.rev, dataloader.dwi_mask)
-    anat_validation_wkf(dataloader.anat, dataloader.anat_mask, dataloader.pvf)
+def validate_input_data (dwi, rev, dwi_mask, anat, anat_mask, pvf) {
+    dwi_validation_wkf(dwi, rev, dwi_mask)
+    anat_validation_wkf(anat, anat_mask, pvf)
 
     error_per_subject = dwi_validation_wkf.out.error_per_subject
         .join(anat_validation_wkf.out.error_per_subject, remainer: true)
