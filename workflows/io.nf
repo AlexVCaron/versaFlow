@@ -6,6 +6,11 @@ params.data_root = false
 
 include { prepare_metadata as pmeta_dwi; prepare_metadata as pmeta_rev } from "../modules/processes/io.nf"
 include { fill_missing_datapoints; exclude_missing_datapoints; separate_b0_from_dwi } from "../modules/functions.nf"
+include {
+    validate_affine as anat_validate_affine;
+    validate_affine as dwi_validate_affine;
+    validate_dwi_acquisition
+} from "../modules/processes/validate.nf"
 
 workflow load_dataset {
     main:
