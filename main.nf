@@ -37,11 +37,7 @@ def validate_input_data (dwi, rev, dwi_mask, anat, anat_mask, pvf) {
     dwi_validation_wkf(dwi, rev, dwi_mask)
     anat_validation_wkf(anat, anat_mask, pvf)
 
-    error_per_subject = dwi_validation_wkf.out.error_per_subject
-        .join(anat_validation_wkf.out.error_per_subject, remainer: true)
-        .map{ [it[0], it[1..-1].sum()] }
     errors = dwi_validation_wkf.out.error.mix(anat_validation_wkf.out.error)
-
     dwi_validation_wkf.out.error_count
         .mix(anat_validation_wkf.out.error_count)
         .sum()
@@ -49,8 +45,7 @@ def validate_input_data (dwi, rev, dwi_mask, anat, anat_mask, pvf) {
             if (it > 0) {
                 println "Number of errors found : $it"
                 errors.subscribe onComplete: { error "Pipeline finished in error" }
-                error_per_subject.subscribe onComplete: { errors.take(-1) }
-                error_per_subject.take(-1)
+                errors.take(-1)
             }
             
         }

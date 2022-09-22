@@ -98,7 +98,6 @@ workflow anat_validation_wkf {
         error_channel = anat_validate_affine.out.errors
     emit:
         error_count = errors.count()
-        error_per_subject = errors.countBy()
         errors = error_channel
 }
 
@@ -113,10 +112,9 @@ workflow dwi_validation_wkf {
         (rev_dwi_channel, rev_b0_channel) = separate_b0_from_dwi(rev_channel)
         validate_dwi_acquisition(dwi_channel.mix(rev_dwi_channel))
 
-        errors = dwi_validate_affine.out.error_files.mix(validate_dwi_acquisition.out.bad_affine)
+        errors = dwi_validate_affine.out.bad_affine.mix(validate_dwi_acquisition.out.error_files)
         error_channel = dwi_validate_affine.out.errors.mix(validate_dwi_acquisition.out.errors)
     emit:
         error_count = errors.count()
-        error_per_subject = errors.countBy()
         errors = error_channel
 }
