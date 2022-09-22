@@ -15,7 +15,7 @@ process validate_affine {
         tuple val(sid), path("${sid}_validation_affine_components.txt"), emit: bad_affine, optional: true
     script:
         """
-        ERROR_MSG=$(mrhardi validate affine --ref $ref_image --in $cmp_image --stdout --out ${sid}_validation)
+        ERROR_MSG="\$(mrhardi validate affine --ref $ref_image --in $cmp_image --stdout --out ${sid}_validation)"
         """
 }
 
@@ -32,6 +32,6 @@ process validate_dwi_acquisition {
         if (params.b0_threshold)
             args += " --b0-thr $params.b0_threshold"
         """
-        ERROR_MSG=$(mrhardi validate dwi --in $dwi --bvals $bval --bvecs $bvec --stdout $args --out ${sid}_validation)
+        ERROR_MSG="\$(mrhardi validate dwi --in $dwi --bvals $bval --bvecs $bvec --stdout $args --out ${sid}_validation)"
         """
 }
