@@ -21,7 +21,7 @@ include {
     crop_image as crop_raw_dwi; crop_image as crop_raw_t1;
     apply_mask as apply_mask_to_t1_for_reg; apply_mask as apply_mask_to_b0_for_reg;
     dilate_mask as dilate_t1_mask; dilate_mask as dilate_b0_mask;
-    bet_mask;fit_bounding_box; merge_masks; check_odd_dimensions; pvf_to_mask
+    bet_mask; fit_bounding_box; merge_masks; check_odd_dimensions; pvf_to_mask
 } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise; normalize_inter_b0 } from '../modules/processes/denoise.nf'
 include {
@@ -34,7 +34,7 @@ include {
     dwi_denoise_wkf; dwi_denoise_wkf as rev_denoise_wkf; n4_denoise_wkf;
     squash_wkf; squash_wkf as squash_raw_wkf; topup_wkf; apply_topup_wkf; apply_topup_wkf as raw_apply_topup_wkf; eddy_wkf
 } from "../modules/workflows/preprocess.nf"
-include { t12b0_registration as t1_mask_registration_wkf; t12b0_registration as t1_registration_wkf } from '../modules/workflows/t1_registration.nf'
+include { t1_mask_to_b0; t12b0_registration as t1_registration_wkf } from '../modules/workflows/t1_registration.nf'
 include { segment_nmt_wkf; segment_wm_wkf } from '../modules/workflows/segment.nf'
 
 // Preprocess workflow parameters
@@ -217,18 +217,14 @@ workflow preprocess_wkf {
 
             existing_t1_mask_ids = exclude_missing_datapoints(t1_mask_channel, 1, "").map{ [it[0]] }
             absent_t1_mask_ids = filter_datapoints(t1_mask_channel, { it[1] == "" }).map{ [it[0]] }
-
-            t1_mask_registration_wkf(
+            t1_mask_to_b0(
                 existing_t1_mask_ids.join(reg_dwi_channel),
                 existing_t1_mask_ids.join(t1_channel),
                 existing_t1_mask_ids.join(t1_mask_channel),
-                existing_t1_mask_ids.join(dwi_mask_channel),
-                "true",
-                !params.register_t1_to_dwi,
-                params.quick_t1_mask_registration
+                "false"
             )
 
-            t1_mask_convert_datatype(t1_mask_registration_wkf.out.mask, "uint8", "preprocess", !params.register_t1_to_dwi, "mask", "")
+            t1_mask_convert_datatype(t1_mask_to_b0.out.mask, "uint8", "preprocess", !params.register_t1_to_dwi, "mask", "")
             dwi_mask_channel = t1_mask_convert_datatype.out.image.mix(absent_t1_mask_ids.join(dwi_mask_channel))
         }
 

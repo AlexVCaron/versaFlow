@@ -21,7 +21,7 @@ c.AntsRegistration.base_config_file = ""
 # AntsConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
-c.AntsConfiguration.accross_modalities = False
+c.AntsConfiguration.accross_modalities = True
 
 c.AntsConfiguration.dimension = 3
 
@@ -36,17 +36,39 @@ c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-6,
-    "conv_max_iter": [400, 200, 100],
-    "conv_win": 30,
-    "grad_step": 0.2,
+    "conv_eps": 1e-07,
+    "conv_max_iter": [500, 300, 150, 50],
+    "conv_win": 10,
+    "grad_step": 0.1,
     "klass": "mrHARDI.traits.ants.AntsRigid",
     "metrics": [
         {
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.2,
+                64,
+                "Regular",
+                0.5
+            ],
+            "klass": "mrHARDI.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 1,
+            "moving_index": 0,
+            "args": [
+                0.1,
+                64,
+                "Regular",
+                0.5
+            ],
+            "klass": "mrHARDI.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 2,
+            "moving_index": 0,
+            "args": [
+                0.7,
                 64,
                 "Regular",
                 0.5
@@ -55,27 +77,51 @@ c.AntsConfiguration.passes = [{
         }
     ],
     "shrinks": [
-        12,
         8,
-        4
-    ],
-    "smoothing": [
-        3,
+        4,
         2,
         1
+    ],
+    "smoothing": [
+        1.5,
+        1,
+        0.5,
+        0
     ]
 }, {
-    "conv_eps": 1e-6,
-    "conv_max_iter": [500, 300, 200, 100],
-    "conv_win": 20,
-    "grad_step": 0.2,
+    "conv_eps": 1e-07,
+    "conv_max_iter": [300, 150, 100, 50],
+    "conv_win": 10,
+    "grad_step": 0.1,
     "klass": "mrHARDI.traits.ants.AntsAffine",
     "metrics": [
         {
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.2,
+                64,
+                "Regular",
+                0.5
+            ],
+            "klass": "mrHARDI.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 1,
+            "moving_index": 0,
+            "args": [
+                0.1,
+                64,
+                "Regular",
+                0.5
+            ],
+            "klass": "mrHARDI.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 2,
+            "moving_index": 0,
+            "args": [
+                0.7,
                 64,
                 "Regular",
                 0.5
@@ -84,81 +130,18 @@ c.AntsConfiguration.passes = [{
         }
     ],
     "shrinks": [
-        12,
-        8,
-        4,
-        2
-    ],
-    "smoothing": [
-        3,
-        2,
-        1,
-        0.5
-    ]
-}, {
-    "conv_eps": 1e-6,
-    "conv_max_iter": [200, 200, 100, 100, 10],
-    "conv_win": 10,
-    "grad_step": 0.2,
-    "var_penality": 3,
-    "var_total": 0,
-    "klass": "mrHARDI.traits.ants.AntsSyN",
-    "metrics": [
-        {
-            "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                1.0,
-                32,
-                "Regular",
-                0.5
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        }
-    ],
-    "shrinks": [
-        12,
         8,
         4,
         2,
         1
     ],
     "smoothing": [
-        3,
-        2,
+        1.5,
         1,
-        0.5,
-        0
-    ]
-}, {
-    "conv_eps": 1e-6,
-    "conv_max_iter": [40, 20],
-    "conv_win": 10,
-    "grad_step": 0.1,
-    "var_penality": 3,
-    "var_total": 0,
-    "klass": "mrHARDI.traits.ants.AntsSyN",
-    "metrics": [
-        {
-            "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                1.0,
-                4,
-                "Regular",
-                0.5
-            ],
-            "klass": "mrHARDI.traits.ants.MetricCC"
-        }
-    ],
-    "shrinks": [
-        2,
-        1
-    ],
-    "smoothing": [
         0.5,
         0
     ]
 }]
 
 c.AntsConfiguration.use_float = False
+
