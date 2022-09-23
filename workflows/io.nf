@@ -92,9 +92,10 @@ workflow anat_validation_wkf {
         other_channel
     main:
         compare_channel = mask_channel.mix(other_channel.transpose())
+        compare_channel = exclude_missing_datapoints(compare_channel, 1, "")
         anat_validate_affine(anat_channel.combine(compare_channel, by: 0))
 
-        errors = anat_validate_affine.out.error_files
+        errors = anat_validate_affine.out.bad_affine
         error_channel = anat_validate_affine.out.errors
     emit:
         error_count = errors.count()
@@ -107,8 +108,9 @@ workflow dwi_validation_wkf {
         rev_channel
         mask_channel
     main:
-        compare_channel = mask_channel.mix(rev_channel.map{ it[0..2] })
-        dwi_validate_affine(dwi_channel.map{ it[0..2] }.combine(compare_channel, by: 0))
+        compare_channel = mask_channel.mix(rev_channel.map{ it[0..1] })
+        compare_channel = exclude_missing_datapoints(compare_channel, 1, "")
+        dwi_validate_affine(dwi_channel.map{ it[0..1] }.combine(compare_channel, by: 0))
         (rev_dwi_channel, rev_b0_channel) = separate_b0_from_dwi(rev_channel)
         validate_dwi_acquisition(dwi_channel.mix(rev_dwi_channel))
 

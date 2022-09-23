@@ -37,7 +37,7 @@ def validate_input_data (dwi, rev, dwi_mask, anat, anat_mask, pvf) {
     dwi_validation_wkf(dwi, rev, dwi_mask)
     anat_validation_wkf(anat, anat_mask, pvf)
 
-    errors = dwi_validation_wkf.out.error.mix(anat_validation_wkf.out.error)
+    errors = dwi_validation_wkf.out.errors.mix(anat_validation_wkf.out.errors)
     dwi_validation_wkf.out.error_count
         .mix(anat_validation_wkf.out.error_count)
         .sum()
