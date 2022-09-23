@@ -146,10 +146,11 @@ workflow t1_mask_to_b0 {
         t1_mask_channel
         publish_mask
     main:
-        bet_mask(empty_dwi_mask_ids.join(b0_channel), "preprocess", "${!params.dwi_mask_from_t1_mask}")
+        extract_target_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
+
+        bet_mask(extract_target_b0.out.b0, "preprocess", "false")
         dwi_mask_channel = bet_mask.out.mask
 
-        extract_target_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
         mask_target_b0(extract_target_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         compute_target_pdavg(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
