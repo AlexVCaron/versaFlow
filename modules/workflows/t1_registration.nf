@@ -176,7 +176,7 @@ workflow t1_mask_to_b0 {
             false,
             "",
             "",
-            params.t1_to_b0_registration_config
+            params.t1_to_b0_registration_config,
             ""
         )
         transform_t1_mask_to_b0(
