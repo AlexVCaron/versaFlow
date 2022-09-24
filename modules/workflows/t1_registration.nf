@@ -46,7 +46,7 @@ params.t1_to_template_registration_config = file("${get_config_path()}/t1_to_tem
 params.b0_to_template_registration_config = file("${get_config_path()}/b0_to_template_registration_config.py")
 params.t1_to_template_registration_quick_config = file("${get_config_path()}/t1_to_template_registration_quick_config.py")
 params.b0_to_template_registration_quick_config = file("${get_config_path()}/b0_to_template_registration_quick_config.py")
-params.t1_to_b0_registration_config = file("${get_config_path()}/t1_to_b0_registration_affine.py")
+params.t1_to_b0_registration_config = file("${get_config_path()}/t1_to_b0_registration_affine_config.py")
 
 workflow t12b0_registration {
     take:
