@@ -16,11 +16,41 @@ workflow {
     else {
         validate_required_parameters()
         dataloader = load_dataset()
-        validate_input_data(dataloader.dwi, dataloader.rev, dataloader.dwi_mask, dataloader.anat, dataloader.anat_mask, dataloader.pvf)
+        (dwi, rev, dwi_mask, anat, anat_mask, pvf) = validate_input_data(
+            dataloader.dwi,
+            dataloader.rev,
+            dataloader.dwi_mask,
+            dataloader.anat,
+            dataloader.anat_mask,
+            dataloader.pvf
+        )
         display_run_info()
-        preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.pvf, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
-        reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.tissue_masks, preprocess_wkf.out.safe_wm_mask, preprocess_wkf.out.metadata)
-        measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.tissue_masks, reconstruct_wkf.out.diamond_summary, preprocess_wkf.out.metadata)
+
+        preprocess_wkf(
+            dataloader.dwi,
+            dataloader.rev,
+            dataloader.anat,
+            dataloader.pvf,
+            dataloader.metadata,
+            dataloader.rev_metadata,
+            dataloader.dwi_mask,
+            dataloader.anat_mask
+        )
+        reconstruct_wkf(
+            preprocess_wkf.out.dwi,
+            preprocess_wkf.out.mask,
+            preprocess_wkf.out.tissue_masks,
+            preprocess_wkf.out.safe_wm_mask,
+            preprocess_wkf.out.metadata
+        )
+        measure_wkf(
+            preprocess_wkf.out.dwi,
+            reconstruct_wkf.out.all,
+            preprocess_wkf.out.mask,
+            preprocess_wkf.out.tissue_masks,
+            reconstruct_wkf.out.diamond_summary,
+            preprocess_wkf.out.metadata
+        )
         if ( params.pft_tracking ) {
             tracking_wkf(reconstruct_wkf.out.csd, preprocess_wkf.out.pvf)
         }
@@ -51,14 +81,14 @@ def validate_input_data (dwi, rev, dwi_mask, anat, anat_mask, pvf) {
         }
         .take( -1 )
 
-    return (
+    return [
         dwi_validation_wkf.out.dwi,
         dwi_validation_wkf.out.rev,
         dwi_validation_wkf.out.mask,
         anat_validation_wkf.out.anat,
         anat_validation_wkf.out.mask,
         pvf
-    )
+    ]
 }
 
 def validate_required_parameters () {
