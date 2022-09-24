@@ -50,6 +50,15 @@ def validate_input_data (dwi, rev, dwi_mask, anat, anat_mask, pvf) {
             
         }
         .take( -1 )
+
+    return (
+        dwi_validation_wkf.out.dwi,
+        dwi_validation_wkf.out.rev,
+        dwi_validation_wkf.out.mask,
+        anat_validation_wkf.out.anat,
+        anat_validation_wkf.out.mask,
+        pvf
+    )
 }
 
 def validate_required_parameters () {

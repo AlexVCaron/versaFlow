@@ -100,6 +100,8 @@ workflow anat_validation_wkf {
     emit:
         error_count = errors.count()
         errors = error_channel
+        anat = anat_validate_affine.out.ref
+        mask = mask_channel
 }
 
 workflow dwi_validation_wkf {
@@ -119,4 +121,7 @@ workflow dwi_validation_wkf {
     emit:
         error_count = errors.count()
         errors = error_channel
+        dwi = validate_dwi_acquisition.out.dwi
+        rev = rev_channel
+        mask = mask_channel
 }
