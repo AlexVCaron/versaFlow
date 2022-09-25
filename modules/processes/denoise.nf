@@ -64,7 +64,10 @@ process nlmeans_denoise {
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
-        scil_run_nlmeans.py $image ${image.simpleName}__nlmeans_denoised.nii.gz 1 --processes $task.cpus -f $args
+        mrhardi nlmeans \
+            --in $image \
+            --out ${image.simpleName}__nlmeans_denoised.nii.gz \
+            --processes $task.cpus $args
         $after_script
         """
 }
