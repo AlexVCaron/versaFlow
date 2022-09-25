@@ -66,7 +66,7 @@ process nlmeans_denoise {
         export OPENBLAS_NUM_THREADS=1
         mrhardi nlmeans \
             --in $image \
-            --out ${image.simpleName}__nlmeans_denoised.nii.gz \
+            --out ${image.simpleName}__nlmeans_denoised \
             --processes $task.cpus $args
         $after_script
         """
