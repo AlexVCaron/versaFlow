@@ -75,3 +75,5 @@ c.EddyConfiguration.susceptibility = None
 # }
 
 c.EddyConfiguration.set_seed = True
+
+c.EddyConfiguration.ceil_value = 10

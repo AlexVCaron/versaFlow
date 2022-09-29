@@ -55,3 +55,4 @@ c.EddyConfiguration.slice_to_vol = None
 
 c.EddyConfiguration.susceptibility = None
 
+c.EddyConfiguration.ceil_value = 10
