@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# CSD(MagicMonkeyBaseApplication) configuration
+# CSD(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 
 c.CSD.deconv_frequencies = ""
@@ -24,18 +24,18 @@ c.CSD.base_config_file = ""
 
 
 # -----------------------------------------------------------------------------
-# SphericalDeconvConfiguration(MagicMonkeyConfigurable) configuration
+# SphericalDeconvConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
 
-c.CSDConfiguration.klass = "magic_monkey.config.csd.CSDConfiguration"
+c.CSDConfiguration.klass = "mrHARDI.config.csd.CSDConfiguration"
 
 c.CSDConfiguration.shells = []
 
 c.CSDConfiguration.strides = []
 
 c.CSDConfiguration.algorithm = {
-    "klass": "magic_monkey.traits.csd.MSMTCSDAlgorithm",
+    "klass": "mrHARDI.traits.csd.MSMTCSDAlgorithm",
     "max_iter": 50,
     "non_neg_lambda": 1.0,
     "norm_lambda": 1.0,

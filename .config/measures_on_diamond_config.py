@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# DiamondMetrics(MagicMonkeyBaseApplication) configuration
+# DiamondMetrics(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 c.DiamondMetrics.free_water = True
 

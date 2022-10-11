@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# FiberResponse(MagicMonkeyBaseApplication) configuration
+# FiberResponse(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 
 c.FiberResponse.n_threads = 4
@@ -20,11 +20,11 @@ c.FiberResponse.base_config_file = ""
 
 
 # -----------------------------------------------------------------------------
-# FiberResponseConfiguration(MagicMonkeyConfigurable) configuration
+# FiberResponseConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
 
-c.FiberResponseConfiguration.klass = "magic_monkey.config.csd.FiberResponseConfiguration"
+c.FiberResponseConfiguration.klass = "mrHARDI.config.csd.FiberResponseConfiguration"
 
 c.FiberResponseConfiguration.lmax = 0
 
@@ -37,6 +37,6 @@ c.FiberResponseConfiguration.algorithm = {
     "p_gm_voxels": 2.,
     "p_csf_voxels": 10.,
     "wm_alg": "tournier",
-    "klass": "magic_monkey.traits.csd.DhollanderResponseAlgorithm"
+    "klass": "mrHARDI.traits.csd.DhollanderResponseAlgorithm"
 }
 

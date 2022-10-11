@@ -28,7 +28,7 @@ process apply_mask {
         tuple val(sid), path("${img.simpleName}__masked_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey apply_mask --in $img --mask $mask --out ${img.simpleName}__masked.nii.gz
+        mrhardi apply_mask --in $img --mask $mask --out ${img.simpleName}__masked.nii.gz
         """
 }
 
@@ -75,7 +75,7 @@ process cat_datasets {
             args += " --bvecs ${bvec.join(',')}"
 
         """
-        magic-monkey concatenate $args --out ${sid}_${prefix}__concatenated --config $config
+        mrhardi concatenate $args --out ${sid}_${prefix}__concatenated --config $config
         """
 }
 
@@ -94,7 +94,7 @@ process split_image {
         tuple val(sid), path("${img.simpleName}_splitted_ax${split_axis}_*_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey split --image $img --prefix "${img.simpleName}_splitted" --axis $split_axis
+        mrhardi split --image $img --prefix "${img.simpleName}_splitted" --axis $split_axis
         """
 }
 
@@ -113,7 +113,7 @@ process join_images {
         tuple val(sid), path("${sid}__joined_ax${split_axis}_*_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey split --image ${sid}__joined_ax${split_axis}.nii.gz --prefix $prefix --axis $split_axis --inverse
+        mrhardi split --image ${sid}__joined_ax${split_axis}.nii.gz --prefix $prefix --axis $split_axis --inverse
         """
 }
 
@@ -132,7 +132,7 @@ process apply_topup {
         tuple val(sid), path("${sid}_dwi__topup_corrected_*_metadata.*"), optional: true, emit: metadata
     script:
         """
-        magic-monkey apply_topup --dwi ${dwis.join(",")} --bvals ${bvals.join(",")} --bvecs ${bvecs.join(",")} --rev ${revs.join(",")} --acqp $topup_params --topup $topup_prefix --out ${sid}_dwi__topup_corrected
+        mrhardi apply_topup --dwi ${dwis.join(",")} --bvals ${bvals.join(",")} --bvecs ${bvecs.join(",")} --rev ${revs.join(",")} --acqp $topup_params --topup $topup_prefix --out ${sid}_dwi__topup_corrected
         """
 }
 
@@ -187,7 +187,7 @@ process replicate_image {
         if ( "$idx_to_rep" )
             args += "--idx $idx_to_rep"
         """
-        magic-monkey replicate --in $img --ref $ref_img --out ${img.simpleName}__replicated.nii.gz $args
+        mrhardi replicate --in $img --ref $ref_img --out ${img.simpleName}__replicated.nii.gz $args
         """
 }
 
@@ -206,7 +206,7 @@ process check_dwi_conformity {
         tuple val(sid), path("${dwi.simpleName}__checked_metadata.*"), emit: metadata, optional: true
     script:
         """
-        magic-monkey check --in $dwi --bvals $bval --bvecs $bvec --strat $error_strategy --out ${dwi.simpleName}__checked
+        mrhardi check --in $dwi --bvals $bval --bvecs $bvec --strat $error_strategy --out ${dwi.simpleName}__checked
         """
 }
 
@@ -303,16 +303,16 @@ process crop_image {
 
         if ( !bounding_box.empty() ) {
             args += "--input_bbox $bounding_box"
-            after_script += ["magic-monkey fit2box --in ${image.simpleName}__cropped.nii.gz --out ${image.simpleName}__cropped.nii.gz --pbox $bounding_box"]
+            after_script += ["mrhardi fit2box --in ${image.simpleName}__cropped.nii.gz --out ${image.simpleName}__cropped.nii.gz --pbox $bounding_box"]
         }
         else
             args += "--output_bbox ${image.simpleName}__bbox.pkl"
 
         if ( !mask.empty() ) {
-            before_script = "magic-monkey apply_mask --in $image --mask $mask --out masked_image.nii.gz"
+            before_script = "mrhardi apply_mask --in $image --mask $mask --out masked_image.nii.gz"
             img = "masked_image.nii.gz"
-            mask_script = "magic-monkey fit2box --in $mask --out ${mask.simpleName}__cropped.nii.gz"
-            img_script = "magic-monkey fit2box --in $image --out ${image.simpleName}__cropped.nii.gz"
+            mask_script = "mrhardi fit2box --in $mask --out ${mask.simpleName}__cropped.nii.gz"
+            img_script = "mrhardi fit2box --in $image --out ${image.simpleName}__cropped.nii.gz"
             if ( !bounding_box.empty() ) {
                 mask_script += " --pbox $bounding_box"
                 img_script += " --pbox $bounding_box"
@@ -327,7 +327,7 @@ process crop_image {
         }
 
         if ( metadata instanceof nextflow.util.BlankSeparatedList ? !metadata.isEmpty() : !metadata.empty() )
-            after_script += ["magic-monkey metadata --in ${image.getSimpleName()}__cropped.nii.gz --update_affine --metadata $metadata"]
+            after_script += ["mrhardi metadata --in ${image.getSimpleName()}__cropped.nii.gz --update_affine --metadata $metadata"]
 
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
@@ -356,7 +356,7 @@ process fit_bounding_box {
         tuple val(sid), path("${image.simpleName}__bbox.pkl"), emit: bbox, optional: true
     script:
         """
-        magic-monkey fitbox --in $image --ref $reference --pbox $bounding_box --out ${image.simpleName}__bbox
+        mrhardi fitbox --in $image --ref $reference --pbox $bounding_box --out ${image.simpleName}__bbox
         """
 }
 
@@ -373,7 +373,7 @@ process average {
         tuple val(sid), path("${base_name}__averaged.nii.gz"), emit: image
     script:
         """
-        magic-monkey concatenate --in ${images.join(",")} --out cat_images --ts
+        mrhardi concatenate --in ${images.join(",")} --out cat_images --ts
         fslmaths cat_images.nii.gz -Tmean ${base_name}__averaged.nii.gz
         """
 }
@@ -386,7 +386,7 @@ process merge_masks {
         tuple val(sid), path("${base_name}__merged.nii.gz"), emit: mask
     script:
         """
-        magic-monkey concatenate --in ${masks.join(",")} --out cat_images --ts
+        mrhardi concatenate --in ${masks.join(",")} --out cat_images --ts
         fslmaths cat_images.nii.gz -Tmax ${base_name}__merged.nii.gz
         """
 }
@@ -416,7 +416,7 @@ process extract_shells {
         tuple val(sid), path("${dwi.simpleName}__extracted_shells.nii.gz"), path("${dwi.simpleName}__extracted_shells.bval"), path("${dwi.simpleName}__extracted_shells.bvec"), emit: dwi
     script:
         """
-        magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config
+        mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config
         """
 }
 
@@ -454,7 +454,7 @@ process segmentation_to_binary {
         tuple val(sid), path("${segmentation.simpleName}_all_gm.nii.gz"), emit: all_gm_seg
     script:
         """
-        magic-monkey seg2mask --in $segmentation --values 1,2,3,4 --labels csf,gm,dgm,wm --out ${segmentation.simpleName}
+        mrhardi seg2mask --in $segmentation --values 1,2,3,4 --labels csf,gm,dgm,wm --out ${segmentation.simpleName}
         scil_image_math.py addition ${segmentation.simpleName}_gm.nii.gz ${segmentation.simpleName}_dgm.nii.gz ${segmentation.simpleName}_all_gm.nii.gz --data_type uint8 -f
         """
 }
@@ -520,7 +520,7 @@ process check_odd_dimensions {
         if ( !rval.empty() ) after_script += "cp $rval ${reverse.simpleName}__even_dims.bval\n"
         if ( !rvec.empty() ) after_script += "cp $rvec ${reverse.simpleName}__even_dims.bvec\n"
         """
-        magic-monkey even_dimensions --in $dwi --suffix __even_dims $args
+        mrhardi even_dimensions --in $dwi --suffix __even_dims $args
         cp $bval ${dwi.simpleName}__even_dims.bval
         cp $bvec ${dwi.simpleName}__even_dims.bvec
         $after_script
@@ -541,6 +541,6 @@ process check_for_duplicates {
         tuple val(sid), path("*__${params.duplicates_merge_method}_duplicates_metadata.*"), optional: true, emit: metadata   
     script:
         """
-        magic-monkey duplicates --in $dwi --bvals $bval --bvecs $bvec --merge $params.duplicates_merge_method --out ${dwi.simpleName}__${params.duplicates_merge_method}_duplicates
+        mrhardi duplicates --in $dwi --bvals $bval --bvecs $bvec --merge $params.duplicates_merge_method --out ${dwi.simpleName}__${params.duplicates_merge_method}_duplicates
         """
 }

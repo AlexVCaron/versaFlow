@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# DTI(MagicMonkeyBaseApplication) configuration
+# DTI(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 
 c.DTI.output_b0 = False
@@ -22,10 +22,10 @@ c.DTI.base_config_file = ""
 
 
 # -----------------------------------------------------------------------------
-# DTIConfiguration(MagicMonkeyConfigurable) configuration
+# DTIConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
-c.DTIConfiguration.klass = "magic_monkey.config.dti.DTIConfiguration"
+c.DTIConfiguration.klass = "mrHARDI.config.dti.DTIConfiguration"
 
 c.DTIConfiguration.predicted_signal = False
 

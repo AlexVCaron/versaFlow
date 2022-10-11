@@ -54,7 +54,7 @@ process diamond {
             args += " --lenient-params"
 
         """
-        magic-monkey diamond --in $input_dwi --out ${sid}_diamond --n $params.n_fascicles --f $params.fascicle_model --p $task.cpus --config $config $args
+        mrhardi diamond --in $input_dwi --out ${sid}_diamond --n $params.n_fascicles --f $params.fascicle_model --p $task.cpus --config $config $args
         """
 }
 
@@ -77,7 +77,7 @@ process mrtrix_dti {
 
         """
         export MRTRIX_RNG_SEED=$params.random_seed
-        magic-monkey dti $args --out ${sid}_dti --config $config
+        mrhardi dti $args --out ${sid}_dti --config $config
         """
 }
 
@@ -102,7 +102,7 @@ process response {
 
         """
         export MRTRIX_RNG_SEED=$params.random_seed
-        magic-monkey response $args --out ${sid}_response --config $config
+        mrhardi response $args --out ${sid}_response --config $config
         """
 }
 
@@ -127,7 +127,7 @@ process csd {
 
         """
         export MRTRIX_RNG_SEED=$params.random_seed
-        magic-monkey csd $args --out ${sid}_csd --responses ${responses.join(',')} --config $config
+        mrhardi csd $args --out ${sid}_csd --responses ${responses.join(',')} --config $config
         """
 }
 
@@ -150,7 +150,7 @@ process scilpy_response {
         if (params.frf_center)
             args += " --roi_center ${params.frf_center.join(" ")}"
         if (params.frf_on_dti_shell && params.max_dti_bvalue)
-            before_frf += "magic-monkey shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_frf_shells --with_b0\n"
+            before_frf += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_frf_shells --with_b0\n"
         else {
             before_frf += "cp $dwi dwi_frf_shells.nii.gz\n"
             before_frf += "cp $bval dwi_frf_shells.bval\n"

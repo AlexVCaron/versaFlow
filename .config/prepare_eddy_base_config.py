@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# Eddy(MagicMonkeyBaseApplication) configuration
+# Eddy(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 
 # Application traits configuration
@@ -18,7 +18,7 @@ c.Eddy.base_config_file = ""
 
 
 # -----------------------------------------------------------------------------
-# EddyConfiguration(MagicMonkeyConfigurable) configuration
+# EddyConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
 c.EddyConfiguration.check_if_shelled = True
@@ -33,7 +33,7 @@ c.EddyConfiguration.fill_empty = False
 
 c.EddyConfiguration.interpolation = "spline"
 
-c.EddyConfiguration.klass = "magic_monkey.config.eddy.EddyConfiguration"
+c.EddyConfiguration.klass = "mrHARDI.config.eddy.EddyConfiguration"
 
 c.EddyConfiguration.n_iter = 5
 
@@ -55,3 +55,4 @@ c.EddyConfiguration.slice_to_vol = None
 
 c.EddyConfiguration.susceptibility = None
 
+c.EddyConfiguration.ceil_value = 10

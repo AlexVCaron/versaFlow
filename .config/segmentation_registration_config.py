@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# AntsRegistration(MagicMonkeyBaseApplication) configuration
+# AntsRegistration(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 
 # Application traits configuration
@@ -18,20 +18,20 @@ c.AntsRegistration.base_config_file = ""
 
 
 # -----------------------------------------------------------------------------
-# AntsConfiguration(MagicMonkeyConfigurable) configuration
+# AntsConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
 c.AntsConfiguration.accross_modalities = True
 
 c.AntsConfiguration.dimension = 3
 
-c.AntsConfiguration.init_transform = [0, 0, 1]
+c.AntsConfiguration.init_moving_transform = [[0, 0, 1]]
 
 c.AntsConfiguration.inlier_range = [0.005, 0.995]
 
 c.AntsConfiguration.interpolation = "Linear"
 
-c.AntsConfiguration.klass = "magic_monkey.config.ants.AntsConfiguration"
+c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 
 c.AntsConfiguration.match_histogram = False
 
@@ -40,7 +40,7 @@ c.AntsConfiguration.passes = [{
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 10,
     "grad_step": 0.1,
-    "klass": "magic_monkey.traits.ants.AntsRigid",
+    "klass": "mrHARDI.traits.ants.AntsRigid",
     "metrics": [
         {
             "target_index": 0,
@@ -51,7 +51,7 @@ c.AntsConfiguration.passes = [{
                 "Regular",
                 1.0
             ],
-            "klass": "magic_monkey.traits.ants.MetricMI"
+            "klass": "mrHARDI.traits.ants.MetricMI"
         }
     ],
     "shrinks": [
@@ -71,7 +71,7 @@ c.AntsConfiguration.passes = [{
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 10,
     "grad_step": 0.1,
-    "klass": "magic_monkey.traits.ants.AntsAffine",
+    "klass": "mrHARDI.traits.ants.AntsAffine",
     "metrics": [
         {
             "target_index": 0,
@@ -82,7 +82,7 @@ c.AntsConfiguration.passes = [{
                 "Regular",
                 1.0
             ],
-            "klass": "magic_monkey.traits.ants.MetricMI"
+            "klass": "mrHARDI.traits.ants.MetricMI"
         }
     ],
     "shrinks": [
@@ -104,7 +104,7 @@ c.AntsConfiguration.passes = [{
     "grad_step": 0.1,
     "var_penality": 3,
     "var_total": 0,
-    "klass": "magic_monkey.traits.ants.AntsSyN",
+    "klass": "mrHARDI.traits.ants.AntsSyN",
     "metrics": [
         {
             "target_index": 0,
@@ -115,7 +115,7 @@ c.AntsConfiguration.passes = [{
                 "Regular",
                 1.0
             ],
-            "klass": "magic_monkey.traits.ants.MetricMI"
+            "klass": "mrHARDI.traits.ants.MetricMI"
         }
     ],
     "shrinks": [

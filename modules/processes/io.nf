@@ -47,6 +47,6 @@ process prepare_metadata {
             args = metadata_from_params(reverse)
 
         """
-        magic-monkey metadata --in $image $args
+        mrhardi metadata --in $image $args
         """
 }

@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# AntsTransform(MagicMonkeyBaseApplication) configuration
+# AntsTransform(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 
 # Application traits configuration
@@ -18,7 +18,7 @@ c.AntsTransform.base_config_file = ""
 
 
 # -----------------------------------------------------------------------------
-# AntsTransformConfiguration(MagicMonkeyConfigurable) configuration
+# AntsTransformConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
 c.AntsTransform.out_type = "uchar"
@@ -29,4 +29,4 @@ c.AntsTransformConfiguration.interpolation = "NearestNeighbor"
 
 c.AntsTransformConfiguration.dimensionality = 3
 
-c.AntsTransformConfiguration.klass = "magic_monkey.config.ants.AntsTransformConfiguration"
+c.AntsTransformConfiguration.klass = "mrHARDI.config.ants.AntsTransformConfiguration"

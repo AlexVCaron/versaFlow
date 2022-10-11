@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# Topup(MagicMonkeyBaseApplication) configuration
+# Topup(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 
 c.Topup.extra_arguments = ""
@@ -20,12 +20,12 @@ c.Topup.base_config_file = ""
 
 
 # -----------------------------------------------------------------------------
-# TopupConfiguration(MagicMonkeyConfigurable) configuration
+# TopupConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
 c.TopupConfiguration.interpolation = "spline"
 
-c.TopupConfiguration.klass = "magic_monkey.config.topup.TopupConfiguration"
+c.TopupConfiguration.klass = "mrHARDI.config.topup.TopupConfiguration"
 
 c.TopupConfiguration.passes = [{
     "warp_resolution": 10.,

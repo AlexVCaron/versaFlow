@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# ExtractShells(MagicMonkeyBaseApplication) configuration
+# ExtractShells(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 # Application traits configuration
 

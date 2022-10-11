@@ -1,9 +1,9 @@
-# Configuration file for Magic Monkey.
+# Configuration file for mrHARDI.
 
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# Concatenate(MagicMonkeyBaseApplication) configuration
+# Concatenate(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 c.Concatenate.bvals = []
 
