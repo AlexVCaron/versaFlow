@@ -25,7 +25,7 @@ c.AntsConfiguration.accross_modalities = True
 
 c.AntsConfiguration.dimension = 3
 
-c.AntsConfiguration.init_moving_transform = [[0, 0, 1], [0, 1, 1]]
+c.AntsConfiguration.init_moving_transform = [[0, 0, 1]]
 
 c.AntsConfiguration.inlier_range = [0.005, 0.995]
 
@@ -199,11 +199,11 @@ c.AntsConfiguration.passes = [{
             "moving_index": 1,
             "args": [
                 0.6,
-                8,
+                64,
                 "Regular",
                 0.7
             ],
-            "klass": "mrHARDI.traits.ants.MetricCC"
+            "klass": "mrHARDI.traits.ants.MetricMI"
         },
         {
             "target_index": 0,

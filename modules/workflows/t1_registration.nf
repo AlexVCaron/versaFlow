@@ -182,7 +182,7 @@ workflow t1_mask_to_b0 {
             t1_mask_channel
                 .join(extract_target_b0.out.b0)
                 .join(t1_to_b0_registration_wkf.out.transform)
-                .map{ it + ["", ""] },
+                .map{ it + ["", "", ""] },
             "preprocess",
             "","$publish_mask", "mask",
             params.ants_transform_mask_config
