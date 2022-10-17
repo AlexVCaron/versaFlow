@@ -188,11 +188,11 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 0.1,
-                8,
+                64,
                 "Regular",
                 0.5
             ],
-            "klass": "mrHARDI.traits.ants.MetricCC"
+            "klass": "mrHARDI.traits.ants.MetricMI"
         },
         {
             "target_index": 0,
