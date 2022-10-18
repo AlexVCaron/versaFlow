@@ -150,11 +150,12 @@ process scilpy_response {
             args += " --roi_radii $params.frf_radii"
         if (params.frf_center)
             args += " --roi_center ${params.frf_center.join(" ")}"
-        if (params.frf_on_dti_shell && params.max_dti_bvalue)
+        if (params.frf_on_dti_shell && params.max_dti_bvalue) {
             def shell_args = ""
             if (params.b0_threshold)
                 shell_args += " --ceil ${params.b0_threshold}"
             before_frf += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_frf_shells --with_b0 $shell_args\n"
+        }
         else {
             before_frf += "cp $dwi dwi_frf_shells.nii.gz\n"
             before_frf += "cp $bval dwi_frf_shells.bval\n"
