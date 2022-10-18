@@ -12,6 +12,7 @@ params.max_fa_ventricle = 0.1
 params.min_md_ventricle = 0.003
 params.max_dti_bvalue = 1300
 params.random_seed = 1234
+params.b0_threshold = false
 
 
 process dti_metrics {
@@ -64,7 +65,10 @@ process scil_compute_dti_fa {
         }
 
         if ( params.max_dti_bvalue ) {
-            before += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0\n"
+            def shell_args = ""
+            if (params.b0_threshold)
+                shell_args += " --ceil ${params.b0_threshold}"
+            before += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0 $shell_args\n"
         }
         else {
             before += "cp $dwi dwi_for_dti.nii.gz\ncp $bval dwi_for_dti.bval\ncp $bvec dwi_for_dti.bvec"
@@ -111,7 +115,10 @@ process scil_dti_and_metrics {
 
         before = ""
         if ( params.max_dti_bvalue ) {
-            before += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0\n"
+            def shell_args = ""
+            if (params.b0_threshold)
+                shell_args += " --ceil ${params.b0_threshold}"
+            before += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0 $shell_args\n"
         }
         else {
             before += "cp $dwi dwi_for_dti.nii.gz\ncp $bval dwi_for_dti.bval\ncp $bvec dwi_for_dti.bvec"

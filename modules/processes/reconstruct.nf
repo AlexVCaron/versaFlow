@@ -20,6 +20,7 @@ params.strict_parameters = true
 params.frf_on_dti_shell = false
 params.max_dti_bvalue = 1300
 params.random_seed = 1234
+params.b0_threshold = false
 
 process diamond {
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
@@ -150,7 +151,10 @@ process scilpy_response {
         if (params.frf_center)
             args += " --roi_center ${params.frf_center.join(" ")}"
         if (params.frf_on_dti_shell && params.max_dti_bvalue)
-            before_frf += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_frf_shells --with_b0\n"
+            def shell_args = ""
+            if (params.b0_threshold)
+                shell_args += " --ceil ${params.b0_threshold}"
+            before_frf += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_frf_shells --with_b0 $shell_args\n"
         else {
             before_frf += "cp $dwi dwi_frf_shells.nii.gz\n"
             before_frf += "cp $bval dwi_frf_shells.bval\n"
