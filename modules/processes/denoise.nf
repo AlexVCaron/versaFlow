@@ -321,7 +321,7 @@ process eddy {
 }
 
 process gibbs_removal {
-    label "res_single_cpu"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
@@ -340,7 +340,7 @@ process gibbs_removal {
 
     """
     export MRTRIX_RNG_SEED=$params.random_seed
-    mrdegibbs -nthreads 1 -datatype float64 $dwi gibbs_corrected.nii.gz
+    mrdegibbs -nthreads $task.cpus -datatype float64 $dwi gibbs_corrected.nii.gz
     $after_denoise
     """
 }

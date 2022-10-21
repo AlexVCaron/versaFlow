@@ -3,6 +3,7 @@
 nextflow.enable.dsl=2
 
 params.add_odd_dimension = false
+params.b0_threshold = false
 params.bet_f = 0.5
 params.min_pvf_threshold = 0.001
 params.max_safe_csf_pvf_threshold = 0.01
@@ -205,8 +206,11 @@ process check_dwi_conformity {
         tuple val(sid), path("${dwi.simpleName}__checked.nii.gz"), path("${dwi.simpleName}__checked.bval"), path("${dwi.simpleName}__checked.bvec"), emit: dwi
         tuple val(sid), path("${dwi.simpleName}__checked_metadata.*"), emit: metadata, optional: true
     script:
+        def args = ""
+        if (params.b0_threshold)
+            args += " --ceil ${params.b0_threshold}"
         """
-        mrhardi check --in $dwi --bvals $bval --bvecs $bvec --strat $error_strategy --out ${dwi.simpleName}__checked
+        mrhardi check --in $dwi --bvals $bval --bvecs $bvec --strat $error_strategy --out ${dwi.simpleName}__checked $args
         """
 }
 
@@ -415,8 +419,11 @@ process extract_shells {
     output:
         tuple val(sid), path("${dwi.simpleName}__extracted_shells.nii.gz"), path("${dwi.simpleName}__extracted_shells.bval"), path("${dwi.simpleName}__extracted_shells.bvec"), emit: dwi
     script:
+        def args = ""
+        if (params.b0_threshold)
+            args += " --ceil ${params.b0_threshold}"
         """
-        mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config
+        mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config $args
         """
 }
 
@@ -540,7 +547,10 @@ process check_for_duplicates {
         tuple val(sid), path("${dwi.simpleName}__${params.duplicates_merge_method}_duplicates.nii.gz"), path("${dwi.simpleName}__${params.duplicates_merge_method}_duplicates.bval"), path("${dwi.simpleName}__${params.duplicates_merge_method}_duplicates.bvec"), emit: dwi
         tuple val(sid), path("*__${params.duplicates_merge_method}_duplicates_metadata.*"), optional: true, emit: metadata   
     script:
+        def args = ""
+        if (params.b0_threshold)
+            args += " --ceil ${params.b0_threshold}"
         """
-        mrhardi duplicates --in $dwi --bvals $bval --bvecs $bvec --merge $params.duplicates_merge_method --out ${dwi.simpleName}__${params.duplicates_merge_method}_duplicates
+        mrhardi duplicates --in $dwi --bvals $bval --bvecs $bvec --merge $params.duplicates_merge_method --out ${dwi.simpleName}__${params.duplicates_merge_method}_duplicates $args
         """
 }

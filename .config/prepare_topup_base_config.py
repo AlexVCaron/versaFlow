@@ -103,11 +103,11 @@ c.TopupConfiguration.passes = [{
 
 c.TopupConfiguration.precision = "double"
 
-c.TopupConfiguration.reg_model = "bending_energy"
+c.TopupConfiguration.reg_model = "membrane_energy"
 
 c.TopupConfiguration.scale_intensities = True
 
-c.TopupConfiguration.spl_order = "cubic"
+c.TopupConfiguration.spl_order = "quadratic"
 
 c.TopupConfiguration.ssq_scale_lambda = True
 
