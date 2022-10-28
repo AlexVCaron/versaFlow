@@ -53,11 +53,14 @@ process scil_compute_dti_fa {
         tuple val(sid), path("${sid}_dti_dti.nii.gz"), emit: dti
         tuple val(sid), path("${sid}_dti_fa.nii.gz"), emit: fa
         tuple val(sid), path("${sid}_dti_md.nii.gz"), emit: md
+        tuple val(sid), path("${sid}_dti_evecs_v1.nii.gz"), emit: main_peak
+        tuple val(sid), path("${sid}_dti_evecs*.nii.gz"), emit: evecs
     script:
         def avail_threads = Math.round(task.cpus / 3)
         def remainder_threads = task.cpus - avail_threads
         def args = "--tensor ${sid}_dti_dti.nii.gz"
         args += " --fa ${sid}_dti_fa.nii.gz --md ${sid}_dti_md.nii.gz"
+        args += " --evecs ${sid}_dti_evecs.nii.gz"
         def before = ""
         if ( !mask.empty() ) {
             args += " --mask $mask"

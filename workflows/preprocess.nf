@@ -21,7 +21,8 @@ include {
     crop_image as crop_raw_dwi; crop_image as crop_raw_t1;
     apply_mask as apply_mask_to_t1_for_reg; apply_mask as apply_mask_to_b0_for_reg;
     dilate_mask as dilate_t1_mask; dilate_mask as dilate_b0_mask;
-    bet_mask; fit_bounding_box; merge_masks; check_odd_dimensions; pvf_to_mask
+    bet_mask; fit_bounding_box; merge_masks; check_odd_dimensions; pvf_to_mask;
+    validate_gradients
 } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise; normalize_inter_b0 } from '../modules/processes/denoise.nf'
 include {
@@ -399,8 +400,9 @@ workflow preprocess_wkf {
         }
 
         extract_b0_preprocessed(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", "true", params.extract_mean_b0_base_config)
+        validate_gradients_wkf(dwi_channel, dwi_mask_channel)
 
-        dwi_channel = uniformize_naming(dwi_channel.map{ it.subList(0, 4) }, "dwi_preprocessed", "false", "false")
+        dwi_channel = uniformize_naming(validate_gradients_wkf.out.dwi.map{ it.subList(0, 4) }, "dwi_preprocessed", "false", "false")
         meta_channel = uniformize_naming(meta_channel, "dwi_preprocessed_metadata", "false", "false")
         dwi_mask_channel = uniformize_naming(dwi_mask_channel, "mask_preprocessed", "false", "false")
     emit:
@@ -412,6 +414,25 @@ workflow preprocess_wkf {
         safe_wm_mask = safe_wm_mask
         wm_segmentation = wm_segmentation
         metadata = meta_channel
+}
+
+workflow validate_gradients_wkf {
+    take:
+        dwi_channel
+        mask_channel
+    main:
+        scil_compute_dti_fa(dwi_channel.join(mask_channel), "preprocess", "preprocess", "false")
+        validate_gradients(
+            dwi_channel.map{ [it[0], it[3]]}
+                .join(scil_compute_dti_fa.out.main_peak)
+                .join(scil_compute_dti_fa.out.fa)
+                .join(mask_channel)
+                .map{ it + [""] },
+            "preprocess"
+        )
+        dwi_channel = dwi_channel.map{ it[0..-2] }.join(validate_gradients.out.bvecs)
+    emit:
+        dwi = dwi_channel
 }
 
 workflow t1_preprocess_wkf {

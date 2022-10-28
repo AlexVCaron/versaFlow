@@ -11,6 +11,7 @@ params.max_safe_gm_pvf_threshold = 0.01
 params.safe_csf_mask_dilation = 1
 params.safe_gm_mask_dilation = 1
 params.duplicates_merge_method = "mean"
+params.validate_bvecs_fa_thr = 0.2
 
 include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 
@@ -553,4 +554,25 @@ process check_for_duplicates {
         """
         mrhardi duplicates --in $dwi --bvals $bval --bvecs $bvec --merge $params.duplicates_merge_method --out ${dwi.simpleName}__${params.duplicates_merge_method}_duplicates $args
         """
+}
+
+process validate_gradients {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(bvec), path(peaks), path(fa), file(mask), file(peaks_vals)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${bvec.simpleName}__validated.bvec"), emit: bvecs
+    script:
+        def args = ""
+        if ( !mask.empty() ) args += " --mask $mask"
+        if ( !peaks_vals.empty() ) args += " --peaks_vals $peaks_vals"
+        """
+        scil_validate_and_correct_bvecs.py $bvec $peaks $fa ${bvec.simpleName}__validated.bvec --fa_th $params.validate_bvecs_fa_thr -f $args
+        """
+
 }
