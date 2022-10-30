@@ -36,7 +36,7 @@ c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-5,
+    "conv_eps": 1e-6,
     "conv_max_iter": [400, 200, 100, 50],
     "conv_win": 20,
     "grad_step": 0.2,
@@ -78,7 +78,7 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-6,
+    "conv_eps": 1e-7,
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 10,
     "grad_step": 0.1,
@@ -120,7 +120,7 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-8,
     "conv_max_iter": [1000, 500, 300, 100],
     "conv_win": 30,
     "grad_step": 0.1,
@@ -132,7 +132,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                0.1,
+                0.2,
                 64,
                 "Regular",
                 0.5
@@ -143,7 +143,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 1,
             "args": [
-                0.6,
+                0.4,
                 64,
                 "Regular",
                 0.7
@@ -154,7 +154,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 2,
             "args": [
-                0.3,
+                0.4,
                 64,
                 "Regular",
                 0.7
@@ -175,7 +175,7 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-8,
     "conv_max_iter": [100, 40],
     "conv_win": 20,
     "grad_step": 0.1,
@@ -187,7 +187,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                0.1,
+                0.2,
                 64,
                 "Regular",
                 0.5
@@ -198,7 +198,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 1,
             "args": [
-                0.6,
+                0.4,
                 64,
                 "Regular",
                 0.7
@@ -209,7 +209,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 2,
             "args": [
-                0.3,
+                0.4,
                 8,
                 "Regular",
                 0.7

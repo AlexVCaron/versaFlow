@@ -33,10 +33,10 @@ c.AntsConfiguration.interpolation = "Linear"
 
 c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 
-c.AntsConfiguration.match_histogram = False
+c.AntsConfiguration.match_histogram = True
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-6,
+    "conv_eps": 1e-8,
     "conv_max_iter": [400, 200, 100, 50],
     "conv_win": 10,
     "grad_step": 0.2,
@@ -67,7 +67,7 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-9,
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 20,
     "grad_step": 0.2,
@@ -98,7 +98,7 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-9,
     "conv_max_iter": [1000, 500, 200],
     "conv_win": 20,
     "grad_step": 0.2,
@@ -129,7 +129,7 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-10,
     "conv_max_iter": [100, 40],
     "conv_win": 20,
     "grad_step": 0.1,

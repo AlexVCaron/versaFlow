@@ -21,7 +21,7 @@ c.AntsRegistration.base_config_file = ""
 # AntsConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
-c.AntsConfiguration.accross_modalities = True
+c.AntsConfiguration.accross_modalities = False
 
 c.AntsConfiguration.dimension = 3
 
@@ -33,7 +33,7 @@ c.AntsConfiguration.interpolation = "Linear"
 
 c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 
-c.AntsConfiguration.match_histogram = False
+c.AntsConfiguration.match_histogram = True
 
 c.AntsConfiguration.passes = [{
     "conv_eps": 1e-10,

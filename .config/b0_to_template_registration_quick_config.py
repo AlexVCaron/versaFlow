@@ -130,7 +130,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                0.1,
+                0.2,
                 32,
                 "Regular",
                 0.5
@@ -141,7 +141,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 1,
             "args": [
-                0.6,
+                0.4,
                 32,
                 "Regular",
                 0.7
@@ -152,7 +152,7 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 2,
             "args": [
-                0.3,
+                0.4,
                 32,
                 "Regular",
                 0.7

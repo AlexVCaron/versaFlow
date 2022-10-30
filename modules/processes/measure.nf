@@ -131,7 +131,7 @@ process scil_dti_and_metrics {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
-        scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
+        scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         $before
         scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec --mask mask4scil.nii.gz -f --not_all $args
         """

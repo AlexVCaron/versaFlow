@@ -31,8 +31,12 @@ include {
     apply_mask as mask_target_pdavg;
     apply_mask as mask_moving_t1;
     prepend_sid as prepend_sid_template;
-    bet_mask
+    bet_mask;
 } from '../processes/utils.nf'
+include {
+    resampling_reference;
+    scilpy_resample_to_reference as resample_template
+} from '../processes/upsample.nf'
 include {
     get_data_path; get_config_path
 } from "../functions.nf"
@@ -71,9 +75,22 @@ workflow t12b0_registration {
             .map{ [it[0], it[1..-1]] }
         moving_channel = apply_mask_to_t1_for_reg.out.image
             .map{ [it[0], [it[1]]] }
+
         template_channel = prepend_sid_template(
             t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_t1.nii.gz")] }
-        ).map{ [it[0], [it[1]]] }
+        )
+        resampling_reference(dwi_channel.map{ it.subList(0, 2) }.join(t1_channel).join(template_channel).map{ [it[0], it[1..-1]] }, "preprocess")
+        resample_template(
+            template_channel
+                .join(resampling_reference.out.reference)
+                .map{ it + ["", ""] },
+            "preprocess",
+            "lin",
+            false,
+            false,
+            "", ""
+        )
+        template_channel = resample_template.out.image.map{ [it[0], [it[1]]] }
 
         t1_to_template_registration_wkf(
             template_channel,
@@ -114,7 +131,7 @@ workflow t12b0_registration {
                 .join(inverse_transform)
                 .map{ it + ["", ""] },
             "preprocess",
-            "","$publish_mask", "mask",
+            "","$publish_t1", "t1",
             params.ants_transform_base_config
         )
         ants_transform_t1_mask_to_b0(

@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 params.add_odd_dimension = false
 params.b0_threshold = false
+params.shell_threshold = false
 params.bet_f = 0.5
 params.min_pvf_threshold = 0.001
 params.max_safe_csf_pvf_threshold = 0.01
@@ -172,7 +173,7 @@ process convert_float_to_integer {
         tuple val(sid), path("${image.simpleName}__uint8.nii.gz"), emit: image
     script:
         """
-        scil_image_math.py round $image ${image.simpleName}__${datatype}.nii.gz -f --data_type $datatype
+        scil_image_math.py floor $image ${image.simpleName}__${datatype}.nii.gz -f --data_type $datatype
         """
 }
 
@@ -328,7 +329,7 @@ process crop_image {
             }
             after_script += [img_script]
             after_script += [mask_script]
-            after_script += ["scil_image_math.py round ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
+            after_script += ["scil_image_math.py floor ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
         }
 
         if ( metadata instanceof nextflow.util.BlankSeparatedList ? !metadata.isEmpty() : !metadata.empty() )
@@ -423,6 +424,8 @@ process extract_shells {
         def args = ""
         if (params.b0_threshold)
             args += " --ceil ${params.b0_threshold}"
+        if (params.shell_threshold)
+            args += " --gap ${params.shell_threshold}"
         """
         mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config $args
         """
