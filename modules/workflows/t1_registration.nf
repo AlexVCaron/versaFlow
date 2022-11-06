@@ -31,7 +31,11 @@ include {
     apply_mask as mask_target_pdavg;
     apply_mask as mask_moving_t1;
     prepend_sid as prepend_sid_template;
+    prepend_sid as prepend_sid_template_mask;
     bet_mask;
+    dilate_mask as dilate_t1_mask;
+    dilate_mask as dilate_dwi_mask;
+    clean_mask_borders
 } from '../processes/utils.nf'
 include {
     resampling_reference;
@@ -62,12 +66,15 @@ workflow t12b0_registration {
         publish_t1
         use_quick
     main:
+        dilate_t1_mask(t1_mask_channel, 4, "preprocess")
+        dilate_dwi_mask(dwi_mask_channel, 4, "preprocess")
+
         extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
-        apply_mask_to_b0_for_reg(extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
-        apply_mask_to_t1_for_reg(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
+        apply_mask_to_b0_for_reg(extract_b0.out.b0.join(dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
         compute_powder_average(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
-        apply_mask_to_pdavg_for_reg(compute_powder_average.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
-        scil_compute_dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess", false)
+        apply_mask_to_pdavg_for_reg(compute_powder_average.out.image.join(dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
+        scil_compute_dti_fa(dwi_channel.join(dilate_dwi_mask.out.mask), "preprocess", "preprocess", false)
+        apply_mask_to_t1_for_reg(t1_channel.join(dilate_t1_mask.out.mask).map{ it + [""] }, "preprocess", "false")
 
         target_channel = apply_mask_to_b0_for_reg.out.image
             .join(apply_mask_to_pdavg_for_reg.out.image)
@@ -79,11 +86,15 @@ workflow t12b0_registration {
         template_channel = prepend_sid_template(
             t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_t1.nii.gz")] }
         )
+        template_mask_channel = prepend_sid_template_mask(
+            t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_no_bv.nii.gz")] }
+        )
         resampling_reference(dwi_channel.map{ it.subList(0, 2) }.join(t1_channel).join(template_channel).map{ [it[0], it[1..-1]] }, "preprocess")
         resample_template(
             template_channel
                 .join(resampling_reference.out.reference)
-                .map{ it + ["", ""] },
+                .join(template_mask_channel)
+                .map{ it + [""] },
             "preprocess",
             "lin",
             false,
@@ -96,7 +107,7 @@ workflow t12b0_registration {
             template_channel,
             moving_channel,
             t1_mask_channel,
-            null,
+            resample_template.out.mask.join(dilate_t1_mask.out.mask).map{ [it[0], it[1..-1]] },
             null,
             null,
             "",
@@ -111,7 +122,7 @@ workflow t12b0_registration {
             template_channel,
             target_channel,
             null,
-            null,
+            resample_template.out.mask.join(dilate_dwi_mask.out.mask).map{ [it[0], it[1..-1]] },
             null,
             null,
             "",
@@ -144,6 +155,8 @@ workflow t12b0_registration {
             params.ants_transform_mask_config
         )
 
+        clean_mask_borders(ants_transform_t1_mask_to_b0.out.image, 2, "preprocess")
+
         transformation = t1_to_template_registration_wkf.out.transform
             .map{ [it[0], it[1], it[1].collect{ "false" }] }
             .join(inverse_transform)
@@ -151,7 +164,7 @@ workflow t12b0_registration {
 
     emit:
         t1 = ants_transform_t1_to_b0.out.image
-        mask = ants_transform_t1_mask_to_b0.out.image
+        mask = clean_mask_borders.out.mask
         transform = transformation
         reference = extract_b0.out.b0
 }

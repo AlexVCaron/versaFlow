@@ -19,8 +19,6 @@ include {
     convert_float_to_integer as t1_mask_convert_datatype;
     crop_image as crop_dwi; crop_image as crop_t1; crop_image as crop_wm; crop_image as crop_gm; crop_image as crop_csf;
     crop_image as crop_raw_dwi; crop_image as crop_raw_t1;
-    apply_mask as apply_mask_to_t1_for_reg; apply_mask as apply_mask_to_b0_for_reg;
-    dilate_mask as dilate_t1_mask; dilate_mask as dilate_b0_mask;
     bet_mask; fit_bounding_box; merge_masks; check_odd_dimensions; pvf_to_mask;
     validate_gradients
 } from '../modules/processes/utils.nf'

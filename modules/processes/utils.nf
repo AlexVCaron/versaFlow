@@ -441,10 +441,29 @@ process dilate_mask {
         val(dilation_factor)
         val(caller_name)
     output:
-        tuple val(sid), path("${mask.simpleName}__dilated.nii.gz")
+        tuple val(sid), path("${mask.simpleName}__dilated.nii.gz"), emit: mask
     script:
         """
         scil_image_math.py dilation $mask $dilation_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
+        """
+}
+
+process clean_mask_borders {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(mask)
+        val(factor)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${mask.simpleName}__clean_borders.nii.gz"), emit: mask
+    script:
+        """
+        scil_image_math.py opening $mask $factor ${mask.simpleName}__clean_borders.nii.gz --data_type uint8 -f
+        scil_image_math.py closing ${mask.simpleName}__clean_borders.nii.gz $factor ${mask.simpleName}__clean_borders.nii.gz --data_type uint8 -f
         """
 }
 

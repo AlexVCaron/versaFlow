@@ -78,7 +78,7 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-6,
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 10,
     "grad_step": 0.1,
@@ -120,8 +120,8 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-8,
-    "conv_max_iter": [1000, 500, 300, 100],
+    "conv_eps": 1e-6,
+    "conv_max_iter": [1000, 500, 300, 200, 100],
     "conv_win": 30,
     "grad_step": 0.1,
     "var_penality": 3,
@@ -135,7 +135,7 @@ c.AntsConfiguration.passes = [{
                 0.2,
                 64,
                 "Regular",
-                0.5
+                1.
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
         },
@@ -146,7 +146,7 @@ c.AntsConfiguration.passes = [{
                 0.4,
                 64,
                 "Regular",
-                0.7
+                1.
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
         },
@@ -155,73 +155,24 @@ c.AntsConfiguration.passes = [{
             "moving_index": 2,
             "args": [
                 0.4,
-                64,
+                4,
                 "Regular",
-                0.7
+                1.
             ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
+            "klass": "mrHARDI.traits.ants.MetricCC"
         }
     ],
     "shrinks": [
+        12,
         8,
         4,
         2,
         1
     ],
     "smoothing": [
+        2,
         1.5,
         1,
-        0.5,
-        0
-    ]
-}, {
-    "conv_eps": 1e-8,
-    "conv_max_iter": [100, 40],
-    "conv_win": 20,
-    "grad_step": 0.1,
-    "var_penality": 3,
-    "var_total": 0,
-    "klass": "mrHARDI.traits.ants.AntsSyN",
-    "metrics": [
-        {
-            "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                0.2,
-                64,
-                "Regular",
-                0.5
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        },
-        {
-            "target_index": 0,
-            "moving_index": 1,
-            "args": [
-                0.4,
-                64,
-                "Regular",
-                0.7
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        },
-        {
-            "target_index": 0,
-            "moving_index": 2,
-            "args": [
-                0.4,
-                8,
-                "Regular",
-                0.7
-            ],
-            "klass": "mrHARDI.traits.ants.MetricCC"
-        }
-    ],
-    "shrinks": [
-        2,
-        1
-    ],
-    "smoothing": [
         0.5,
         0
     ]
