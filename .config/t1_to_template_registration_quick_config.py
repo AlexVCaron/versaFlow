@@ -97,9 +97,9 @@ c.AntsConfiguration.passes = [{
     ]
 }, {
     "conv_eps": 1e-6,
-    "conv_max_iter": [200, 200, 100, 100, 10],
+    "conv_max_iter": [200, 200, 100, 50, 10],
     "conv_win": 10,
-    "grad_step": 0.2,
+    "grad_step": 0.1,
     "var_penality": 3,
     "var_total": 0,
     "klass": "mrHARDI.traits.ants.AntsSyN",
@@ -109,7 +109,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                32,
+                64,
                 "Regular",
                 0.5
             ],
@@ -132,7 +132,7 @@ c.AntsConfiguration.passes = [{
     ]
 }, {
     "conv_eps": 1e-6,
-    "conv_max_iter": [40, 20],
+    "conv_max_iter": [40],
     "conv_win": 10,
     "grad_step": 0.1,
     "var_penality": 3,
@@ -152,11 +152,9 @@ c.AntsConfiguration.passes = [{
         }
     ],
     "shrinks": [
-        2,
         1
     ],
     "smoothing": [
-        0.5,
         0
     ]
 }]

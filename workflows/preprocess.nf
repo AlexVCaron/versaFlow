@@ -19,15 +19,15 @@ include {
     convert_float_to_integer as t1_mask_convert_datatype;
     crop_image as crop_dwi; crop_image as crop_t1; crop_image as crop_wm; crop_image as crop_gm; crop_image as crop_csf;
     crop_image as crop_raw_dwi; crop_image as crop_raw_t1;
-    apply_mask as apply_mask_to_t1_for_reg; apply_mask as apply_mask_to_b0_for_reg;
-    dilate_mask as dilate_t1_mask; dilate_mask as dilate_b0_mask;
-    bet_mask; fit_bounding_box; merge_masks; check_odd_dimensions; pvf_to_mask
+    bet_mask; fit_bounding_box; merge_masks; check_odd_dimensions; pvf_to_mask;
+    validate_gradients
 } from '../modules/processes/utils.nf'
 include { gibbs_removal as dwi_gibbs_removal; gibbs_removal as rev_gibbs_removal; nlmeans_denoise; ants_gaussian_denoise; normalize_inter_b0 } from '../modules/processes/denoise.nf'
 include {
-    scilpy_resample as scilpy_resample_wm; scilpy_resample as scilpy_resample_gm; scilpy_resample as scilpy_resample_csf;
-    scilpy_resample as scilpy_resample_t1; scilpy_resample as scilpy_resample_dwi;
-    scilpy_resample as scilpy_resample_raw_dwi; scilpy_resample as scilpy_resample_raw_t1
+    scilpy_resample_to_reference as resample_wm; scilpy_resample_to_reference as resample_gm; scilpy_resample_to_reference as resample_csf;
+    scilpy_resample_to_reference as resample_t1; scilpy_resample_to_reference as resample_dwi;
+    scilpy_resample_to_reference as resample_raw_dwi; scilpy_resample_to_reference as resample_raw_t1;
+    resampling_reference
 } from '../modules/processes/upsample.nf'
 include {
     registration_wkf as dwi_mask_registration_wkf;
@@ -257,6 +257,9 @@ workflow preprocess_wkf {
         )
 
         dwi_mask_convert_datatype(dwi_mask_registration_wkf.out.image, "uint8", "preprocess", false, "", "")
+        existing_t1_mask_ids = exclude_missing_datapoints(t1_mask_channel, 1, "").map{ [it[0]] }
+        absent_t1_mask_ids = filter_datapoints(t1_mask_channel, { it[1] == "" }).map{ [it[0]] }
+
         t1_mask_channel = exclude_missing_datapoints(t1_mask_channel, 1, "").mix(dwi_mask_convert_datatype.out.image)
         raw_t1_mask_channel = t1_mask_channel
 
@@ -264,30 +267,31 @@ workflow preprocess_wkf {
         t1_channel = t1_preprocess_wkf.out.t1
         t1_mask_channel = t1_preprocess_wkf.out.mask
 
-        if ( params.resample_data ) {
-            scilpy_resample_dwi(dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).join(meta_channel), "preprocess", "lin", true, "mask", "")
+        pvf_to_resample = pvf_channel.filter{ !it[1].isEmpty() }
+        resampling_reference(dwi_channel.map{ it.subList(0, 2) }.join(t1_channel).map{ [it[0], it[1..-1]] }, "preprocess")
+        reference_channel = resampling_reference.out.reference
+        resample_dwi(dwi_channel.map{ it.subList(0, 2) }.join(reference_channel).join(dwi_mask_channel).join(meta_channel), "preprocess", "lin", true, true, "mask", "")
+        resample_t1(t1_channel.join(reference_channel).join(t1_mask_channel).map{ it + [""] }, "preprocess", "lin", true, true, "", "")
+        resample_wm(pvf_to_resample.map{ [it[0], it[1][0]] }.join(reference_channel).join(t1_mask_channel).map{ it + [""] }, "preprocess", "nn", true, false, "", "segmentation")
+        resample_gm(pvf_to_resample.map{ [it[0], it[1][1]] }.join(reference_channel).join(t1_mask_channel).map{ it + [""] }, "preprocess", "nn", true, false, "", "segmentation")
+        resample_csf(pvf_to_resample.map{ [it[0], it[1][2]] }.join(reference_channel).join(t1_mask_channel).map{ it + [""] }, "preprocess", "nn", true, false, "", "segmentation")
+        pvf_channel = resample_wm.out.image.join(resample_gm.out.image).join(resample_csf.out.image).map{ [it[0], it.subList(1, it.size())] }.mix(pvf_channel.filter{ it[1].isEmpty() })
 
-            pvf_to_resample = pvf_channel.filter{ !it[1].isEmpty() }
+        if ( params.raw_to_processed_space ) {
+            resample_raw_dwi(raw_dwi_channel.map{ it.subList(0, 2) }.join(reference_channel).join(dwi_mask_channel).join(raw_meta_channel), "preprocess", "lin", true, true, "mask", "raw")
+            raw_dwi_channel = replace_dwi_file(raw_dwi_channel, resample_raw_dwi.out.image)
+            raw_meta_channel = resample_raw_dwi.out.metadata
 
-            scilpy_resample_wm(pvf_to_resample.map{ [it[0], it[1][0]] }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "nn", false, "", "")
-            scilpy_resample_gm(pvf_to_resample.map{ [it[0], it[1][1]] }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "nn", false, "", "")
-            scilpy_resample_csf(pvf_to_resample.map{ [it[0], it[1][2]] }.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "nn", false, "", "")
-            pvf_channel = scilpy_resample_wm.out.image.join(scilpy_resample_gm.out.image).join(scilpy_resample_csf.out.image).map{ [it[0], it.subList(1, it.size())] }.mix(pvf_channel.filter{ it[1].isEmpty() })
-
-            if ( params.raw_to_processed_space ) {
-                scilpy_resample_raw_dwi(raw_dwi_channel.map{ it.subList(0, 2) }.join(dwi_mask_channel).join(raw_meta_channel), "preprocess", "lin", true, "mask", "raw")
-                raw_dwi_channel = replace_dwi_file(raw_dwi_channel, scilpy_resample_raw_dwi.out.image)
-                raw_meta_channel = scilpy_resample_raw_dwi.out.metadata
-
-                scilpy_resample_raw_t1(raw_t1_channel.join(raw_t1_mask_channel).map{ it + [""] }, "preprocess", "lin", false, "", "raw")
-                raw_t1_channel = scilpy_resample_raw_t1.out.image
-                raw_t1_mask_channel = t1_mask_channel
-            }
-
-            dwi_channel = replace_dwi_file(dwi_channel, scilpy_resample_dwi.out.image)
-            dwi_mask_channel = scilpy_resample_dwi.out.mask
-            meta_channel = scilpy_resample_dwi.out.metadata
+            resample_raw_t1(raw_t1_channel.join(reference_channel).join(raw_t1_mask_channel).map{ it + [""] }, "preprocess", "lin", true, false, "", "raw")
+            raw_t1_channel = resample_raw_t1.out.image
+            raw_t1_mask_channel = t1_mask_channel
         }
+
+        dwi_channel = replace_dwi_file(dwi_channel, resample_dwi.out.image)
+        dwi_mask_channel = resample_dwi.out.mask
+        meta_channel = resample_dwi.out.metadata
+        t1_channel = resample_t1.out.image
+        t1_mask_channel = resample_t1.out.mask
 
         if ( params.register_t1_to_dwi ) {
             t1_registration_wkf(
@@ -295,7 +299,7 @@ workflow preprocess_wkf {
                 t1_channel,
                 t1_mask_channel,
                 dwi_mask_channel,
-                false,
+                true,
                 true,
                 params.quick_denoised_t1_registration
             )
@@ -399,8 +403,9 @@ workflow preprocess_wkf {
         }
 
         extract_b0_preprocessed(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", "true", params.extract_mean_b0_base_config)
+        validate_gradients_wkf(dwi_channel, dwi_mask_channel)
 
-        dwi_channel = uniformize_naming(dwi_channel.map{ it.subList(0, 4) }, "dwi_preprocessed", "false", "false")
+        dwi_channel = uniformize_naming(validate_gradients_wkf.out.dwi.map{ it.subList(0, 4) }, "dwi_preprocessed", "false", "false")
         meta_channel = uniformize_naming(meta_channel, "dwi_preprocessed_metadata", "false", "false")
         dwi_mask_channel = uniformize_naming(dwi_mask_channel, "mask_preprocessed", "false", "false")
     emit:
@@ -412,6 +417,25 @@ workflow preprocess_wkf {
         safe_wm_mask = safe_wm_mask
         wm_segmentation = wm_segmentation
         metadata = meta_channel
+}
+
+workflow validate_gradients_wkf {
+    take:
+        dwi_channel
+        mask_channel
+    main:
+        scil_compute_dti_fa(dwi_channel.join(mask_channel), "preprocess", "preprocess", "false")
+        validate_gradients(
+            dwi_channel.map{ [it[0], it[3]]}
+                .join(scil_compute_dti_fa.out.main_peak)
+                .join(scil_compute_dti_fa.out.fa)
+                .join(mask_channel)
+                .map{ it + [""] },
+            "preprocess"
+        )
+        dwi_channel = dwi_channel.map{ it[0..-2] }.join(validate_gradients.out.bvecs)
+    emit:
+        dwi = dwi_channel
 }
 
 workflow t1_preprocess_wkf {
@@ -436,12 +460,6 @@ workflow t1_preprocess_wkf {
         if ( params.t1_intensity_normalization ) {
             n4_denoise_wkf(t1_channel, Channel.empty(), mask_channel, Channel.empty(), params.t1_n4_normalization_config)
             t1_channel = n4_denoise_wkf.out.image
-        }
-
-        if ( params.resample_data ) {
-            scilpy_resample_t1(t1_channel.join(mask_channel).map{ it + [""] }, "preprocess", "lin", false, "", "")
-            t1_channel = scilpy_resample_t1.out.image
-            mask_channel = scilpy_resample_t1.out.mask
         }
     emit:
         t1 = t1_channel

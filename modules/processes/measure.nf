@@ -53,11 +53,14 @@ process scil_compute_dti_fa {
         tuple val(sid), path("${sid}_dti_dti.nii.gz"), emit: dti
         tuple val(sid), path("${sid}_dti_fa.nii.gz"), emit: fa
         tuple val(sid), path("${sid}_dti_md.nii.gz"), emit: md
+        tuple val(sid), path("${sid}_dti_evecs_v1.nii.gz"), emit: main_peak
+        tuple val(sid), path("${sid}_dti_evecs*.nii.gz"), emit: evecs
     script:
         def avail_threads = Math.round(task.cpus / 3)
         def remainder_threads = task.cpus - avail_threads
         def args = "--tensor ${sid}_dti_dti.nii.gz"
         args += " --fa ${sid}_dti_fa.nii.gz --md ${sid}_dti_md.nii.gz"
+        args += " --evecs ${sid}_dti_evecs.nii.gz"
         def before = ""
         if ( !mask.empty() ) {
             args += " --mask $mask"
@@ -128,7 +131,7 @@ process scil_dti_and_metrics {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
         export OMP_NUM_THREADS=$avail_threads
         export OPENBLAS_NUM_THREADS=1
-        scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f
+        scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         $before
         scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec --mask mask4scil.nii.gz -f --not_all $args
         """

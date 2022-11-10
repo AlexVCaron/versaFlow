@@ -4,6 +4,7 @@ nextflow.enable.dsl=2
 
 params.add_odd_dimension = false
 params.b0_threshold = false
+params.shell_threshold = false
 params.bet_f = 0.5
 params.min_pvf_threshold = 0.001
 params.max_safe_csf_pvf_threshold = 0.01
@@ -11,6 +12,7 @@ params.max_safe_gm_pvf_threshold = 0.01
 params.safe_csf_mask_dilation = 1
 params.safe_gm_mask_dilation = 1
 params.duplicates_merge_method = "mean"
+params.validate_bvecs_fa_thr = 0.2
 
 include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 
@@ -171,7 +173,7 @@ process convert_float_to_integer {
         tuple val(sid), path("${image.simpleName}__uint8.nii.gz"), emit: image
     script:
         """
-        scil_image_math.py round $image ${image.simpleName}__${datatype}.nii.gz -f --data_type $datatype
+        scil_image_math.py floor $image ${image.simpleName}__${datatype}.nii.gz -f --data_type $datatype
         """
 }
 
@@ -327,7 +329,7 @@ process crop_image {
             }
             after_script += [img_script]
             after_script += [mask_script]
-            after_script += ["scil_image_math.py round ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
+            after_script += ["scil_image_math.py floor ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
         }
 
         if ( metadata instanceof nextflow.util.BlankSeparatedList ? !metadata.isEmpty() : !metadata.empty() )
@@ -422,6 +424,8 @@ process extract_shells {
         def args = ""
         if (params.b0_threshold)
             args += " --ceil ${params.b0_threshold}"
+        if (params.shell_threshold)
+            args += " --gap ${params.shell_threshold}"
         """
         mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --out ${dwi.simpleName}__extracted_shells --config $config $args
         """
@@ -437,10 +441,29 @@ process dilate_mask {
         val(dilation_factor)
         val(caller_name)
     output:
-        tuple val(sid), path("${mask.simpleName}__dilated.nii.gz")
+        tuple val(sid), path("${mask.simpleName}__dilated.nii.gz"), emit: mask
     script:
         """
         scil_image_math.py dilation $mask $dilation_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
+        """
+}
+
+process clean_mask_borders {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(mask)
+        val(factor)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${mask.simpleName}__clean_borders.nii.gz"), emit: mask
+    script:
+        """
+        scil_image_math.py opening $mask $factor ${mask.simpleName}__clean_borders.nii.gz --data_type uint8 -f
+        scil_image_math.py closing ${mask.simpleName}__clean_borders.nii.gz $factor ${mask.simpleName}__clean_borders.nii.gz --data_type uint8 -f
         """
 }
 
@@ -553,4 +576,25 @@ process check_for_duplicates {
         """
         mrhardi duplicates --in $dwi --bvals $bval --bvecs $bvec --merge $params.duplicates_merge_method --out ${dwi.simpleName}__${params.duplicates_merge_method}_duplicates $args
         """
+}
+
+process validate_gradients {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(bvec), path(peaks), path(fa), file(mask), file(peaks_vals)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${bvec.simpleName}__validated.bvec"), emit: bvecs
+    script:
+        def args = ""
+        if ( !mask.empty() ) args += " --mask $mask"
+        if ( !peaks_vals.empty() ) args += " --peaks_vals $peaks_vals"
+        """
+        scil_validate_and_correct_bvecs.py $bvec $peaks $fa ${bvec.simpleName}__validated.bvec --fa_th $params.validate_bvecs_fa_thr -f $args
+        """
+
 }
