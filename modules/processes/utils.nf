@@ -448,6 +448,23 @@ process dilate_mask {
         """
 }
 
+process erode_mask {
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+
+    input:
+        tuple val(sid), path(mask)
+        val(erosion_factor)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${mask.simpleName}__dilated.nii.gz"), emit: mask
+    script:
+        """
+        scil_image_math.py erosion $mask $erosion_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
+        """
+}
+
 process clean_mask_borders {
     label "res_single_cpu"
 

@@ -72,9 +72,9 @@ c.AntsConfiguration.passes = [{
         1
     ],
     "smoothing": [
-        1.5,
-        1,
-        0.5,
+        3.,
+        2.,
+        1.,
         0
     ]
 }, {
@@ -114,9 +114,9 @@ c.AntsConfiguration.passes = [{
         1
     ],
     "smoothing": [
-        1.5,
-        1,
-        0.5,
+        3.,
+        2.,
+        1.,
         0
     ]
 }, {
@@ -170,10 +170,10 @@ c.AntsConfiguration.passes = [{
         1
     ],
     "smoothing": [
-        2,
-        1.5,
-        1,
-        0.5,
+        4.,
+        3.,
+        2.,
+        1.,
         0
     ]
 }]

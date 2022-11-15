@@ -35,6 +35,7 @@ include {
     bet_mask;
     dilate_mask as dilate_t1_mask;
     dilate_mask as dilate_dwi_mask;
+    erode_mask as erode_dwi_mask;
     clean_mask_borders
 } from '../processes/utils.nf'
 include {
@@ -68,12 +69,13 @@ workflow t12b0_registration {
     main:
         dilate_t1_mask(t1_mask_channel, 4, "preprocess")
         dilate_dwi_mask(dwi_mask_channel, 4, "preprocess")
+        erode_dwi_mask(dwi_mask_channel, 4, "preprocess")
 
         extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
         apply_mask_to_b0_for_reg(extract_b0.out.b0.join(dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
         compute_powder_average(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
         apply_mask_to_pdavg_for_reg(compute_powder_average.out.image.join(dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
-        scil_compute_dti_fa(dwi_channel.join(dilate_dwi_mask.out.mask), "preprocess", "preprocess", false)
+        scil_compute_dti_fa(dwi_channel.join(erode_dwi_mask.out.mask), "preprocess", "preprocess", false)
         apply_mask_to_t1_for_reg(t1_channel.join(dilate_t1_mask.out.mask).map{ it + [""] }, "preprocess", "false")
 
         target_channel = apply_mask_to_b0_for_reg.out.image
