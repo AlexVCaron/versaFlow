@@ -61,6 +61,7 @@ process cat_datasets {
 
     input:
         tuple val(sid), path(imgs), file(bval), file(bvec), file(metadatas)
+        val(axis)
         val(prefix)
         val(caller_name)
         path(config)
@@ -71,13 +72,22 @@ process cat_datasets {
         tuple val(sid), path("${sid}_${prefix}__concatenated_metadata.*"), optional: true, emit: metadata
     script:
         def args = "--in ${imgs.join(',')}"
-
+        def single_copy_and_exit = ""
         if ( bval.size() > 0 )
             args += " --bvals ${bval.join(',')}"
         if ( bvec.size() > 0 )
             args += " --bvecs ${bvec.join(',')}"
-
+        if ( !("$axis" == "") )
+            args += " --axis $axis"
+        if ( imgs.size() == 1 ) {
+            single_copy_and_exit = "cp $imgs ${sid}_${prefix}__concatenated.nii.gz\n"
+            if ( bval.size() > 0 ) single_copy_and_exit += "cp $bval ${sid}_${prefix}__concatenated.bval\n"
+            if ( bvec.size() > 0 ) single_copy_and_exit += "cp $bvec ${sid}_${prefix}__concatenated.bvec\n"
+            if ( metadata.size() > 0 ) single_copy_and_exit += "cp $metadata ${sid}_${prefix}__concatenated_metadata.py\n"
+            single_copy_and_exit += "exit 0\n"
+        }
         """
+        $single_copy_and_exit
         mrhardi concatenate $args --out ${sid}_${prefix}__concatenated --config $config
         """
 }
@@ -97,7 +107,13 @@ process split_image {
         tuple val(sid), path("${img.simpleName}_splitted_ax${split_axis}_*_metadata.*"), optional: true, emit: metadata
     script:
         """
-        mrhardi split --image $img --prefix "${img.simpleName}_splitted" --axis $split_axis
+        if [[ \$(( $split_axis + 1 )) -gt \$(mrinfo -ndim ${img}) ]]
+        then
+            cp $img ${img.simpleName}_splitted_ax${split_axis}_0.nii.gz
+            cp $metadata ${img.simpleName}_splitted_ax${split_axis}_0_metadata.py
+        else
+            mrhardi split --image $img --prefix "${img.simpleName}_splitted" --axis $split_axis
+        fi
         """
 }
 

@@ -27,7 +27,7 @@ process dwi_denoise {
         tuple val(sid), path("${dwi.simpleName}__dwidenoised.nii.gz"), emit: image
         tuple val(sid), path("${dwi.simpleName}__dwidenoised_metadata.*"), optional: true, emit: metadata
     script:
-        def after_denoise = "fslmaths -dt double dwidenoise.nii.gz -thr 0 ${dwi.simpleName}__dwidenoised.nii.gz -odt double\n"
+        def after_denoise = "fslmaths dwidenoise.nii.gz -thr 0 ${dwi.simpleName}__dwidenoised.nii.gz \n"
         if ( !metadata.empty() )
             after_denoise += "cp $metadata ${dwi.simpleName}__dwidenoised_metadata.py"
 
@@ -123,7 +123,7 @@ process n4_denoise {
             after_denoise += "mv n4denoise_metadata.py ${image.simpleName}__n4denoised_metadata.py\n"
             args += " --metadata $metadata"
         }
-        after_denoise += "fslmaths -dt double n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz -odt double\n"
+        after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz \n"
 
         if ( !mask.empty() )
             args += " --mask $mask"
@@ -334,7 +334,7 @@ process gibbs_removal {
         tuple val(sid), path("${dwi.simpleName}__gibbs_corrected.nii.gz"), emit: image
         tuple val(sid), path("${dwi.simpleName}__gibbs_corrected_metadata.*"), optional: true, emit: metadata
     script:
-    def after_denoise = "fslmaths -dt double gibbs_corrected.nii.gz -thr 0 ${dwi.simpleName}__gibbs_corrected.nii.gz -odt double\n"
+    def after_denoise = "fslmaths gibbs_corrected.nii.gz -thr 0 ${dwi.simpleName}__gibbs_corrected.nii.gz\n"
     if ( metadata )
         after_denoise += "cp $metadata ${dwi.simpleName}__gibbs_corrected_metadata.py"
 

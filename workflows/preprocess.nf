@@ -299,6 +299,7 @@ workflow preprocess_wkf {
                 t1_channel,
                 t1_mask_channel,
                 dwi_mask_channel,
+                meta_channel,
                 true,
                 true,
                 params.quick_denoised_t1_registration
