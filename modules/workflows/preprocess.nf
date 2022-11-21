@@ -3,15 +3,52 @@
 nextflow.enable.dsl=2
 
 include {
-    filter_datapoints; separate_b0_from_dwi; exclude_missing_datapoints; fill_missing_datapoints;
-    merge_channels_non_blocking; join_optional; sort_as_with_name; is_data; get_config_path
+    filter_datapoints;
+    separate_b0_from_dwi;
+    exclude_missing_datapoints;
+    fill_missing_datapoints;
+    merge_channels_non_blocking;
+    join_optional;
+    sort_as_with_name;
+    is_data;
+    get_config_path
 } from '../functions.nf'
-include { extract_b0 as b0_topup; extract_b0 as b0_topup_rev; squash_b0 as squash_dwi; squash_b0 as squash_rev } from '../processes/preprocess.nf'
-include { n4_denoise; dwi_denoise; nlmeans_denoise; prepare_topup; topup; prepare_eddy; eddy } from '../processes/denoise.nf'
-include { ants_register; ants_transform } from '../processes/register.nf'
 include {
-    cat_datasets; cat_datasets as cat_topup; cat_datasets as cat_eddy_on_rev;
-    apply_topup; check_dwi_conformity; generate_b0_bval
+    extract_b0 as b0_topup;
+    extract_b0 as b0_topup_rev;
+    squash_b0 as squash_dwi;
+    squash_b0 as squash_rev
+} from '../processes/preprocess.nf'
+include {
+    n4_denoise;
+    dwi_denoise;
+    nlmeans_denoise;
+    nlmeans_denoise as nlmeans_denoise_b0_from_fwd_dwi;
+    nlmeans_denoise as nlmeans_denoise_b0_from_rev_dwi;
+    prepare_topup;
+    topup;
+    prepare_eddy;
+    eddy
+} from '../processes/denoise.nf'
+include {
+    ants_register;
+    ants_transform;
+    align_to_closest as b0_align_to_closest;
+    align_to_closest as rev_align_to_closest;
+    align_to_average as b0_align_to_average
+} from '../processes/register.nf'
+include {
+    cat_datasets as cat_topup;
+    cat_datasets as cat_eddy_on_rev;
+    cat_datasets as concatenate_for_average;
+    cat_datasets as concatenate_b0;
+    cat_datasets as concatenate_rev_b0;
+    timeseries_mean as get_average;
+    apply_topup;
+    check_dwi_conformity;
+    generate_b0_bval;
+    split_image as split_b0;
+    split_image as split_rev
 } from '../processes/utils.nf'
 
 params.eddy_with_reverse = true
@@ -110,20 +147,30 @@ workflow topup_wkf {
         b0_topup(topupable_dwi_channel.map{ it.subList(0, 3) }.join(topupable_meta_channel), "preprocess", "false", params.preproc_extract_b0_topup_config)
         b0_topup_rev(dwi_rev.map{ it.subList(0, 3) }.join(topupable_meta_channel), "preprocess", "false", params.preproc_extract_b0_topup_config)
 
-        b0_channel = b0_topup.out.b0
-        b0_rev_channel = b0_topup_rev.out.b0.mix(b0_rev.map{ it.subList(0, 2) })
-        b0_metadata_channel = b0_topup.out.metadata.join(
-            b0_topup_rev.out.metadata.mix(b0_rev.map{ [it[0]] }.join(topupable_meta_channel).map{ [it[0], it[1][1]] })
-        ).map{ [it[0], it.subList(1, it.size())] }
+        nlmeans_denoise_b0_from_fwd_dwi(b0_topup.out.b0.map{ it + [""] }.join(b0_topup.out.metadata), "preprocess", false)
+        nlmeans_denoise_b0_from_rev_dwi(b0_topup_rev.out.b0.map{ it + [""] }.join(b0_topup_rev.out.metadata), "preprocess", false)
 
-        b0_channel = b0_channel.map{ [it[0], it.subList(1, it.size())] }
-        b0_rev_channel = b0_rev_channel.map{ [it[0], it.subList(1, it.size())] }
+        b0_channel = nlmeans_denoise_b0_from_fwd_dwi.out.image
+        b0_rev_channel = nlmeans_denoise_b0_from_rev_dwi.out.image.mix(b0_rev.map{ it.subList(0, 2) })
+
+        align_b0_for_topup(
+            b0_channel,
+            b0_rev_channel,
+            nlmeans_denoise_b0_from_fwd_dwi.out.metadata,
+            nlmeans_denoise_b0_from_rev_dwi.out.metadata.mix(b0_rev.map{ [it[0]] }.join(topupable_meta_channel).map{ [it[0], it[1][1]] })
+        )
+
+        b0_channel = align_b0_for_topup.out.b0.map{ [it[0], it.subList(1, it.size())] }
+        b0_rev_channel = align_b0_for_topup.out.rev_b0.map{ [it[0], it.subList(1, it.size())] }
 
         acq_channel = topupable_dwi_channel.map{ [it[0], [it[2]]] }.join(existing_rev.map{ [it[0], [it[2]]] })
-        b0_data_channel = b0_channel.join(b0_rev_channel).map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] }
-        b0_data_channel = b0_data_channel.map{ it + [[], []] }.join(b0_metadata_channel)
+        b0_data_channel = b0_channel
+            .join(b0_rev_channel)
+            .map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] }
+            .map{ it + [[], []] }
+            .join(align_b0_for_topup.out.metadata)
 
-        cat_topup(b0_data_channel, "b0", "preprocess", params.concatenate_base_config)
+        cat_topup(b0_data_channel, 3, "b0", "preprocess", params.concatenate_base_config)
 
         metadata_channel = cat_topup.out.metadata.join(topupable_meta_channel).map{ [it[0], [it[1]] + it[2]] }
 
@@ -155,6 +202,49 @@ workflow topup_wkf {
         excluded_indexes = excluded_indexes
         excluded_dwi = excluded_indexes.join(dwi_channel)
         excluded_dwi_metadata = excluded_indexes.join(metadata_channel).map{ it.subList(0, 2) }
+}
+
+workflow align_b0_for_topup {
+    take:
+        b0_channel
+        b0_rev_channel
+        b0_meta_channel
+        b0_rev_meta_channel
+    main:
+        meta_channel = b0_meta_channel
+            .join(b0_rev_meta_channel)
+            .map{ [it[0], it.subList(1, it.size())] }
+
+        split_b0(b0_channel.join(b0_meta_channel), 3, "preprocess")
+        split_rev(b0_rev_channel.join(b0_rev_meta_channel), 3, "preprocess")
+        b0_align_to_closest(split_b0.out.images.join(split_b0.out.metadata), 1, false, "preprocess", "", false, "")
+        rev_align_to_closest(split_rev.out.images.join(split_rev.out.metadata), 1, false, "preprocess", "", false, "")
+
+        b0_data_channel = b0_align_to_closest.out.images
+            .join(rev_align_to_closest.out.images)
+            .map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> t instanceof Path ? c + [t] : c + t }] }
+
+        concatenate_for_average(b0_data_channel.map{ it + [[], []] }.join(meta_channel), 3, "b0", "preprocess", params.concatenate_base_config)
+        get_average(concatenate_for_average.out.image, "preprocess")
+
+        metadata_channel = b0_align_to_closest.out.metadata.join(rev_align_to_closest.out.metadata).map{ [it[0], [it[1], it[2]]] }
+        b0_align_to_average(b0_data_channel.join(get_average.out.image).join(metadata_channel), 1, false, "preprocess", "", false, "")
+
+        b0_map = b0_align_to_average.out.images
+            .join(b0_align_to_closest.out.images)
+            .multiMap{ it ->
+                forward: [it[0], it[2] instanceof Path ? [it[1][0]] : it[1].subList(0, it[2].size())]
+                reverse: [it[0], it[2] instanceof Path ? [it[1][1]] : it[1].subList(it[2].size(), it[1].size())] 
+            }
+
+        concatenate_b0(b0_map.forward.map{ it + [[], []] }.join(b0_align_to_average.out.metadata), 3, "b0__aligned", "preprocess", params.concatenate_base_config)
+        concatenate_rev_b0(b0_map.reverse.map{ it + [[], []] }.join(b0_align_to_average.out.metadata), 3, "b0_rev__aligned", "preprocess", params.concatenate_base_config)
+    emit:
+        b0 = concatenate_b0.out.image
+        rev_b0 = concatenate_rev_b0.out.image
+        metadata = concatenate_b0.out.metadata
+            .join(concatenate_rev_b0.out.metadata)
+            .map{ [it[0], it[1..-1]] }
 }
 
 workflow apply_topup_wkf {
@@ -243,7 +333,7 @@ workflow eddy_wkf {
         rev_channel = rev_channel.map{ it.subList(0, 3) }.join(prepare_eddy.out.bvec.map{ [it[0], it[1].find { f -> f.simpleName.indexOf("_rev") >= 0 }] })
 
         if ( params.eddy_with_reverse ) {
-            cat_eddy_on_rev(merge_channels_non_blocking(dwi_channel, rev_channel).join(metadata_channel), "dwi", "preprocess", params.concatenate_base_config)
+            cat_eddy_on_rev(merge_channels_non_blocking(dwi_channel, rev_channel).join(metadata_channel), 3, "dwi", "preprocess", params.concatenate_base_config)
             dwi_channel = cat_eddy_on_rev.out.image.join( cat_eddy_on_rev.out.bval ).join(cat_eddy_on_rev.out.bvec).mix( absent_reverse_ids.join(dwi_channel) )
             metadata_channel = cat_eddy_on_rev.out.metadata.map{ [it[0], it.subList(1, it.size())] }.mix( absent_reverse_ids.join(metadata_channel) )
         }

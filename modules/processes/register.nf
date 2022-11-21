@@ -74,8 +74,8 @@ process ants_register {
             then
                 printf -v letter "\\x\$(printf %x \$((\$cnt2 + 64)))"
                 (( ++cnt2 ))
-                mv ${moving[0].simpleName}__registration\${cnt1}Warp.nii.gz ${moving[0].simpleName}__\${letter}_registration_syn.nii.gz
-                mv ${moving[0].simpleName}__registration\${cnt1}InverseWarp.nii.gz ${moving[0].simpleName}__\${letter}_inv_registration_syn_inverse.nii.gz
+                cp ${moving[0].simpleName}__registration\${cnt1}Warp.nii.gz ${moving[0].simpleName}__\${letter}_registration_syn.nii.gz
+                cp ${moving[0].simpleName}__registration\${cnt1}InverseWarp.nii.gz ${moving[0].simpleName}__\${letter}_inv_registration_syn_inverse.nii.gz
                 found=true
             fi
             
@@ -145,5 +145,82 @@ process ants_transform {
         """
         export ANTS_RANDOM_SEED=$params.random_seed
         mrhardi ants_transform $args --out ${img.simpleName}__transformed --config $config
+        """
+}
+
+process align_to_closest {
+    input:
+        tuple val(sid), path(images), path(metadata)
+        val(n_iterations)
+        val(run_n4)
+        val(caller_name)
+        val(additional_publish_path)
+        val(publish)
+        val(publish_suffix)
+    output:
+        tuple val(sid), path("${sid}_*__[0-9]*_aligned.nii.gz"), emit: images
+        tuple val(sid), path("${sid}_*__[0-9]*_aligned_metadata.py"), emit: metadata
+    script:
+        def single_copy_and_exit = ""
+        def copy_warped = ""
+        def copy_metadata = ""
+        images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate1${img}${idx}WarpedToTemplate.nii.gz ${sid}_${img.simpleName.split("__")[0].tokenize("_")[1]}__${idx}_aligned.nii.gz\n" }
+        images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${sid}_${img.simpleName.split("__")[0].tokenize("_")[1]}__${idx}_aligned_metadata.py\n" }
+        if ( images.getNameCount() == 1 ) {
+            single_copy_and_exit = "cp $images ${sid}_${images.simpleName.split("__")[0].tokenize("_")[1]}__0_aligned.nii.gz\n"
+            single_copy_and_exit += "cp $metadata ${sid}_${images.simpleName.split("__")[0].tokenize("_")[1]}__0_aligned_metadata.py\n"
+            single_copy_and_exit += "exit 0\n"
+        }
+        """
+        $single_copy_and_exit
+        antsMultivariateTemplateConstruction2.sh \
+            -i $n_iterations \
+            -d 3 \
+            -g 0.2 \
+            -m MI \
+            -r 1 \
+            -n ${run_n4 ? "1" : "0"} \
+            -t Rigid \
+            -o aligned \
+            $images
+
+        $copy_warped
+        $copy_metadata
+        """
+}
+
+process align_to_average {
+    input:
+        tuple val(sid), path(images), path(average), path(metadata)
+        val(n_iterations)
+        val(run_n4)
+        val(caller_name)
+        val(additional_publish_path)
+        val(publish)
+        val(publish_suffix)
+    output:
+        tuple val(sid), path("${sid}_*__[0-9]*_average_aligned.nii.gz"), emit: images
+        tuple val(sid), path("${sid}_*__[0-9]*_average_aligned_metadata.py"), emit: metadata
+    script:
+        def copy_warped = ""
+        def copy_metadata = ""
+        images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate0${img.simpleName}${idx}WarpedToTemplate.nii.gz ${sid}_${img.simpleName.split("__")[0].tokenize("_")[1]}__${idx}_average_aligned.nii.gz\n" }
+        images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${sid}_${img.simpleName.split("__")[0].tokenize("_")[1]}__${idx}_average_aligned_metadata.py\n" }
+        """
+        antsMultivariateTemplateConstruction2.sh \
+            -i $n_iterations \
+            -d 3 \
+            -c 2 \
+            -g 0.2 \
+            -m MI \
+            -r 1 \
+            -n ${run_n4 ? "1" : "0"} \
+            -t Rigid \
+            -o aligned \
+            -z $average \
+            $images
+
+        $copy_warped
+        $copy_metadata
         """
 }

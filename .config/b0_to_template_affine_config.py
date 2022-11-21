@@ -16,12 +16,13 @@ c.AntsRegistration.log_level = 30
 
 c.AntsRegistration.base_config_file = ""
 
+c.AntsRegistration.verbose = True
 
 # -----------------------------------------------------------------------------
 # AntsConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
-c.AntsConfiguration.accross_modalities = False
+c.AntsConfiguration.accross_modalities = True
 
 c.AntsConfiguration.dimension = 3
 
@@ -33,12 +34,12 @@ c.AntsConfiguration.interpolation = "Linear"
 
 c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 
-c.AntsConfiguration.match_histogram = True
+c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-6,
     "conv_max_iter": [400, 200, 100, 50],
-    "conv_win": 10,
+    "conv_win": 20,
     "grad_step": 0.2,
     "klass": "mrHARDI.traits.ants.AntsRigid",
     "metrics": [
@@ -46,10 +47,21 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.2,
                 64,
                 "Regular",
-                0.6
+                0.5
+            ],
+            "klass": "mrHARDI.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 0,
+            "moving_index": 1,
+            "args": [
+                0.8,
+                64,
+                "Regular",
+                0.7
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
         }
@@ -67,9 +79,9 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-6,
     "conv_max_iter": [500, 300, 150, 75],
-    "conv_win": 20,
+    "conv_win": 10,
     "grad_step": 0.1,
     "klass": "mrHARDI.traits.ants.AntsAffine",
     "metrics": [
@@ -77,10 +89,21 @@ c.AntsConfiguration.passes = [{
             "target_index": 0,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.2,
                 64,
                 "Regular",
                 0.5
+            ],
+            "klass": "mrHARDI.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 0,
+            "moving_index": 1,
+            "args": [
+                0.8,
+                64,
+                "Regular",
+                0.7
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
         }
@@ -96,39 +119,6 @@ c.AntsConfiguration.passes = [{
         2.,
         1.,
         0
-    ]
-}, {
-    "conv_eps": 1e-7,
-    "conv_max_iter": [500, 400, 200, 200],
-    "conv_win": 20,
-    "grad_step": 0.1,
-    "var_penality": 3,
-    "var_total": 0,
-    "klass": "mrHARDI.traits.ants.AntsSyN",
-    "metrics": [
-        {
-            "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                1.0,
-                64,
-                "Regular",
-                1.0
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        }
-    ],
-    "shrinks": [
-        8,
-        4,
-        2,
-        1
-    ],
-    "smoothing": [
-        3.,
-        2.,
-        1.,
-        0.
     ]
 }]
 
