@@ -37,31 +37,20 @@ c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-6,
+    "conv_eps": 1e-8,
     "conv_max_iter": [400, 200, 100, 50],
     "conv_win": 20,
-    "grad_step": 0.2,
+    "grad_step": 0.1,
     "klass": "mrHARDI.traits.ants.AntsRigid",
     "metrics": [
         {
             "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                0.2,
-                64,
-                "Regular",
-                0.5
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        },
-        {
-            "target_index": 0,
             "moving_index": 1,
             "args": [
-                0.8,
+                1.,
                 64,
                 "Regular",
-                0.7
+                1.
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
         }
@@ -79,7 +68,7 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-6,
+    "conv_eps": 1e-8,
     "conv_max_iter": [500, 300, 150, 75],
     "conv_win": 10,
     "grad_step": 0.1,
@@ -87,23 +76,12 @@ c.AntsConfiguration.passes = [{
     "metrics": [
         {
             "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                0.2,
-                64,
-                "Regular",
-                0.5
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        },
-        {
-            "target_index": 0,
             "moving_index": 1,
             "args": [
-                0.8,
+                1.,
                 64,
                 "Regular",
-                0.7
+                1.
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
         }

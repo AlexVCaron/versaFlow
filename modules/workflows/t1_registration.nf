@@ -222,16 +222,16 @@ workflow t1_to_b0_affine {
         publish_t1
         publish_b0
     main:
-        dilate_t1_mask(t1_mask_channel, 4, "preprocess")
-        dilate_dwi_mask(dwi_mask_channel, 4, "preprocess")
-        erode_dwi_mask(dwi_mask_channel, 4, "preprocess")
+        dilate_t1_mask(t1_mask_channel, 8, "preprocess")
+        dilate_dwi_mask(dwi_mask_channel, 8, "preprocess")
+        erode_dwi_mask(dwi_mask_channel, 8, "preprocess")
 
         aff_extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
         mask_b0_dilated(aff_extract_b0.out.b0.join(dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
         aff_pa_dwi(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
         mask_pa_dwi_dilated(aff_pa_dwi.out.image.join(dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
         dti_fa_eroded(dwi_channel.join(erode_dwi_mask.out.mask), "preprocess", "preprocess", false)
-        mask_t1_dilated(t1_channel.join(dilate_t1_mask.out.mask).map{ it + [""] }, "preprocess", "false")
+        mask_t1_dilated(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         b0_moving_channel = mask_b0_dilated.out.image
             .join(mask_pa_dwi_dilated.out.image)
