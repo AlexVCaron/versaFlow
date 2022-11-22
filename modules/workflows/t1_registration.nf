@@ -45,6 +45,8 @@ include {
     dilate_mask as dilate_t1_mask;
     dilate_mask as dilate_dwi_mask;
     erode_mask as erode_dwi_mask;
+    dilate_mask as syn_dilate_dwi_mask;
+    erode_mask as syn_erode_dwi_mask;
     apply_mask as mask_b0_dilated;
     apply_mask as mask_pa_dwi_dilated;
     apply_mask as mask_t1_dilated;
@@ -134,7 +136,7 @@ workflow t12b0_registration {
         )
         mask_template(
             resample_template.out.image
-                .join(resample_template.out.mask)
+                .join(resample_dilated_mask.out.image)
                 .map{ it + [""] },
             "preprocess",
             false
@@ -361,11 +363,15 @@ workflow t1_to_b0_syn {
         publish_t1
         publish_b0
     main:
+
+        syn_dilate_dwi_mask(dwi_mask_channel, 8, "preprocess")
+        syn_erode_dwi_mask(dwi_mask_channel, 4, "preprocess")
+
         syn_extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
-        mask_b0(syn_extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
+        mask_b0(syn_extract_b0.out.b0.join(syn_dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
         syn_pa_dwi(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
-        mask_pa_dwi(syn_pa_dwi.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
-        dti_fa(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess", false)
+        mask_pa_dwi(syn_pa_dwi.out.image.join(syn_dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
+        dti_fa(dwi_channel.join(syn_erode_dwi_mask.out.mask), "preprocess", "preprocess", false)
         mask_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         b0_moving_channel = mask_b0.out.image
