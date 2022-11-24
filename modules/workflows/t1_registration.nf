@@ -21,6 +21,7 @@ include {
     registration_wkf as t1_to_reference_syn;
     registration_wkf as b0_to_reference_syn;
     registration_wkf as t1_to_b0_registration_wkf
+    registration_wkf as t1_to_b0_final_syn
 } from "./preprocess.nf"
 include {
     ants_transform as transform_t1_to_b0;
@@ -35,7 +36,8 @@ include {
     ants_transform as transform_b0_syn;
     ants_transform as transform_dwi_mask_syn;
     ants_transform as transform_dwi_syn;
-    ants_transform as transform_t1_mask_to_b0
+    ants_transform as transform_t1_mask_to_b0;
+    ants_transform as transform_fa_syn
 } from '../processes/register.nf'
 include {
     prepend_sid as prepend_sid_template;
@@ -44,8 +46,9 @@ include {
     clean_mask_borders;
     dilate_mask as dilate_t1_mask;
     dilate_mask as dilate_dwi_mask;
-    erode_mask as erode_dwi_mask;
     dilate_mask as syn_dilate_dwi_mask;
+    dilate_mask as syn_dilate_t1_mask;
+    erode_mask as erode_dwi_mask;
     erode_mask as syn_erode_dwi_mask;
     apply_mask as mask_b0_dilated;
     apply_mask as mask_pa_dwi_dilated;
@@ -88,6 +91,8 @@ params.b0_to_template_syn_config = file("${get_config_path()}/b0_to_template_syn
 params.t1_to_template_syn_quick_config = file("${get_config_path()}/t1_to_template_syn_quick_config.py")
 params.b0_to_template_syn_quick_config = file("${get_config_path()}/b0_to_template_dyn_quick_config.py")
 
+params.t1_to_b0_syn_config = file("${get_config_path()}/t1_to_b0_syn_config.py")
+params.t1_to_b0_syn_quick_config = file("${get_config_path()}/t1_to_b0_syn_quick_config.py")
 
 workflow t12b0_registration {
     take:
@@ -166,6 +171,7 @@ workflow t12b0_registration {
             dwi_metadata_channel,
             use_quick ? params.t1_to_template_syn_quick_config : params.t1_to_template_syn_config,
             use_quick ? params.b0_to_template_syn_quick_config : params.b0_to_template_syn_config,
+            use_quick ? params.t1_to_b0_syn_quick_config : params.t1_to_b0_syn_config,
             false,
             false
         )
@@ -360,10 +366,11 @@ workflow t1_to_b0_syn {
         dwi_metadata_channel
         t1_syn_config    
         b0_syn_config
+        t1_to_b0_syn_config
         publish_t1
         publish_b0
     main:
-
+        syn_dilate_t1_mask(t1_mask_channel, 8, "preprocess")
         syn_dilate_dwi_mask(dwi_mask_channel, 8, "preprocess")
         syn_erode_dwi_mask(dwi_mask_channel, 4, "preprocess")
 
@@ -372,7 +379,7 @@ workflow t1_to_b0_syn {
         syn_pa_dwi(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
         mask_pa_dwi(syn_pa_dwi.out.image.join(syn_dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
         dti_fa(dwi_channel.join(syn_erode_dwi_mask.out.mask), "preprocess", "preprocess", false)
-        mask_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
+        mask_t1(t1_channel.join(syn_dilate_t1_mask.out.mask).map{ it + [""] }, "preprocess", "false")
 
         b0_moving_channel = mask_b0.out.image
             .join(mask_pa_dwi.out.image)
@@ -412,8 +419,37 @@ workflow t1_to_b0_syn {
             params.ants_transform_mask_config
         )
 
-        t1_transform = t1_to_reference_syn.out.transform
-            .map{ [it[0], [it[1]].flatten()] }
+        transform_fa_syn(
+            dti_fa.out.fa
+                .join(b0_to_reference_syn.out.reference)
+                .join(b0_to_reference_syn.out.transform)
+                .map{ it + [it[3].collect{ "false" }] }
+                .map{ it + ["", ""] },
+            "preprocess",
+            "", "false", "",
+            params.ants_transform_base_config
+        )
+
+        t1_to_b0_final_syn(
+            b0_to_reference_syn.out.image
+                .join(transform_fa_syn.out.image)
+                .map{ [it[0], it[1..-1]] },
+            t1_to_reference_syn.out.image,
+            null,
+            null,
+            null,
+            null,
+            "",
+            false,
+            "",
+            "",
+            t1_to_b0_syn_config,
+            params.ants_transform_mask_config
+        )
+
+        t1_transform = t1_to_b0_final_syn.out.transform
+            .join(t1_to_reference_syn.out.transform)
+            .map{ [it[0], [it[1..-1]].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ "false" }] }
         b0_transform = b0_to_reference_syn.out.transform
             .map{ [it[0], [it[1]].flatten()] }
@@ -480,7 +516,8 @@ workflow t1_to_b0_syn {
         dwi_metadata = transform_dwi_syn.out.metadata
         t1_transform = t1_transform
         t1_inverse_transform = t1_to_reference_syn.out.inverse_transform
-            .map{ [it[0], [it[1]].flatten()] }
+            .join(t1_to_b0_final_syn.out.inverse_transform)
+            .map{ [it[0], it[1..-1].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ f -> f.name.contains("syn_inverse") ? "false": "true" }] }
         b0_transform = b0_transform
         b0_inverse_transform = b0_to_reference_syn.out.inverse_transform
