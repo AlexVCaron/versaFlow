@@ -87,32 +87,6 @@ workflow preprocess_wkf {
         raw_meta_channel = meta_channel
         raw_rev_meta_channel = rev_meta_channel
 
-        if ( params.gaussian_noise_correction ) {
-            dwi_denoise_wkf(dwi_channel, dwi_mask_channel, meta_channel, "true")
-            dwi_channel = replace_dwi_file(dwi_channel, dwi_denoise_wkf.out.image)
-            meta_channel = dwi_denoise_wkf.out.metadata
-
-            rev_denoise_wkf(rev_channel, dwi_mask_channel, rev_meta_channel, "false")
-            rev_channel = replace_dwi_file(rev_channel, rev_denoise_wkf.out.image)
-            rev_meta_channel = rev_denoise_wkf.out.metadata
-        }
-
-        if ( params.gibbs_ringing_correction ) {
-            dwi_gibbs_removal(dwi_channel.map{ it.subList(0, 2) }.join(meta_channel), "preprocess", "true")
-            dwi_channel = replace_dwi_file(dwi_channel, dwi_gibbs_removal.out.image)
-            meta_channel = dwi_gibbs_removal.out.metadata
-
-            rev_gibbs_removal(
-                exclude_missing_datapoints(rev_channel.map{ it.subList(0, 2) }.join(rev_meta_channel), 1, ""),
-                "preprocess", "false"
-            )
-            rev_channel = replace_dwi_file(
-                rev_channel,
-                fill_missing_datapoints(rev_gibbs_removal.out.image, ref_id_channel, 1, [""])
-            )
-            rev_meta_channel = fill_missing_datapoints(rev_gibbs_removal.out.metadata, ref_id_channel, 1, [""])
-        }
-
         if ( params.normalize_inter_b0 ) {
             normalize_inter_b0(
                 dwi_channel.map{ it.subList(0, 3) }.join(rev_channel.map{ it.subList(0, 3) }).join(meta_channel).join(rev_meta_channel),
@@ -199,7 +173,34 @@ workflow preprocess_wkf {
                 raw_meta_channel = excluded_dwi_channel.map{ [it[0]] }.join(raw_meta_channel).mix(raw_apply_topup_wkf.out.metadata)
             }
         }
-        else {
+
+        if ( params.gaussian_noise_correction ) {
+            dwi_denoise_wkf(dwi_channel, dwi_mask_channel, meta_channel, "true")
+            dwi_channel = replace_dwi_file(dwi_channel, dwi_denoise_wkf.out.image)
+            meta_channel = dwi_denoise_wkf.out.metadata
+
+            rev_denoise_wkf(rev_channel, dwi_mask_channel, rev_meta_channel, "false")
+            rev_channel = replace_dwi_file(rev_channel, rev_denoise_wkf.out.image)
+            rev_meta_channel = rev_denoise_wkf.out.metadata
+        }
+
+        if ( params.gibbs_ringing_correction ) {
+            dwi_gibbs_removal(dwi_channel.map{ it.subList(0, 2) }.join(meta_channel), "preprocess", "true")
+            dwi_channel = replace_dwi_file(dwi_channel, dwi_gibbs_removal.out.image)
+            meta_channel = dwi_gibbs_removal.out.metadata
+
+            rev_gibbs_removal(
+                exclude_missing_datapoints(rev_channel.map{ it.subList(0, 2) }.join(rev_meta_channel), 1, ""),
+                "preprocess", "false"
+            )
+            rev_channel = replace_dwi_file(
+                rev_channel,
+                fill_missing_datapoints(rev_gibbs_removal.out.image, ref_id_channel, 1, [""])
+            )
+            rev_meta_channel = fill_missing_datapoints(rev_gibbs_removal.out.metadata, ref_id_channel, 1, [""])
+        }
+
+        if ( !params.topup_correction ) {
             dwi_b0(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel.map{ [it[0], it.subList(1, it.size())] }), "preprocess", "false", params.extract_mean_b0_base_config)
             b0_channel = dwi_b0.out.b0
             b0_metadata = dwi_b0.out.metadata
