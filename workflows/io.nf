@@ -106,16 +106,16 @@ workflow load_dataset {
         enforce_sid_convention_anat(anat_channel.map{ it + ["t1"] })
         enforce_sid_convention_anat_mask(anat_mask_channel.map{ it + ["t1_mask"] })
         enforce_sid_convention_rev(rev_channel.map{ [it[0], it[1..-1], ["rev"] * (it.size() - 1)] })
-        enforce_sid_convention_pvf(pvf_channel.map{ [it[0], it[1], it[1].collect{ i -> i.split("_")[-2] + "_pvf"} ] })
+        enforce_sid_convention_pvf(pvf_channel.map{ [it[0], it[1], it[1].collect{ i -> i.tokenize("_")[-2] + "_pvf"} ] })
         enforce_sid_convention_metadata(dwi_meta_channel.map{ it + ["dwi_metadata"] })
         enforce_sid_convention_rev_metadata(rev_meta_channel.map{ it + ["rev_metadata"] })
     emit:
-        dwi = enforce_sid_convention_dwi.out.image.map{ [it[0], it[3], it[1], it[2]] } 
+        dwi = enforce_sid_convention_dwi.out.image.map{ [it[0], it[1][2], it[1][0], it[1][1]] } 
         dwi_mask = enforce_sid_convention_dwi_mask.out.image
         anat = enforce_sid_convention_anat.out.image
         anat_mask = enforce_sid_convention_anat_mask.out.image
-        rev = enforce_sid_convention_rev.out.image.map{ it.getNameCount() > 1 ? [it[0], it[3], it[1], it[2]]: it } 
-        pvf = enforce_sid_convention_pvf.out.image.map{ [it[0], it.subList(1, it.size()).reverse()] }
+        rev = enforce_sid_convention_rev.out.image.map{ it[1].getNameCount() > 1 ? [it[0], it[1][2], it[1][0], it[1][1]] : it } 
+        pvf = enforce_sid_convention_pvf.out.image.map{ [it[0], it[1].reverse()] }
         metadata = enforce_sid_convention_metadata.out.image
         rev_metadata = enforce_sid_convention_rev_metadata.out.image
 }
