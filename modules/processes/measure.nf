@@ -166,7 +166,7 @@ process diamond_metrics {
 
 process odf_metrics {
     label "MEDIUM"
-    label params.conservative_resources ? "res_conservative" : "res_max_cpu"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -211,7 +211,7 @@ process odf_metrics {
             --rgb ${sid}_fodf_metrics_wm_rgb.nii.gz \
             --peak_values ${sid}_fodf_metrics_wm_peaks_values.nii.gz \
             --peak_indices ${sid}_fodf_metrics_wm_peaks_indices.nii.gz \
-            --processes $tash.cpus
+            --processes $task.cpus
 
         scil_compute_fodf_metrics.py $gm_f \
             --rt $params.fodf_gm_relative_thr \
@@ -226,7 +226,7 @@ process odf_metrics {
             --rgb ${sid}_fodf_metrics_gm_rgb.nii.gz \
             --peak_values ${sid}_fodf_metrics_gm_peaks_values.nii.gz \
             --peak_indices ${sid}_fodf_metrics_gm_peaks_indices.nii.gz \
-            --processes $tash.cpus
+            --processes $task.cpus
         """
 }
 
