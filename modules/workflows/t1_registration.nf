@@ -53,6 +53,7 @@ include {
     apply_mask as mask_b0_dilated;
     apply_mask as mask_pa_dwi_dilated;
     apply_mask as mask_t1_dilated;
+    apply_mask as mask_fa;
     apply_mask as mask_b0;
     apply_mask as mask_pa_dwi;
     apply_mask as mask_t1;
@@ -376,7 +377,7 @@ workflow t1_to_b0_syn {
     main:
         syn_dilate_t1_mask(t1_mask_channel, 8, "preprocess")
         syn_dilate_dwi_mask(dwi_mask_channel, 8, "preprocess")
-        syn_erode_dwi_mask(dwi_mask_channel, 10, "preprocess")
+        syn_erode_dwi_mask(dwi_mask_channel, 20, "preprocess")
 
         dti_fa_np(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess", false)
         invert_mask(syn_erode_dwi_mask.out.mask, "preprocess")
@@ -384,14 +385,15 @@ workflow t1_to_b0_syn {
         difference_masks(dwi_mask_channel.join(intersect_masks.out.mask), "preprocess")
 
         syn_extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
-        mask_b0(syn_extract_b0.out.b0.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         syn_pa_dwi(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
+        mask_fa(dti_fa_np.out.fa.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
+        mask_b0(syn_extract_b0.out.b0.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         mask_pa_dwi(syn_pa_dwi.out.image.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         mask_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         b0_moving_channel = mask_b0.out.image
             .join(mask_pa_dwi.out.image)
-            .join(dti_fa_np.out.fa)
+            .join(mask_fa.out.image)
             .map{ [it[0], it[1..-1]] }
         t1_moving_channel = mask_t1.out.image
             .map{ [it[0], [it[1]]] }
@@ -428,7 +430,7 @@ workflow t1_to_b0_syn {
         )
 
         transform_fa_syn(
-            dti_fa_np.out.fa
+            mask_fa.out.image
                 .join(b0_to_reference_syn.out.reference)
                 .join(b0_to_reference_syn.out.transform)
                 .map{ it + [it[3].collect{ "false" }] }

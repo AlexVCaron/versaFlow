@@ -493,10 +493,10 @@ process erode_mask {
         val(erosion_factor)
         val(caller_name)
     output:
-        tuple val(sid), path("${mask.simpleName}__dilated.nii.gz"), emit: mask
+        tuple val(sid), path("${mask.simpleName}__eroded.nii.gz"), emit: mask
     script:
         """
-        scil_image_math.py erosion $mask $erosion_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
+        scil_image_math.py erosion $mask $erosion_factor ${mask.simpleName}__eroded.nii.gz --data_type uint8
         """
 }
 

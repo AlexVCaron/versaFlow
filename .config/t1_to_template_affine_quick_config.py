@@ -95,41 +95,6 @@ c.AntsConfiguration.passes = [{
         1,
         0.5
     ]
-}, {
-    "conv_eps": 1e-6,
-    "conv_max_iter": [200, 200, 100, 50, 10],
-    "conv_win": 10,
-    "grad_step": 0.1,
-    "var_penality": 3,
-    "var_total": 0,
-    "klass": "mrHARDI.traits.ants.AntsSyN",
-    "metrics": [
-        {
-            "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                1.0,
-                64,
-                "Regular",
-                0.5
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        }
-    ],
-    "shrinks": [
-        12,
-        8,
-        4,
-        2,
-        1
-    ],
-    "smoothing": [
-        3,
-        2,
-        1,
-        0.5,
-        0
-    ]
 }]
 
 c.AntsConfiguration.use_float = False
