@@ -9,6 +9,8 @@ params.default_slicing_direction = null
 params.default_phase_direction = null
 params.default_acquisition_tensor_type = null
 
+include { extract_extension } from '../functions.nf'
+
 def metadata_from_params ( reverse ) {
     if ([
         params.default_readout,
@@ -50,4 +52,26 @@ process prepare_metadata {
         """
         mrhardi metadata --in $image $args
         """
+}
+
+process enforce_sid_convention {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+    input:
+        tuple val(sid), path(images), val(suffix)
+    output:
+        tuple val(sid), path("${sid}_.*"), emit: image
+    script:
+        if ( images.getNameCount() == 1 ) {
+            """
+            ln -s $images ${sid}_${suffix}.${extract_extension(images)}
+            """
+        }
+        else {
+            def linkers = ""
+            images.each{ img -> linkers += "ln -s $img ${sid}_${suffix}.${extract_extension(img)}\n" }
+            """
+            $linkers
+            """
+        }
 }

@@ -4,8 +4,23 @@ nextflow.enable.dsl=2
 
 params.data_root = false
 
-include { prepare_metadata as pmeta_dwi; prepare_metadata as pmeta_rev } from "../modules/processes/io.nf"
-include { fill_missing_datapoints; exclude_missing_datapoints } from "../modules/functions.nf"
+include {
+    prepare_metadata as pmeta_dwi;
+    prepare_metadata as pmeta_rev;
+    enforce_sid_convention as enforce_sid_convention_dwi;
+    enforce_sid_convention as enforce_sid_convention_dwi_mask;
+    enforce_sid_convention as enforce_sid_convention_anat;
+    enforce_sid_convention as enforce_sid_convention_anat_mask;
+    enforce_sid_convention as enforce_sid_convention_rev;
+    enforce_sid_convention as enforce_sid_convention_pvf;
+    enforce_sid_convention as enforce_sid_convention_metadata;
+    enforce_sid_convention as enforce_sid_convention_rev_metadata
+} from "../modules/processes/io.nf"
+
+include {
+    fill_missing_datapoints;
+    exclude_missing_datapoints
+} from "../modules/functions.nf"
 
 def get_id ( dir, dir_base ) {
     return dir_base.relativize(dir)
@@ -86,13 +101,21 @@ workflow load_dataset {
             1, [""]
         )
 
+        enforce_sid_convention_dwi(dwi_channel.map{ it + ["dwi"] })
+        enforce_sid_convention_dwi_mask(dwi_mask_channel.map{ it + ["dwi_mask"] })
+        enforce_sid_convention_anat(anat_channel.map{ it + ["t1"] })
+        enforce_sid_convention_anat_mask(anat_mask_channel.map{ it + ["t1_mask"] })
+        enforce_sid_convention_rev(rev_channel.map{ it + ["rev"] })
+        enforce_sid_convention_pvf(pvf_channel.map{ it + [ it[1].split("_")[-2] + "_pvf" ] })
+        enforce_sid_convention_metadata(dwi_meta_channel.map{ it + ["dwi_metadata"] })
+        enforce_sid_convention_rev_metadata(rev_meta_channel.map{ it + ["rev_metadata"] })
     emit:
-        dwi = dwi_channel
-        dwi_mask = dwi_mask_channel
-        anat = anat_channel
-        anat_mask = anat_mask_channel
-        rev = rev_channel
-        pvf = pvf_channel
-        metadata = dwi_meta_channel
-        rev_metadata = rev_meta_channel
+        dwi = enforce_sid_convention_dwi.out.image
+        dwi_mask = enforce_sid_convention_dwi_mask.out.image
+        anat = enforce_sid_convention_anat.out.image
+        anat_mask = enforce_sid_convention_anat_mask.out.image
+        rev = enforce_sid_convention_rev.out.image
+        pvf = enforce_sid_convention_pvf.out.image
+        metadata = enforce_sid_convention_metadata.out.image
+        rev_metadata = enforce_sid_convention_rev_metadata.out.image
 }
