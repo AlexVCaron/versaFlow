@@ -527,7 +527,7 @@ process intersect_masks {
         tuple val(sid), path(mask1), path(mask2)
         val(caller_name)
     output:
-        tuple val(sid), path("${mask.simpleName}__inverted.nii.gz"), emit: mask
+        tuple val(sid), path("${mask1.simpleName}__intersection.nii.gz"), emit: mask
     script:
         """
         scil_image_math.py intersection $mask1 $mask2 ${mask1.simpleName}__intersection.nii.gz --data_type uint8
@@ -544,7 +544,7 @@ process difference_masks {
         tuple val(sid), path(mask1), path(mask2)
         val(caller_name)
     output:
-        tuple val(sid), path("${mask.simpleName}__inverted.nii.gz"), emit: mask
+        tuple val(sid), path("${mask1.simpleName}__difference.nii.gz"), emit: mask
     script:
         """
         scil_image_math.py difference $mask1 $mask2 ${mask1.simpleName}__difference.nii.gz --data_type uint8
