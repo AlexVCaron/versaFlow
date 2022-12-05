@@ -35,7 +35,7 @@ c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = True
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-7,
+    "conv_eps": 1e-6,
     "conv_max_iter": [500, 400, 200, 200],
     "conv_win": 20,
     "grad_step": 0.1,

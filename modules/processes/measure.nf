@@ -205,7 +205,8 @@ process odf_metrics {
             --peaks ${sid}_fodf_metrics_wm_peaks.nii.gz \
             --rgb ${sid}_fodf_metrics_wm_rgb.nii.gz \
             --peak_values ${sid}_fodf_metrics_wm_peaks_values.nii.gz \
-            --peak_indices ${sid}_fodf_metrics_wm_peaks_indices.nii.gz
+            --peak_indices ${sid}_fodf_metrics_wm_peaks_indices.nii.gz \
+            --processes $tash.cpus
 
         scil_compute_fodf_metrics.py $gm_f \
             --rt $params.fodf_gm_relative_thr \
@@ -219,7 +220,8 @@ process odf_metrics {
             --peaks ${sid}_fodf_metrics_gm_peaks.nii.gz \
             --rgb ${sid}_fodf_metrics_gm_rgb.nii.gz \
             --peak_values ${sid}_fodf_metrics_gm_peaks_values.nii.gz \
-            --peak_indices ${sid}_fodf_metrics_gm_peaks_indices.nii.gz
+            --peak_indices ${sid}_fodf_metrics_gm_peaks_indices.nii.gz \
+            --processes $tash.cpus
         """
 }
 

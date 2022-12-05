@@ -7,6 +7,12 @@ params.data_root = false
 include { prepare_metadata as pmeta_dwi; prepare_metadata as pmeta_rev } from "../modules/processes/io.nf"
 include { fill_missing_datapoints; exclude_missing_datapoints } from "../modules/functions.nf"
 
+def get_id ( dir, dir_base ) {
+    return dir_base.relativize(dir)
+        .collect{ it.name }
+        .join("_")
+}
+
 workflow load_dataset {
     main:
         if ( !params.data_root )
@@ -14,18 +20,23 @@ workflow load_dataset {
         root = file(params.data_root)
 
         // Load DWI and T1, those datapoints are all required for all subject/session
-        dwi_channel = Channel.fromFilePairs("$root/**/*dwi.{nii.gz,bval,bvec}", size: 3, flat: true) { it -> [it.parent.parent, it.parent].join("_") }
+        dwi_channel = Channel.fromFilePairs("$root/**/*dwi.{nii.gz,bval,bvec}", size: 3, flat: true)
+            { get_id(it.parent, root) }
             .map{ [it[0], it[3], it[1], it[2]] }
-        anat_channel = Channel.fromFilePairs("$root/**/*t1.nii.gz", size: 1, flat: true) { it -> [it.parent.parent, it.parent].join("_") }
+        anat_channel = Channel.fromFilePairs("$root/**/*t1.nii.gz", size: 1, flat: true)
+            { get_id(it.parent, root) }
+
         ref_id_channel = anat_channel.map{ [it[0]] }
 
         rev_channel = fill_missing_datapoints(
-            Channel.fromFilePairs("$root/**/*rev.nii.gz", size: 1, flat: true) { it -> [it.parent.parent, it.parent].join("_") },
+            Channel.fromFilePairs("$root/**/*rev.nii.gz", size: 1, flat: true)
+                { get_id(it.parent, root) },
             ref_id_channel,
             1, [""]
         )
         rev_bval_bvec = fill_missing_datapoints(
-            Channel.fromFilePairs("$root/**/*rev.{bval,bvec}", size: 2, flat: true) { it -> [it.parent.parent, it.parent].join("_") },
+            Channel.fromFilePairs("$root/**/*rev.{bval,bvec}", size: 2, flat: true)
+                { get_id(it.parent, root) },
             ref_id_channel,
             1, ["", ""]
         )
@@ -33,7 +44,8 @@ workflow load_dataset {
 
         // Load WM/GM/CSF segmentation if present
         pvf_channel = fill_missing_datapoints(
-            Channel.fromFilePairs("$root/**/*{wm,gm,csf}_pvf.nii.gz", size: 3, flat: true) { it -> [it.parent.parent, it.parent].join("_") },
+            Channel.fromFilePairs("$root/**/*{wm,gm,csf}_pvf.nii.gz", size: 3, flat: true)
+                { get_id(it.parent, root) },
             ref_id_channel,
             1, []
         )
@@ -42,12 +54,14 @@ workflow load_dataset {
 
         // Load per subject/session DWI json metadata specification and transform
         dwi_json_channel = fill_missing_datapoints(
-            Channel.fromFilePairs("$root/**/*dwi.json", size: 1, flat: true) { it -> [it.parent.parent, it.parent].join("_") },
+            Channel.fromFilePairs("$root/**/*dwi.json", size: 1, flat: true)
+                { get_id(it.parent, root) },
             ref_id_channel,
             1, [""]
         )
         rev_json_channel = fill_missing_datapoints(
-            Channel.fromFilePairs("$root/**/*rev.json", size: 1, flat: true) { it -> [it.parent.parent, it.parent].join("_") },
+            Channel.fromFilePairs("$root/**/*rev.json", size: 1, flat: true)
+                { get_id(it.parent, root) },
             ref_id_channel,
             1, [""]
         )
@@ -60,12 +74,14 @@ workflow load_dataset {
 
         // Load available masks (T1 and/or DWI)
         dwi_mask_channel = fill_missing_datapoints(
-            Channel.fromFilePairs("$root/**/*dwi_mask.nii.gz", size: 1, flat: true) { it -> [it.parent.parent, it.parent].join("_") },
+            Channel.fromFilePairs("$root/**/*dwi_mask.nii.gz", size: 1, flat: true)
+                { get_id(it.parent, root) },
             ref_id_channel,
             1, [""]
         )
         anat_mask_channel = fill_missing_datapoints(
-            Channel.fromFilePairs("$root/**/*t1_mask.nii.gz", size: 1, flat: true) { it -> [it.parent.parent, it.parent].join("_") },
+            Channel.fromFilePairs("$root/**/*t1_mask.nii.gz", size: 1, flat: true)
+                { get_id(it.parent, root) },
             ref_id_channel,
             1, [""]
         )

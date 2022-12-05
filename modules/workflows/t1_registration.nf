@@ -153,7 +153,7 @@ workflow t12b0_registration {
             dwi_mask_channel,
             t1_mask_channel,
             resample_template.out.image,
-            resample_dilated_mask.out.image,
+            resample_template.out.mask,
             dwi_metadata_channel,
             use_quick ? params.t1_to_template_affine_quick_config : params.t1_to_template_affine_config,
             use_quick ? params.b0_to_template_affine_quick_config : params.b0_to_template_affine_config,
@@ -168,6 +168,7 @@ workflow t12b0_registration {
             t1_to_b0_affine.out.t1_mask,
             mask_template.out.image,
             resample_template.out.mask,
+            resample_dilated_mask.out.image,
             dwi_metadata_channel,
             use_quick ? params.t1_to_template_syn_quick_config : params.t1_to_template_syn_config,
             use_quick ? params.b0_to_template_syn_quick_config : params.b0_to_template_syn_config,
@@ -190,7 +191,6 @@ workflow t12b0_registration {
             t1_channel
                 .join(extract_b0.out.b0)
                 .join(t1_to_b0_transform)
-                .view()
                 .map{ it + ["", ""] },
             "preprocess",
             "","$publish_t1", "t1",
@@ -363,6 +363,7 @@ workflow t1_to_b0_syn {
         t1_mask_channel
         reference_channel
         reference_mask_channel
+        dilated_reference_mask_channel
         dwi_metadata_channel
         t1_syn_config    
         b0_syn_config
@@ -375,11 +376,11 @@ workflow t1_to_b0_syn {
         syn_erode_dwi_mask(dwi_mask_channel, 4, "preprocess")
 
         syn_extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
-        mask_b0(syn_extract_b0.out.b0.join(syn_dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
+        mask_b0(syn_extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
         syn_pa_dwi(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
-        mask_pa_dwi(syn_pa_dwi.out.image.join(syn_dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
+        mask_pa_dwi(syn_pa_dwi.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
         dti_fa(dwi_channel.join(syn_erode_dwi_mask.out.mask), "preprocess", "preprocess", false)
-        mask_t1(t1_channel.join(syn_dilate_t1_mask.out.mask).map{ it + [""] }, "preprocess", "false")
+        mask_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         b0_moving_channel = mask_b0.out.image
             .join(mask_pa_dwi.out.image)
@@ -393,7 +394,7 @@ workflow t1_to_b0_syn {
             reference_fixed_channel,
             t1_moving_channel,
             t1_mask_channel,
-            reference_mask_channel.join(t1_mask_channel).map{ [it[0], it[1..-1]] },
+            dilated_reference_mask_channel.join(syn_dilate_t1_mask.out.mask).map{ [it[0], it[1..-1]] },
             null,
             null,
             "",
@@ -408,7 +409,7 @@ workflow t1_to_b0_syn {
             reference_fixed_channel,
             b0_moving_channel,
             null,
-            null,
+            dilated_reference_mask_channel.join(syn_dilate_dwi_mask.out.mask).map{ [it[0], it[1..-1]] },
             null,
             null,
             "",

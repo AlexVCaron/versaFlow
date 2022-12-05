@@ -147,17 +147,14 @@ workflow topup_wkf {
         b0_topup(topupable_dwi_channel.map{ it.subList(0, 3) }.join(topupable_meta_channel), "preprocess", "false", params.preproc_extract_b0_topup_config)
         b0_topup_rev(dwi_rev.map{ it.subList(0, 3) }.join(topupable_meta_channel), "preprocess", "false", params.preproc_extract_b0_topup_config)
 
-        nlmeans_denoise_b0_from_fwd_dwi(b0_topup.out.b0.map{ it + [""] }.join(b0_topup.out.metadata), "preprocess", false)
-        nlmeans_denoise_b0_from_rev_dwi(b0_topup_rev.out.b0.map{ it + [""] }.join(b0_topup_rev.out.metadata), "preprocess", false)
-
-        b0_channel = nlmeans_denoise_b0_from_fwd_dwi.out.image
-        b0_rev_channel = nlmeans_denoise_b0_from_rev_dwi.out.image.mix(b0_rev.map{ it.subList(0, 2) })
+        b0_channel = b0_topup.out.b0
+        b0_rev_channel = b0_topup_rev.out.b0.mix(b0_rev.map{ it.subList(0, 2) })
 
         align_b0_for_topup(
             b0_channel,
             b0_rev_channel,
-            nlmeans_denoise_b0_from_fwd_dwi.out.metadata,
-            nlmeans_denoise_b0_from_rev_dwi.out.metadata.mix(b0_rev.map{ [it[0]] }.join(topupable_meta_channel).map{ [it[0], it[1][1]] })
+            b0_topup.out.metadata,
+            b0_topup_rev.out.metadata.mix(b0_rev.map{ [it[0]] }.join(topupable_meta_channel).map{ [it[0], it[1][1]] })
         )
 
         b0_channel = align_b0_for_topup.out.b0.map{ [it[0], it.subList(1, it.size())] }
@@ -217,8 +214,29 @@ workflow align_b0_for_topup {
 
         split_b0(b0_channel.join(b0_meta_channel), 3, "preprocess")
         split_rev(b0_rev_channel.join(b0_rev_meta_channel), 3, "preprocess")
-        b0_align_to_closest(split_b0.out.images.join(split_b0.out.metadata), 1, false, "preprocess", "", false, "")
-        rev_align_to_closest(split_rev.out.images.join(split_rev.out.metadata), 1, false, "preprocess", "", false, "")
+
+        b0_align_to_closest(
+            split_b0.out.images
+                .map{ it[1] instanceof Path ? [it[0], [it[1]]] : it  }
+                .join(split_b0.out.metadata),
+            1,
+            false,
+            "preprocess",
+            "",
+            false,
+            ""
+        )
+        rev_align_to_closest(
+            split_rev.out.images
+                .map{ it[1] instanceof Path ? [it[0], [it[1]]] : it  }
+                .join(split_rev.out.metadata),
+            1,
+            false,
+            "preprocess",
+            "",
+            false,
+            ""
+        )
 
         b0_data_channel = b0_align_to_closest.out.images
             .join(rev_align_to_closest.out.images)
