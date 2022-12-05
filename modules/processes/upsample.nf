@@ -10,6 +10,7 @@ params.force_resampling_sequential = false
 include { remove_alg_suffixes } from '../functions.nf'
 
 process scilpy_resample {
+    label "FAST"
     label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -49,6 +50,7 @@ process scilpy_resample {
 }
 
 process scilpy_resample_to_reference {
+    label "FAST"
     label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -89,6 +91,7 @@ process scilpy_resample_to_reference {
 }
 
 process resampling_reference {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

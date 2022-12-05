@@ -17,6 +17,7 @@ params.validate_bvecs_fa_thr = 0.2
 include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 
 process apply_mask {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -36,6 +37,7 @@ process apply_mask {
 }
 
 process bet_mask {
+    label "BET"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -55,6 +57,7 @@ process bet_mask {
 }
 
 process cat_datasets {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -93,6 +96,7 @@ process cat_datasets {
 }
 
 process split_image {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -118,6 +122,7 @@ process split_image {
 }
 
 process join_images {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -137,6 +142,7 @@ process join_images {
 }
 
 process apply_topup {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -156,6 +162,7 @@ process apply_topup {
 }
 
 process tournier2descoteaux_odf {
+    label "MEDIUM"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -173,6 +180,7 @@ process tournier2descoteaux_odf {
 }
 
 process convert_float_to_integer {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -194,6 +202,7 @@ process convert_float_to_integer {
 }
 
 process replicate_image {
+    label "FAST"
     label "res_single_cpu"
 
     input:
@@ -211,6 +220,7 @@ process replicate_image {
 }
 
 process check_dwi_conformity {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -233,6 +243,7 @@ process check_dwi_conformity {
 }
 
 process pvf_to_mask {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -301,6 +312,7 @@ process pvf_to_mask {
 }
 
 process crop_image {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -366,6 +378,7 @@ process crop_image {
 }
 
 process fit_bounding_box {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -383,6 +396,7 @@ process fit_bounding_box {
 }
 
 process average {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -401,6 +415,7 @@ process average {
 }
 
 process merge_masks {
+    label "LIGHTSPEED"
     input:
         tuple val(sid), path(masks), val(base_name)
         val(caller_name)
@@ -414,6 +429,7 @@ process merge_masks {
 }
 
 process timeseries_mean {
+    label "FAST"
     input:
         tuple val(sid), path(image)
         val(caller_name)
@@ -426,6 +442,7 @@ process timeseries_mean {
 }
 
 process extract_shells {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -448,6 +465,7 @@ process extract_shells {
 }
 
 process dilate_mask {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -465,6 +483,7 @@ process dilate_mask {
 }
 
 process erode_mask {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -482,6 +501,7 @@ process erode_mask {
 }
 
 process clean_mask_borders {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -501,6 +521,7 @@ process clean_mask_borders {
 }
 
 process segmentation_to_binary {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -523,6 +544,7 @@ process segmentation_to_binary {
 }
 
 process prepend_sid {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     input:
@@ -536,6 +558,7 @@ process prepend_sid {
 }
 
 process generate_b0_bval {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     input:
@@ -559,6 +582,7 @@ process generate_b0_bval {
 }
 
 process check_odd_dimensions {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -591,6 +615,7 @@ process check_odd_dimensions {
 }
 
 process check_for_duplicates {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -612,6 +637,7 @@ process check_for_duplicates {
 }
 
 process validate_gradients {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

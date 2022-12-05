@@ -23,6 +23,7 @@ params.random_seed = 1234
 params.b0_threshold = false
 
 process diamond {
+    label "DIAMOND"
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -65,6 +66,7 @@ process diamond {
 }
 
 process mrtrix_dti {
+    label "MEDIUM"
     label "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -88,6 +90,7 @@ process mrtrix_dti {
 }
 
 process response {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -115,6 +118,7 @@ process response {
 }
 
 process csd {
+    label "MEDIUM"
     label "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -142,6 +146,7 @@ process csd {
 }
 
 process scilpy_response {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -188,6 +193,7 @@ process scilpy_response {
 }
 
 process scilpy_msmt_response {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -225,6 +231,7 @@ process scilpy_msmt_response {
 }
 
 process scilpy_csd {
+    label "MEDIUM"
     label "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -256,6 +263,7 @@ process scilpy_csd {
 }
 
 process scilpy_msmt_csd {
+    label "LONG"
     label "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

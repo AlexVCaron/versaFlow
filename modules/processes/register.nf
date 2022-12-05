@@ -10,6 +10,7 @@ params.random_seed = 1234
 include { remove_alg_suffixes } from '../functions.nf'
 
 process ants_register {
+    label "REGISTER"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -91,6 +92,7 @@ process ants_register {
 }
 
 process ants_correct_motion {
+    label "REGISTER"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -114,6 +116,7 @@ process ants_correct_motion {
 }
 
 process ants_transform {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -149,6 +152,7 @@ process ants_transform {
 }
 
 process align_to_closest {
+    label "ALIGN"
     input:
         tuple val(sid), path(images), path(metadata)
         val(n_iterations)
@@ -190,6 +194,7 @@ process align_to_closest {
 }
 
 process align_to_average {
+    label "ALIGN"
     input:
         tuple val(sid), path(images), path(average), path(metadata)
         val(n_iterations)

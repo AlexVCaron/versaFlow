@@ -16,6 +16,7 @@ params.b0_threshold = false
 
 
 process dti_metrics {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -36,6 +37,7 @@ process dti_metrics {
 }
 
 process scil_compute_dti_fa {
+    label "MEDIUM"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
@@ -87,6 +89,7 @@ process scil_compute_dti_fa {
 }
 
 process scil_dti_and_metrics {
+    label "LONG"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
@@ -138,6 +141,7 @@ process scil_dti_and_metrics {
 }
 
 process diamond_metrics {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -161,6 +165,7 @@ process diamond_metrics {
 }
 
 process odf_metrics {
+    label "MEDIUM"
     label params.conservative_resources ? "res_conservative" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
