@@ -13,7 +13,7 @@ include {
 } from '../processes/preprocess.nf'
 include {
     scil_compute_dti_fa as dti_fa_eroded;
-    scil_compute_dti_fa as dti_fa
+    scil_compute_dti_fa_np as dti_fa_np
 } from '../processes/measure.nf'
 include {
     registration_wkf as t1_to_reference_affine;
@@ -60,7 +60,10 @@ include {
     apply_mask as mask_target_pdavg;
     apply_mask as mask_moving_t1;
     apply_mask as mask_template;
-    bet_mask
+    bet_mask;
+    difference_masks;
+    intersect_masks;
+    invert_mask
 } from '../processes/utils.nf'
 include {
     resampling_reference;
@@ -373,18 +376,22 @@ workflow t1_to_b0_syn {
     main:
         syn_dilate_t1_mask(t1_mask_channel, 8, "preprocess")
         syn_dilate_dwi_mask(dwi_mask_channel, 8, "preprocess")
-        syn_erode_dwi_mask(dwi_mask_channel, 4, "preprocess")
+        syn_erode_dwi_mask(dwi_mask_channel, 10, "preprocess")
+
+        dti_fa_np(dwi_channel.join(dwi_mask_channel), "preprocess", "preprocess", false)
+        invert_mask(syn_erode_dwi_mask.out.mask, "preprocess")
+        intersect_masks(dti_fa_np.out.np_outliers_mask.join(invert_mask.out.mask), "preprocess")
+        difference_masks(dwi_mask_channel.join(intersect_masks.out.mask), "preprocess")
 
         syn_extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
-        mask_b0(syn_extract_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
+        mask_b0(syn_extract_b0.out.b0.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         syn_pa_dwi(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
-        mask_pa_dwi(syn_pa_dwi.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
-        dti_fa(dwi_channel.join(syn_erode_dwi_mask.out.mask), "preprocess", "preprocess", false)
+        mask_pa_dwi(syn_pa_dwi.out.image.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         mask_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         b0_moving_channel = mask_b0.out.image
             .join(mask_pa_dwi.out.image)
-            .join(dti_fa.out.fa)
+            .join(dti_fa_np.out.fa)
             .map{ [it[0], it[1..-1]] }
         t1_moving_channel = mask_t1.out.image
             .map{ [it[0], [it[1]]] }
@@ -421,7 +428,7 @@ workflow t1_to_b0_syn {
         )
 
         transform_fa_syn(
-            dti_fa.out.fa
+            dti_fa_np.out.fa
                 .join(b0_to_reference_syn.out.reference)
                 .join(b0_to_reference_syn.out.transform)
                 .map{ it + [it[3].collect{ "false" }] }

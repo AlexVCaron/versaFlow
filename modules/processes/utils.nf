@@ -500,6 +500,57 @@ process erode_mask {
         """
 }
 
+process invert_mask {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+
+    input:
+        tuple val(sid), path(mask)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${mask.simpleName}__inverted.nii.gz"), emit: mask
+    script:
+        """
+        scil_image_math.py invert $mask ${mask.simpleName}__inverted.nii.gz --data_type uint8
+        """
+}
+
+process intersect_masks {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+
+    input:
+        tuple val(sid), path(mask1), path(mask2)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${mask.simpleName}__inverted.nii.gz"), emit: mask
+    script:
+        """
+        scil_image_math.py intersection $mask1 $mask2 ${mask1.simpleName}__intersection.nii.gz --data_type uint8
+        """
+}
+
+process difference_masks {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+
+    input:
+        tuple val(sid), path(mask1), path(mask2)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${mask.simpleName}__inverted.nii.gz"), emit: mask
+    script:
+        """
+        scil_image_math.py difference $mask1 $mask2 ${mask1.simpleName}__difference.nii.gz --data_type uint8
+        """
+}
+
 process clean_mask_borders {
     label "LIGHTSPEED"
     label "res_single_cpu"
