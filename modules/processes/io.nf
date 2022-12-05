@@ -61,17 +61,11 @@ process enforce_sid_convention {
         tuple val(sid), path(images), val(suffix)
     output:
         tuple val(sid), path("${sid}_.*"), emit: image
-    script:
+    exec:
         if ( images.getNameCount() == 1 ) {
-            """
-            ln -s $images ${sid}_${suffix}.${extract_extension(images)}
-            """
+            images.mklink("${sid}_${suffix}.${extract_extension(images)}")
         }
         else {
-            def linkers = ""
-            images.each{ img -> linkers += "ln -s $img ${sid}_${suffix}.${extract_extension(img)}\n" }
-            """
-            $linkers
-            """
+            images.each{ img -> img.mklink("${sid}_${suffix}.${extract_extension(img)}") }
         }
 }
