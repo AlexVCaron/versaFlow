@@ -142,11 +142,19 @@ workflow preprocess_wkf {
                 "preprocess"
             )
             topup_dwi_channel = check_odd_dimensions.out.dwi
-            topup_rev_channel = fill_missing_datapoints(
-                check_odd_dimensions.out.rev.join(check_odd_dimensions.out.rev_bval_bvec, remainder: true),
-                ref_id_channel,
-                2, ["", ""]
+            rev_ref_id_channel = check_odd_dimensions.out.rev.map{ [it[0]] }
+
+            rev_bval_bvec_channel = fill_missing_datapoints(
+                check_odd_dimensions.out.rev_bval_bvec,
+                rev_ref_id_channel,
+                1, ["", ""]
             )
+            topup_rev_channel = fill_missing_datapoints(
+                check_odd_dimensions.out.rev.join(rev_bval_bvec_channel),
+                ref_id_channel,
+                1, ["", "", ""]
+            )
+
             dwi_mask_channel = fill_missing_datapoints(
                 check_odd_dimensions.out.mask,
                 ref_id_channel,
