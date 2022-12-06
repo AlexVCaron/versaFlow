@@ -62,10 +62,11 @@ process enforce_sid_convention {
     output:
         tuple val(sid), path("${sid}_*.*"), emit: image
     exec:
+        def nxf_work = System.getenv("NXF_WORK")
         if ( (images instanceof Path ? images.getNameCount() : images.size()) == 1 ) {
-            images.mklink("\$NXF_WORK/${sid}_${suffix}.${extract_extension(images)}")
+            images.mklink("$nxf_work/${sid}_${suffix}.${extract_extension(images)}")
         }
         else {
-            images.each{ img -> img.mklink("\$NXF_WORK/${sid}_${suffix}.${extract_extension(img)}") }
+            images.eachWithIndex{ img, i -> img.mklink("$nxf_work/${sid}_${suffix[i]}.${extract_extension(img)}") }
         }
 }
