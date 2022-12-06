@@ -56,12 +56,12 @@ def extract_extension ( f ) {
 
 def copy_and_rename ( fl, prefix, overwrite, copy ) {
     def ext = extract_extension(fl)
-    if ( !file("${file(fl).getParent()}/${prefix}.${ext}").exists() || overwrite == "true" )
+    if ( !file("$NXF_WORK/${prefix}.${ext}").exists() || overwrite == "true" )
         if ( copy == "true" )
-            file(fl).copyTo("${file(fl).getParent()}/${prefix}.${ext}")
+            file(fl).copyTo("$NXF_WORK/${prefix}.${ext}")
         else
-            file(fl).mklink("${file(fl).getParent()}/${prefix}.${ext}", overwrite: true)
-    return file("${file(fl).getParent()}/${prefix}.${ext}")
+            file(fl).mklink("$NXF_WORK/${prefix}.${ext}", overwrite: true)
+    return file("$NXF_WORK/${prefix}.${ext}")
 }
 
 def uniformize_naming ( files_channel, prefix, overwrite, copy ) {
