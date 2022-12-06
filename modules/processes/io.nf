@@ -75,3 +75,30 @@ process enforce_sid_convention {
             """
         }
 }
+
+process change_name {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+    input:
+        tuple val(sid), path(files)
+        val(prefix)
+    output:
+        tuple val(sid), path("*__${prefix}*")
+    script:
+        if ( (files instanceof Path ? files.getNameCount() : files.size()) == 1 ) {
+            """
+            ln -s $files ${files.simpleName.split("__")[0]}__${prefix}.${extract_extension(files)}
+            """
+        }
+        else {
+            def cmd = ""
+            for (f in files) {
+                if (!f.empty()) {
+                    cmd += "ln -s $f ${f.simpleName.split("__")[0]}__${prefix}.${extract_extension(f)}\n"
+                }
+            }
+            """
+            $cmd
+            """
+        }
+}

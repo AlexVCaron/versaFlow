@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 include { dti_metrics; dti_metrics as dti_for_odfs_metrics; diamond_metrics; odf_metrics; scil_compute_dti_fa } from '../modules/processes/measure.nf'
-include { uniformize_naming; replace_naming_to_underscore; rename_according_to; rename; get_config_path } from '../modules/functions.nf'
+include { rename; get_config_path } from '../modules/functions.nf'
 include { dti_wkf } from './reconstruct.nf'
 
 params.recons_dti = true

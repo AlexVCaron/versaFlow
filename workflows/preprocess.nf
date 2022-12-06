@@ -3,7 +3,7 @@
 nextflow.enable.dsl=2
 
 include {
-    merge_channels_non_blocking; replace_dwi_file; uniformize_naming; exclude_missing_datapoints; fill_missing_datapoints; filter_datapoints; get_config_path
+    merge_channels_non_blocking; replace_dwi_file; exclude_missing_datapoints; fill_missing_datapoints; filter_datapoints; get_config_path
 } from '../modules/functions.nf'
 include { extract_b0 as dwi_b0; extract_b0 as extract_topup_b0; extract_b0 as extract_b0_preprocessed } from '../modules/processes/preprocess.nf'
 include { scil_compute_dti_fa } from '../modules/processes/measure.nf'
@@ -36,6 +36,22 @@ include {
 } from "../modules/workflows/preprocess.nf"
 include { t1_mask_to_b0; t12b0_registration as t1_registration_wkf } from '../modules/workflows/t1_registration.nf'
 include { segment_nmt_wkf; segment_wm_wkf } from '../modules/workflows/segment.nf'
+include {
+    change_name as rename_dwi_for_topup;
+    change_name as rename_rev_for_topup;
+    change_name as rename_dwi_meta_for_topup;
+    change_name as rename_dwi_rev_for_topup;
+    change_name as rename_topup_corrected_dwi;
+    change_name as rename_topup_corrected_metadata;
+    change_name as rename_transformed_raw_dwi;
+    change_name as rename_transformed_raw_rev;
+    change_name as rename_transformed_raw_metadata;
+    change_name as rename_transformed_raw_rev_metadata;
+    change_name as rename_processed_dwi;
+    change_name as rename_processed_dwi_metadata;
+    change_name as rename_processed_dwi_mask;
+    change_name as rename_dwi_mask
+} from '../modules/processes/io.nf'
 
 // Preprocess workflow parameters
 params.gaussian_noise_correction = true
@@ -164,15 +180,20 @@ workflow preprocess_wkf {
             topup_wkf(topup_dwi_channel, topup_rev_channel, check_odd_dimensions.out.metadata.map{ it.flatten() })
 
             topup2eddy_channel = topup_wkf.out.param.join(topup_wkf.out.prefix).join(topup_wkf.out.topup.map{ [it[0], it.subList(1, it.size())] })
-
-            dwi2topup_channel = uniformize_naming(topup_wkf.out.topupable_indexes.join(dwi_channel), "dwi_to_topup", "false", "false")
-            rev2topup_channel = uniformize_naming(topup_wkf.out.topupable_indexes.join(rev_channel), "dwi_to_topup_rev", "false", "false")
-            meta2topup_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(0..<it[1].size()).step(2)] }, "dwi_to_topup_metadata", "false", "false")
-            rev_meta2topup_channel = uniformize_naming(topup_wkf.out.in_metadata_w_topup.map{ [it[0]] + it[1][(1..<it[1].size()).step(2)] }, "dwi_to_topup_rev_metadata", "false", "false")
+            dwi2topup_channel = rename_dwi_for_topup(topup_wkf.out.topupable_indexes.join(dwi_channel).map{ [it[0], it[1..-1]] }, "dwi_to_topup")
+                .map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+            rev2topup_channel = rename_rev_for_topup(topup_wkf.out.topupable_indexes.join(rev_channel).map{ [it[0], it[1..-1].findAll{ it }] }, "dwi_to_topup_rev")
+                .map{ [it[0]] + it[1] instanceof Path ? [it, "", ""] : [it[1][2], it[1][0], it[1][1]] }
+            meta2topup_channel = rename_dwi_meta_for_topup(topup_wkf.out.in_metadata_w_topup.map{ [it[0], it[1][(0..<it[1].size()).step(2)]] }, "dwi_to_topup_metadata")
+                .map{ it.flatten() }
+            rev_meta2topup_channel = rename_dwi_rev_for_topup(topup_wkf.out.in_metadata_w_topup.map{ [it[0], it[1][(1..<it[1].size()).step(2)]] }, "dwi_to_topup_rev_metadata")
+                .map{ it.flatten() }
 
             apply_topup_wkf(dwi2topup_channel, rev2topup_channel, topup2eddy_channel, meta2topup_channel.join(rev_meta2topup_channel).map{ [it[0], it.subList(1, it.size())] }, "")
-            topup_corrected_dwi = uniformize_naming(apply_topup_wkf.out.dwi, "topup_corrected", "false", "false")
-            topup_corrected_dwi_meta = uniformize_naming(apply_topup_wkf.out.metadata, "topup_corrected_metadata", "false", "false")
+            topup_corrected_dwi = rename_topup_corrected_dwi(apply_topup_wkf.out.dwi.map{ [it[0], it[1..-1]] }, "topup_corrected")
+                .map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+            topup_corrected_dwi_meta = rename_topup_corrected_metadata(apply_topup_wkf.out.metadata.map{ [it[0], it[1..-1]] }, "topup_corrected_metadata")
+                .map{ it.flatten() }
 
             excluded_dwi_channel = topup_wkf.out.excluded_dwi
             excluded_meta_channel = topup_wkf.out.excluded_dwi_metadata
@@ -198,10 +219,14 @@ workflow preprocess_wkf {
 
             if ( params.raw_to_processed_space ) {
                 squash_raw_wkf(raw_dwi_channel, raw_rev_channel, raw_meta_channel.join(raw_rev_meta_channel), "raw")
-                raw_dwi_channel = uniformize_naming(raw_dwi_channel, "raw", "false", "false")
-                raw_rev_channel = uniformize_naming(raw_rev_channel, "raw", "false", "false")
-                raw_meta_channel = uniformize_naming(meta2topup_channel, "raw_metadata", "false", "false")
-                raw_rev_meta_channel = uniformize_naming(rev_meta2topup_channel, "raw_metadata", "false", "false")
+                raw_dwi_channel = rename_transformed_raw_dwi(raw_dwi_channel.map{ [it[0], it[1..-1]] }, "raw")
+                    .map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+                raw_rev_channel = rename_transformed_raw_rev(raw_rev_channel.map{ [it[0], it[1..-1].findAll{ it }] }, "raw")
+                    .map{ [it[0]] + it[1] instanceof Path ? [it[1], "", ""] : [it[1][2], it[1][0], it[1][1]] }
+                raw_meta_channel = rename_transformed_raw_metadata(meta2topup_channel.map{ [it[0], it[1..-1]] }, "raw_metadata")
+                    .map{ it.flatten() }
+                raw_rev_meta_channel = rename_transformed_raw_rev_metadata(rev_meta2topup_channel.map{ [it[0], it[1..-1]] }, "raw_metadata")
+                    .map{ it.flatten() }
                 raw_apply_topup_wkf(
                     topup_wkf.out.topupable_indexes.join(raw_dwi_channel),
                     topup_wkf.out.topupable_indexes.join(raw_rev_channel),
@@ -319,7 +344,8 @@ workflow preprocess_wkf {
             )
             t1_channel = t1_registration_wkf.out.t1
             t1_mask_channel = t1_registration_wkf.out.mask
-            dwi_mask_channel = uniformize_naming(t1_registration_wkf.out.mask, "dwi_mask", "false", "true")
+            dwi_mask_channel = rename_dwi_mask(t1_registration_wkf.out.mask.map{ [it[0], it[1..-1]] }, "dwi_mask")
+                .map{ it.flatten() }
 
             pvf_to_register = pvf_channel.filter{ !it[1].isEmpty() }
             ants_transform_base_wm(
@@ -419,9 +445,12 @@ workflow preprocess_wkf {
         extract_b0_preprocessed(dwi_channel.map{ it.subList(0, 3) }.join(meta_channel), "preprocess", "true", params.extract_mean_b0_base_config)
         validate_gradients_wkf(dwi_channel, dwi_mask_channel)
 
-        dwi_channel = uniformize_naming(validate_gradients_wkf.out.dwi.map{ it.subList(0, 4) }, "dwi_preprocessed", "false", "false")
-        meta_channel = uniformize_naming(meta_channel, "dwi_preprocessed_metadata", "false", "false")
-        dwi_mask_channel = uniformize_naming(dwi_mask_channel, "mask_preprocessed", "false", "false")
+        dwi_channel = rename_processed_dwi(validate_gradients_wkf.out.dwi.map{ [it[0], it[1..3]] }, "dwi_preprocessed")
+            .map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+        meta_channel = rename_processed_dwi_metadata(meta_channel.map{ [it[0], it[1..-1]] }, "dwi_preprocessed_metadata")
+            .map{ it.flatten() }
+        dwi_mask_channel = rename_processed_dwi_mask(dwi_mask_channel.map{ [it[0], it[1..-1]] }, "mask_preprocessed")
+            .map{ it.flatten() }
     emit:
         t1 = t1_channel
         dwi = dwi_channel
