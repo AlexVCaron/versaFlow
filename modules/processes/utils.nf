@@ -654,7 +654,7 @@ process check_odd_dimensions {
         def assoc = []
         if ( !reverse.empty() ) assoc += ["$reverse"]
         if ( !mask.empty() ) assoc += ["$mask"]
-        args += " --assoc ${assoc.join(",")}"
+        if ( !assoc.isEmpty() ) args += " --assoc ${assoc.join(",")}"
         if ( !rval.empty() ) after_script += "cp $rval ${reverse.simpleName}__even_dims.bval\n"
         if ( !rvec.empty() ) after_script += "cp $rvec ${reverse.simpleName}__even_dims.bvec\n"
         """

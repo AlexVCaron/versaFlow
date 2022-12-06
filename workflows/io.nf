@@ -55,19 +55,25 @@ workflow load_dataset {
         rev_json_channel = Channel.fromFilePairs("$root/**/*rev.json", size: 1, flat: true)
             { get_id(it.parent, root) }
 
+        // Enforce sid as suffix for all files
+        enforce_sid_convention_anat(anat_channel.map{ it + ["t1"] })
         enforce_sid_convention_dwi(dwi_channel.map{ [it[0], it[1..-1], ["dwi"] * (it.size() - 1)] })
         enforce_sid_convention_rev(rev_channel.map{ it + ["rev"] })
         enforce_sid_convention_rev_bval_bvec(rev_bval_bvec_channel.map{ [it[0], it[1..-1], ["rev"] * (it.size() - 1)] })
-        enforce_sid_convention_pvf(pvf_channel.map{ [it[0], it[1..-1], it[1..-1].collect{ i -> i.tokenize("_")[-2] + "_pvf"} ] })
-        enforce_sid_convention_anat(anat_channel.map{ it + ["t1"] })
+        enforce_sid_convention_pvf(pvf_channel.map{ [it[0], it[1..-1], it[1..-1].collect{ i -> i.simpleName.tokenize("_")[-2] + "_pvf"} ] })
         enforce_sid_convention_dwi_mask(dwi_mask_channel.map{ it + ["dwi_mask"] })
         enforce_sid_convention_anat_mask(anat_mask_channel.map{ it + ["t1_mask"] })
         enforce_sid_convention_metadata(dwi_json_channel.map{ it + ["dwi"] })
         enforce_sid_convention_rev_metadata(rev_json_channel.map{ it + ["rev"] })
 
-        ref_id_channel = enforce_sid_convention_anat.out.image.map{ [it[0]] }
-        dwi_channel = enforce_sid_convention_dwi.out.image.map{ [it[0], it[3], it[1], it[2]] }
+        // Unpack base images (T1 + DWI)
+        anat_channel = enforce_sid_convention_anat.out.image
+        dwi_channel = enforce_sid_convention_dwi.out.image
+            .map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+        ref_id_channel = enforce_sid_convention_anat.out.image
+            .map{ [it[0]] }
 
+        // Unpack reverse phase images
         rev_bval_bvec_channel = fill_missing_datapoints(
             enforce_sid_convention_rev_bval_bvec.out.image,
             ref_id_channel,
@@ -80,28 +86,43 @@ workflow load_dataset {
             1, [""]
         ).join(rev_bval_bvec_channel)
 
-        pvf_channel = fill_missing_datapoints(
-            enforce_sid_convention_pvf.out.image.map{ [it[0], it[1..-1].reverse()] },
+        // Unpack image metadata
+        dwi_json_channel = fill_missing_datapoints(
+            enforce_sid_convention_metadata.out.image,
             ref_id_channel,
-            1, []
+            1, [""]
+        )
+        rev_json_channel = fill_missing_datapoints(
+            enforce_sid_convention_rev_metadata.out.image,
+            ref_id_channel,
+            1, [""]
         )
 
         dwi_meta_channel = pmeta_dwi(
             dwi_channel
-                .map{ it.subList(0, 2) }
-                .join(enforce_sid_convention_metadata.out.image)
+                .map{ it[0..1] }
+                .join(dwi_json_channel)
                 .map{ it + ["false"] }
         )
+        rev_meta_channel = pmeta_rev(
+            exclude_missing_datapoints(rev_channel, 1, "")
+                .map{ it[0..1] }
+                .join(rev_json_channel)
+                .map{ it + ["true"] }
+        )
+
         rev_meta_channel = fill_missing_datapoints(
-            pmeta_rev(
-                exclude_missing_datapoints(
-                    rev_channel
-                        .map{ it.subList(0, 2) }
-                        .join(enforce_sid_convention_rev_metadata.out.image),
-                    1, ""
-                ).map{ it + ["true"] }),
+            rev_meta_channel,
             ref_id_channel,
             1, [""]
+        )
+
+        // Unpack tissues PVF images
+        pvf_channel = fill_missing_datapoints(
+            enforce_sid_convention_pvf.out.image
+                .map{ [it[0], it[1].reverse()] },
+            ref_id_channel,
+            1, [[]]
         )
 
         // Load available masks (T1 and/or DWI)
