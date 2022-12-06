@@ -62,7 +62,7 @@ process enforce_sid_convention {
     output:
         tuple val(sid), path("${sid}_*.*"), emit: image
     exec:
-        if ( images.getNameCount() == 1 ) {
+        if ( (images instanceof Path ? images.getNameCount() : images.size()) == 1 ) {
             images.mklink("$NXF_WORK/${sid}_${suffix}.${extract_extension(images)}")
         }
         else {
