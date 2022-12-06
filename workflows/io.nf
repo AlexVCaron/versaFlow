@@ -12,6 +12,7 @@ include {
     enforce_sid_convention as enforce_sid_convention_anat;
     enforce_sid_convention as enforce_sid_convention_anat_mask;
     enforce_sid_convention as enforce_sid_convention_rev;
+    enforce_sid_convention as enforce_sid_convention_rev_bval_bvec;
     enforce_sid_convention as enforce_sid_convention_pvf;
     enforce_sid_convention as enforce_sid_convention_metadata;
     enforce_sid_convention as enforce_sid_convention_rev_metadata
@@ -37,7 +38,9 @@ workflow load_dataset {
         // Load all images
         dwi_channel = Channel.fromFilePairs("$root/**/*dwi.{nii.gz,bval,bvec}", size: 3, flat: true)
             { get_id(it.parent, root) }
-        rev_channel = Channel.fromFilePairs("$root/**/*rev.{nii.gz,bval,bvec}", size: 3, flat: true)
+        rev_channel = Channel.fromFilePairs("$root/**/*rev.nii.gz", size: 1, flat: true)
+            { get_id(it.parent, root) }
+        rev_bval_bvec_channel = Channel.fromFilePairs("$root/**/*rev.{bval,bvec}", size: 2, flat: true)
             { get_id(it.parent, root) }
         pvf_channel = Channel.fromFilePairs("$root/**/*{wm,gm,csf}_pvf.nii.gz", size: 3, flat: true)
             { get_id(it.parent, root) }
@@ -53,7 +56,8 @@ workflow load_dataset {
             { get_id(it.parent, root) }
 
         enforce_sid_convention_dwi(dwi_channel.map{ [it[0], it[1..-1], ["dwi"] * (it.size() - 1)] })
-        enforce_sid_convention_rev(rev_channel.map{ [it[0], it[1..-1], ["rev"] * (it.size() - 1)] })
+        enforce_sid_convention_rev(rev_channel.map{ it + ["rev"] })
+        enforce_sid_convention_rev_bval_bvec(rev_bval_bvec_channel.map{ [it[0], it[1..-1], ["rev"] * (it.size() - 1)] })
         enforce_sid_convention_pvf(pvf_channel.map{ [it[0], it[1..-1], it[1..-1].collect{ i -> i.tokenize("_")[-2] + "_pvf"} ] })
         enforce_sid_convention_anat(anat_channel.map{ it + ["t1"] })
         enforce_sid_convention_dwi_mask(dwi_mask_channel.map{ it + ["dwi_mask"] })
@@ -64,12 +68,17 @@ workflow load_dataset {
         ref_id_channel = enforce_sid_convention_anat.out.image.map{ [it[0]] }
         dwi_channel = enforce_sid_convention_dwi.out.image.map{ [it[0], it[3], it[1], it[2]] }
 
-        rev_channel = fill_missing_datapoints(
-            enforce_sid_convention_rev.out.image
-                .map{ it[1].getNameCount() > 1 ? [it[0], it[1][2], it[1][0], it[1][1]] : it },
+        rev_bval_bvec_channel = fill_missing_datapoints(
+            enforce_sid_convention_rev_bval_bvec.out.image,
             ref_id_channel,
-            1, ["", "", ""]
+            1, ["", ""]
         )
+
+        rev_channel = fill_missing_datapoints(
+            enforce_sid_convention_rev.out.image,
+            ref_id_channel,
+            1, [""]
+        ).join(rev_bval_bvec_channel)
 
         pvf_channel = fill_missing_datapoints(
             enforce_sid_convention_pvf.out.image.map{ [it[0], it[1..-1].reverse()] },
