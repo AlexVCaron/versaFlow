@@ -60,7 +60,7 @@ process enforce_sid_convention {
     input:
         tuple val(sid), path(images), val(suffix)
     output:
-        tuple val(sid), path("${sid}_*.*"), emit: image
+        tuple val(sid), path("${task.workDir}/${sid}_{${suffix.join(",")}}.*"), emit: image
     exec:
         if ( (images instanceof Path ? images.getNameCount() : images.size()) == 1 ) {
             images.mklink("${task.workDir}/${sid}_${suffix}.${extract_extension(images)}")
