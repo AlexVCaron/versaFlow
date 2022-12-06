@@ -80,7 +80,7 @@ process change_name {
     label "LIGHTSPEED"
     label "res_single_cpu"
     input:
-        tuple val(sid), path(files)
+        tuple val(sid), file(files)
         val(prefix)
     output:
         tuple val(sid), path("*__${prefix}*")
