@@ -61,11 +61,17 @@ process enforce_sid_convention {
         tuple val(sid), path(images), val(suffix)
     output:
         tuple val(sid), path("${task.workDir}/${sid}_*"), emit: image
-    exec:
+    script:
         if ( (images instanceof Path ? images.getNameCount() : images.size()) == 1 ) {
-            images.mklink("${task.workDir}/${sid}_${suffix}.${extract_extension(images)}")
+            """
+            ln -s $images ${task.workDir}/${sid}_${suffix}.${extract_extension(images)}
+            """
         }
         else {
-            images.eachWithIndex{ img, i -> img.mklink("${task.workDir}/${sid}_${suffix[i]}.${extract_extension(img)}") }
+            def cmd = ""
+            images.eachWithIndex{ img, i -> cmd += "ln -s $img ${task.workDir}/${sid}_${suffix[i]}.${extract_extension(img)}\n" }
+            """
+            $cmd
+            """
         }
 }
