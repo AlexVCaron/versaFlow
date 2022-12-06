@@ -75,7 +75,7 @@ workflow load_dataset {
 
         // Unpack reverse phase images
         rev_bval_bvec_channel = fill_missing_datapoints(
-            enforce_sid_convention_rev_bval_bvec.out.image,
+            enforce_sid_convention_rev_bval_bvec.out.image.map{ it.flatten() },
             ref_id_channel,
             1, ["", ""]
         )
