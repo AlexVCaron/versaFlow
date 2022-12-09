@@ -17,7 +17,7 @@ def group_subject_reps ( dwi_channel, metadata_channel ) {
 }
 
 def replace_dwi_file ( base_channel, dwi_channel ) {
-    return dwi_channel.join(base_channel.map{ [it[0]] + it.subList(2, it.size()) })
+    return dwi_channel.join(base_channel.map{ [it[0]] + it[2..-1] })
 }
 
 OPT_FILE_VALUE = ""
@@ -56,13 +56,12 @@ def extract_extension ( f ) {
 
 def copy_and_rename ( fl, prefix, overwrite, copy ) {
     def ext = extract_extension(fl)
-    def nxf_work = System.getenv("NXF_WORK")
-    if ( !file("$nxf_work/${prefix}.${ext}").exists() || overwrite == "true" )
+    if ( !file("${prefix}.${ext}").exists() || overwrite == "true" )
         if ( copy == "true" )
-            file(fl).copyTo("$nxf_work/${prefix}.${ext}")
+            file(fl).copyTo("${prefix}.${ext}")
         else
-            file(fl).mklink("$nxf_work/${prefix}.${ext}", overwrite: true)
-    return file("$nxf_work/${prefix}.${ext}")
+            file(fl).mklink("${prefix}.${ext}", overwrite: true)
+    return file("${prefix}.${ext}")
 }
 
 def uniformize_naming ( files_channel, prefix, overwrite, copy ) {
@@ -192,4 +191,14 @@ def get_config_path () {
         current_dir = current_dir.parent
     }
     return "$current_dir/.config"
+}
+
+def is_path_list ( pth ) {
+    return ( pth instanceof Path ? pth.getNameCount() : pth.size() ) > 0
+}
+
+def collect_paths ( data_channel ) {
+    return data_channel.map{
+        [it[0], (it.size() > 2 ? it[1..-1] : [it[1]] ).findAll{ it }]
+    }
 }
