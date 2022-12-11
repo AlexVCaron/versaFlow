@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-params.resampling_resolution = false
+params.force_resampling_resolution = false
 params.resampling_min_resolution = false
 params.resampling_subdivision = 2
 params.force_resampling_sequential = false
@@ -10,6 +10,7 @@ params.force_resampling_sequential = false
 include { remove_alg_suffixes } from '../functions.nf'
 
 process scilpy_resample {
+    label "FAST"
     label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -38,7 +39,7 @@ process scilpy_resample {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_resample_volume.py $image resampled.nii.gz --voxel_size $params.resampling_resolution --interp $interpolation
+        scil_resample_volume.py $image resampled.nii.gz --voxel_size $params.force_resampling_resolution --interp $interpolation
         fslmaths resampled.nii.gz -thr 0 ${image.simpleName}__resampled.nii.gz
         if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}__resampled.nii.gz)" ]
         then
@@ -49,6 +50,7 @@ process scilpy_resample {
 }
 
 process scilpy_resample_to_reference {
+    label "FAST"
     label params.force_resampling_sequential ? "res_max_cpu" : "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -89,6 +91,7 @@ process scilpy_resample_to_reference {
 }
 
 process resampling_reference {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -100,8 +103,8 @@ process resampling_reference {
         tuple val(sid), path("${sid}_resampling_reference.nii.gz"), emit: reference
     script:
         def args = ""
-        if (params.resampling_resolution)
-            args += " --force-resolution ${params.resampling_resolution}"
+        if (params.force_resampling_resolution)
+            args += " --force-resolution ${params.force_resampling_resolution}"
         if (params.resampling_min_resolution)
             args += " --min_voxel_size ${params.resampling_min_resolution}"
         """

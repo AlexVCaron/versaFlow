@@ -5,6 +5,7 @@ nextflow.enable.dsl=2
 params.deep_bet_model = "Site-All-T-epoch_36_update_with_Site_6_plus_7-epoch_09.model"
 
 process deepbet_t1 {
+    label "BET"
     label params.use_cuda ? "res_single_cpu" : params.on_hcp ? "res_full_node_override" : "res_max_cpu"
     label params.use_cuda ? "res_gpu" : ""
 
@@ -24,14 +25,16 @@ process deepbet_t1 {
 }
 
 process bet_mask {
+    label "BET"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_bet_mask") }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), suffix ? "$suffix" : "_bet_mask") }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img)
         val(caller_name)
+        val(suffix)
     output:
         tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz"), emit: mask
     script:

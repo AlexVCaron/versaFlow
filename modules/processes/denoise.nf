@@ -14,6 +14,7 @@ params.verbose_outputs = false
 include { remove_alg_suffixes } from '../functions.nf'
 
 process dwi_denoise {
+    label "MPCA_DENOISE"
     label params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -43,6 +44,7 @@ process dwi_denoise {
 }
 
 process nlmeans_denoise {
+    label "NLMEANS_3D"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -73,6 +75,7 @@ process nlmeans_denoise {
 }
 
 process ants_gaussian_denoise {
+    label "LONG"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -99,6 +102,7 @@ process ants_gaussian_denoise {
 }
 
 process n4_denoise {
+    label "N4_CORRECTION"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -139,6 +143,7 @@ process n4_denoise {
 }
 
 process normalize_inter_b0 {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -178,6 +183,7 @@ process normalize_inter_b0 {
 }
 
 process prepare_topup {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     input:
@@ -201,6 +207,7 @@ process prepare_topup {
 }
 
 process topup {
+    label "TOPUP"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -224,6 +231,7 @@ process topup {
 }
 
 process prepare_eddy {
+    label "LIGHTSPEED"
     label "res_single_cpu"
 
     input:
@@ -272,7 +280,8 @@ process prepare_eddy {
 }
 
 process eddy {
-    label params.use_cuda ? "res_single_cpu" : params.on_hcp ? "res_full_node_override" : "res_max_cpu"
+    label params.use_cuda ? "EDDY_GPU" : "EDDY_OMP"
+    label params.use_cuda ? "res_single_cpu" : params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
     label params.use_cuda ? "res_gpu" : ""
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -321,6 +330,7 @@ process eddy {
 }
 
 process gibbs_removal {
+    label "MEDIUM"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

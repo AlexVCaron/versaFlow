@@ -9,6 +9,8 @@ params.default_slicing_direction = null
 params.default_phase_direction = null
 params.default_acquisition_tensor_type = null
 
+include { extract_extension } from '../functions.nf'
+
 def metadata_from_params ( reverse ) {
     if ([
         params.default_readout,
@@ -34,6 +36,7 @@ def metadata_from_params ( reverse ) {
 }
 
 process prepare_metadata {
+    label "LIGHTSPEED"
     label "res_single_cpu"
     input:
         tuple val(sid), path(image), file(metadata), val(reverse)
@@ -49,4 +52,53 @@ process prepare_metadata {
         """
         mrhardi metadata --in $image $args
         """
+}
+
+process enforce_sid_convention {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+    input:
+        tuple val(sid), path(images), val(suffix)
+    output:
+        tuple val(sid), path("${sid}_*"), emit: image
+    script:
+        if ( (images instanceof Path ? images.getNameCount() : images.size()) == 1 ) {
+            """
+            ln -s $images ${sid}_${suffix}.${extract_extension(images)}
+            """
+        }
+        else {
+            def cmd = ""
+            images.eachWithIndex{ img, i -> cmd += "ln -s $img ${sid}_${suffix[i]}.${extract_extension(img)}\n" }
+            """
+            $cmd
+            """
+        }
+}
+
+process change_name {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+    input:
+        tuple val(sid), file(files)
+        val(prefix)
+    output:
+        tuple val(sid), path("*__${prefix}*")
+    script:
+        if ( (files instanceof Path ? files.getNameCount() : files.size()) == 1 ) {
+            """
+            ln -s $files ${files.simpleName.split("__")[0]}__${prefix}.${extract_extension(files)}
+            """
+        }
+        else {
+            def cmd = ""
+            for (f in files) {
+                if (!f.empty()) {
+                    cmd += "ln -s $f ${f.simpleName.split("__")[0]}__${prefix}.${extract_extension(f)}\n"
+                }
+            }
+            """
+            $cmd
+            """
+        }
 }

@@ -7,6 +7,7 @@ params.b0_threshold = false
 include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 
 process compute_powder_average {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -32,6 +33,7 @@ process compute_powder_average {
 }
 
 process extract_b0 {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -53,6 +55,7 @@ process extract_b0 {
 }
 
 process squash_b0 {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

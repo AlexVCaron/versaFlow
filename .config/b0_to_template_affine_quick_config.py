@@ -76,7 +76,7 @@ c.AntsConfiguration.passes = [{
         1
     ]
 }, {
-    "conv_eps": 1e-6,
+    "conv_eps": 1e-5,
     "conv_max_iter": [500, 300, 200, 100],
     "conv_win": 20,
     "grad_step": 0.1,

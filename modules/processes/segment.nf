@@ -8,6 +8,7 @@ params.random_seed = 1234
 include { remove_alg_suffixes } from '../functions.nf'
 
 process atropos {
+    label "ATROPOS"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all

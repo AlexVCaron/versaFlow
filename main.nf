@@ -17,9 +17,35 @@ workflow {
         validate_required_parameters()
         display_run_info()
         dataloader = load_dataset()
-        preprocess_wkf(dataloader.dwi, dataloader.rev, dataloader.anat, dataloader.pvf, dataloader.metadata, dataloader.rev_metadata, dataloader.dwi_mask, dataloader.anat_mask)
-        reconstruct_wkf(preprocess_wkf.out.dwi, preprocess_wkf.out.mask, preprocess_wkf.out.tissue_masks, preprocess_wkf.out.safe_wm_mask, preprocess_wkf.out.metadata)
-        measure_wkf(preprocess_wkf.out.dwi, reconstruct_wkf.out.all, preprocess_wkf.out.mask, preprocess_wkf.out.tissue_masks, reconstruct_wkf.out.diamond_summary, preprocess_wkf.out.metadata)
+
+        preprocess_wkf(
+            dataloader.dwi,
+            dataloader.rev,
+            dataloader.anat,
+            dataloader.pvf,
+            dataloader.metadata,
+            dataloader.rev_metadata,
+            dataloader.dwi_mask,
+            dataloader.anat_mask
+        )
+
+        reconstruct_wkf(
+            preprocess_wkf.out.dwi,
+            preprocess_wkf.out.mask,
+            preprocess_wkf.out.tissue_masks,
+            preprocess_wkf.out.safe_wm_mask,
+            preprocess_wkf.out.metadata
+        )
+
+        measure_wkf(
+            preprocess_wkf.out.dwi,
+            reconstruct_wkf.out.all,
+            preprocess_wkf.out.mask,
+            preprocess_wkf.out.tissue_masks,
+            reconstruct_wkf.out.diamond_summary,
+            preprocess_wkf.out.metadata
+        )
+
         if ( params.pft_tracking ) {
             tracking_wkf(reconstruct_wkf.out.csd, preprocess_wkf.out.pvf)
         }
@@ -34,8 +60,7 @@ workflow.onComplete {
 
 def validate_required_parameters () {
     if ( !params.data_root ) error "Error ~ Input data root not specified, use --data_root"
-    if ( params.resample_data && !params.resampling_resolution ) error "Error ~ Resampling is enabled, but resampling resolution is not defined, use --resampling_resolution"
-    if ( params.pft_tracking && !params.recons_csd ) error "Error ~ CSD reconstruction is required for tracking step, use --recons_csd to enable fodf reconstruction, or disable tracking with --pft_tracking = false"
+    if ( params.pft_tracking && !params.recons_csd ) error "Error ~ CSD reconstruction is required for tracking step, use --recons_csd to enable fodf reconstruction, or disable tracking with --pft_tracking false"
 }
 
 def display_run_info () {
@@ -54,11 +79,17 @@ def display_run_info () {
     log.info " - Publish mode    : $params.publish_mode"
     log.info " - Publish all outputs ${params.publish_all ? "(enabled)" : "(disabled)"}"
     log.info " - Verbose ${params.verbose_outputs ? "(enabled)" : "(disabled)"}"
+    log.info " - Random seed     : $params.random_seed"
     log.info "Resources allocation :"
     log.info " - Use GPU ${params.use_cuda ? "(enabled)" : "(disabled)"}"
     if (params.use_cuda) {
         log.info "    - Auto-select GPU ${params.eddy_select_gpu ? "(enabled)" : "(disabled)"}"
         log.info "    - Max parallel GPU : $params.cuda_max_parallel"
+    }
+    log.info " - Conserve resources for short tasks ${params.conservative_resources ? "(enabled)" : "(disabled)"}"
+       if (params.conservative_resources) {
+        log.info "    - Conserved CPU count  : ${params.free_processes ? params.free_processes : 0}"
+        log.info "    - Conserved RAM buffer : ${params.memory_buffer_gb ? params.memory_buffer_gb : 0}"
     }
     log.info " - Max CPU per process : ${params.max_cpu_per_process ? params.max_cpu_per_process : params.processes}"
     log.info ""
@@ -95,7 +126,13 @@ def display_run_info () {
     log.info " - Resample T1 and DWI ${params.resample_data ? "(enabled)" : "(disabled)"}"
     if (params.resample_data) {
         log.info "    - Sequential processing ${params.force_resampling_sequential ? "(enabled)" : "(disabled)"}"
-        log.info "    - Resampling resolution : $params.resampling_resolution"
+        if (params.force_resampling_resolution) {
+            log.info "    - Force resampling resolution : ${params.force_resampling_resolution ? params.force_resampling_resolution : "(disabled)"}"
+        }
+        else {
+            log.info "    - Minimum resampling resolution : ${params.resampling_min_resolution ? params.resampling_min_resolution : "(disabled)"}"
+            log.info "    - Resampling subdivisions       : ${params.resampling_subdivision}"
+        }
     }
     log.info "Segmentation :"
     log.info " - Segment WM/GM/CSF from T1 ${params.generate_tissue_segmentation ? "(enabled)" : "(disabled)"}"
@@ -125,7 +162,15 @@ def display_run_info () {
     else log.info " - SSST CSD ${params.recons_csd ? "(enabled)" : "(disabled)"}"
     if (params.recons_csd) {
         log.info "    - Compute FRF on DTI shells ${params.frf_on_dti_shell ? "(enabled)" : "(disabled)"}"
-        log.info "    - Spherical harmonics order              : $params.sh_order"
+        log.info "    - Fit SH order to gradient sampling ${params.strict_parameters ? "(disabled)" : "(enabled)"}"
+        log.info "    - CSD computing library                  : ${params.use_mrtrix_csd ? "Mrtrix" : "Dipy"}"
+        log.info "    - Duplicated directions merge method     : $params.duplicates_merge_method"
+        if (params.strict_parameters) {
+            log.info "    - Spherical harmonics order              : $params.sh_order"
+        }
+        else {
+            log.info "    - Maximal spherical harmonics order      : $params.sh_order"
+        }
         log.info "    - FRF - FA upper threshold               : $params.frf_fa"
         log.info "    - FRF - FA lower threshold               : $params.frf_min_fa"
         log.info "    - FRF - Minimal sample size              : $params.frf_min_nvox"
@@ -141,13 +186,13 @@ def display_run_info () {
     }
     log.info " - DIAMOND ${params.recons_diamond ? "(enabled)" : "(disabled)"}"
     if (params.recons_diamond) {
+        log.info "    - Fit model complexity to gradient sampling ${params.strict_parameters ? "(disabled)" : "(enabled)"}"
         log.info "    - Model selection on tensor ${params.model_selection_with_tensor ? "(enabled)" : "(disabled)"}"
         log.info "    - Estimate ISOR - restricted isotropic diffusion fraction ${params.estimate_restriction ? "(enabled)" : "(disabled)"}"
         log.info "    - Estimate ICVF - hindered diffusion fraction per fascicle ${params.estimate_hindered ? "(enabled)" : "(disabled)"}"
         log.info "    - Use FW tensor model ${params.free_water_tensor ? "(enabled)" : "(disabled)"}"
         log.info "    - Use ISOR tensor model ${params.restriction_tensor ? "(enabled)" : "(disabled)"}"
         log.info "    - Normalize fractions ${params.normalized_fractions ? "(enabled)" : "(disabled)"}"
-        log.info "    - Optimize # parameters ${params.strict_parameters ? "(disabled)" : "(enabled)"}"
         log.info "    - Number of fascicles : $params.n_fascicles"
         log.info "    - Fascicle model      : $params.fascicle_model"
     }
@@ -168,6 +213,9 @@ def display_usage () {
             "verbose_outputs" : "$params.verbose_outputs",
             "resample_data" : "$params.resample_data",
             "force_resampling_sequential" : "$params.force_resampling_sequential",
+            "force_resampling_resolution" : "${params.force_resampling_resolution ? params.force_resampling_resolution : false}",
+            "resampling_subdivision" : "$params.resampling_subdivision",
+            "resampling_min_resolution" : "$params.resampling_min_resolution",
             "b0_threshold" : "$params.b0_threshold",
             "b0_normalization_strategy" : "$params.b0_normalization_strategy",
             "bet_f" : "$params.bet_f",
@@ -239,7 +287,8 @@ def display_usage () {
             "pft_back_tracking_length" : "$params.pft_back_tracking_length",
             "pft_forward_tracking_length" : "$params.pft_forward_tracking_length",
             "raw_to_processed_space": "$params.raw_to_processed_space",
-            "cuda_max_parallel": "$params.cuda_max_parallel"
+            "cuda_max_parallel": "$params.cuda_max_parallel",
+            "random_seed": "$params.random_seed"
     ]
 
     engine = new groovy.text.SimpleTemplateEngine()

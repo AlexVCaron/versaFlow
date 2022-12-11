@@ -130,7 +130,7 @@ automatically handled in a future version of the pipeline.
 To run the pipeline, we recommend creating a directory per run that contains log and 
 cache of execution from Nextflow. In that directory, then run the following command
 
-`nextflow run -resume -w cache -dsl2 <root of mrhardiflow>/main.nf --data_root <data root> --resampling_resolution <final images resolution>`
+`nextflow run -resume -w cache -dsl2 <root of mrhardiflow>/main.nf --data_root <data root>
 
 Additional parameters to this command can be supplied, such as :
 

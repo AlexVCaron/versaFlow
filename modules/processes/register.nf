@@ -10,6 +10,7 @@ params.random_seed = 1234
 include { remove_alg_suffixes } from '../functions.nf'
 
 process ants_register {
+    label "REGISTER"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -91,6 +92,7 @@ process ants_register {
 }
 
 process ants_correct_motion {
+    label "REGISTER"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -114,6 +116,7 @@ process ants_correct_motion {
 }
 
 process ants_transform {
+    label "FAST"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -149,6 +152,7 @@ process ants_transform {
 }
 
 process align_to_closest {
+    label "ALIGN"
     input:
         tuple val(sid), path(images), path(metadata)
         val(n_iterations)
@@ -164,11 +168,11 @@ process align_to_closest {
         def single_copy_and_exit = ""
         def copy_warped = ""
         def copy_metadata = ""
-        images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate1${img}${idx}WarpedToTemplate.nii.gz ${sid}_${img.simpleName.split("__")[0].tokenize("_")[1]}__${idx}_aligned.nii.gz\n" }
-        images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${sid}_${img.simpleName.split("__")[0].tokenize("_")[1]}__${idx}_aligned_metadata.py\n" }
+        images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate1${img}${idx}WarpedToTemplate.nii.gz ${img.simpleName}__${idx}_aligned.nii.gz\n" }
+        images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${img.simpleName}__${idx}_aligned_metadata.py\n" }
         if ( images.getNameCount() == 1 ) {
-            single_copy_and_exit = "cp $images ${sid}_${images.simpleName.split("__")[0].tokenize("_")[1]}__0_aligned.nii.gz\n"
-            single_copy_and_exit += "cp $metadata ${sid}_${images.simpleName.split("__")[0].tokenize("_")[1]}__0_aligned_metadata.py\n"
+            single_copy_and_exit = "cp $images ${images.simpleName}__0_aligned.nii.gz\n"
+            single_copy_and_exit += "cp $metadata ${images.simpleName}__0_aligned_metadata.py\n"
             single_copy_and_exit += "exit 0\n"
         }
         """
@@ -190,6 +194,7 @@ process align_to_closest {
 }
 
 process align_to_average {
+    label "ALIGN"
     input:
         tuple val(sid), path(images), path(average), path(metadata)
         val(n_iterations)
@@ -204,8 +209,8 @@ process align_to_average {
     script:
         def copy_warped = ""
         def copy_metadata = ""
-        images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate0${img.simpleName}${idx}WarpedToTemplate.nii.gz ${sid}_${img.simpleName.split("__")[0].tokenize("_")[1]}__${idx}_average_aligned.nii.gz\n" }
-        images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${sid}_${img.simpleName.split("__")[0].tokenize("_")[1]}__${idx}_average_aligned_metadata.py\n" }
+        images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate0${img.simpleName}${idx}WarpedToTemplate.nii.gz ${img.simpleName}__${idx}_average_aligned.nii.gz\n" }
+        images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${img.simpleName}__${idx}_average_aligned_metadata.py\n" }
         """
         antsMultivariateTemplateConstruction2.sh \
             -i $n_iterations \

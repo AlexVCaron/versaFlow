@@ -16,6 +16,7 @@ params.b0_threshold = false
 
 
 process dti_metrics {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -36,6 +37,7 @@ process dti_metrics {
 }
 
 process scil_compute_dti_fa {
+    label "MEDIUM"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
@@ -86,7 +88,62 @@ process scil_compute_dti_fa {
         """
 }
 
+process scil_compute_dti_fa_np {
+    label "MEDIUM"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$measuring_caller_name/${task.index}_${task.process.replaceAll(":", "_")}",saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f },  mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/dti", saveAs: { f -> ("$publish" == "true") ? f.contains("dti_dti") ? f : null : null }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}/dti", saveAs: { f -> ("$publish" == "true") ? f.contains("dti_dti") ? null : f.contains("metadata") ? null : f : null }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(dwi), path(bval), path(bvec), file(mask)
+        val(processing_caller_name)
+        val(measuring_caller_name)
+        val(publish)
+    output:
+        tuple val(sid), val("${sid}_dti"), emit: prefix
+        tuple val(sid), path("${sid}_dti_dti.nii.gz"), emit: dti
+        tuple val(sid), path("${sid}_dti_fa.nii.gz"), emit: fa
+        tuple val(sid), path("${sid}_dti_md.nii.gz"), emit: md
+        tuple val(sid), path("${sid}_dti_evecs_v1.nii.gz"), emit: main_peak
+        tuple val(sid), path("${sid}_dti_evecs*.nii.gz"), emit: evecs
+        tuple val(sid), path("${sid}_dti_non_physical.nii.gz"), emit: np_outliers_mask
+    script:
+        def avail_threads = Math.round(task.cpus / 3)
+        def remainder_threads = task.cpus - avail_threads
+        def args = "--tensor ${sid}_dti_dti.nii.gz"
+        args += " --fa ${sid}_dti_fa.nii.gz --md ${sid}_dti_md.nii.gz"
+        args += " --evecs ${sid}_dti_evecs.nii.gz"
+        args += " --non-physical ${sid}_dti_non_physical.nii.gz"
+        def before = ""
+        if ( !mask.empty() ) {
+            args += " --mask $mask"
+            before += "scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f\n"
+        }
+
+        if ( params.max_dti_bvalue ) {
+            def shell_args = ""
+            if (params.b0_threshold)
+                shell_args += " --ceil ${params.b0_threshold}"
+            before += "mrhardi shells --in $dwi --bvals $bval --bvecs $bvec --shells $params.max_dti_bvalue --keep leq --out dwi_for_dti --with_b0 $shell_args\n"
+        }
+        else {
+            before += "cp $dwi dwi_for_dti.nii.gz\ncp $bval dwi_for_dti.bval\ncp $bvec dwi_for_dti.bvec"
+        }
+
+        """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
+        export OMP_NUM_THREADS=$avail_threads
+        export OPENBLAS_NUM_THREADS=1
+        $before
+        scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
+        """
+}
+
 process scil_dti_and_metrics {
+    label "LONG"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
@@ -138,6 +195,7 @@ process scil_dti_and_metrics {
 }
 
 process diamond_metrics {
+    label "MEDIUM"
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
@@ -161,7 +219,8 @@ process diamond_metrics {
 }
 
 process odf_metrics {
-    label params.conservative_resources ? "res_conservative" : "res_max_cpu"
+    label "MEDIUM"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
@@ -205,7 +264,8 @@ process odf_metrics {
             --peaks ${sid}_fodf_metrics_wm_peaks.nii.gz \
             --rgb ${sid}_fodf_metrics_wm_rgb.nii.gz \
             --peak_values ${sid}_fodf_metrics_wm_peaks_values.nii.gz \
-            --peak_indices ${sid}_fodf_metrics_wm_peaks_indices.nii.gz
+            --peak_indices ${sid}_fodf_metrics_wm_peaks_indices.nii.gz \
+            --processes $task.cpus
 
         scil_compute_fodf_metrics.py $gm_f \
             --rt $params.fodf_gm_relative_thr \
@@ -219,7 +279,8 @@ process odf_metrics {
             --peaks ${sid}_fodf_metrics_gm_peaks.nii.gz \
             --rgb ${sid}_fodf_metrics_gm_rgb.nii.gz \
             --peak_values ${sid}_fodf_metrics_gm_peaks_values.nii.gz \
-            --peak_indices ${sid}_fodf_metrics_gm_peaks_indices.nii.gz
+            --peak_indices ${sid}_fodf_metrics_gm_peaks_indices.nii.gz \
+            --processes $task.cpus
         """
 }
 
