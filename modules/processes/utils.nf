@@ -41,12 +41,13 @@ process bet_mask {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_bet_mask") : null }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), publish_suffix ? "_$publish_suffix" : "_bet_mask") : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img)
         val(caller_name)
         val(publish)
+        val(publish_suffix)
     output:
         tuple val(sid), path("${img.simpleName}_bet_mask.nii.gz"), emit: mask
     script:

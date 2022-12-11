@@ -207,7 +207,7 @@ workflow t12b0_registration {
                 .join(template_to_b0_transform)
                 .map{ it + ["", ""] },
             "preprocess",
-            "","$publish_mask", "mask",
+            "","$publish_mask", "dwi_mask",
             params.ants_transform_mask_config
         )
 
@@ -544,7 +544,7 @@ workflow t1_mask_to_b0 {
     main:
         extract_target_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
 
-        bet_mask(extract_target_b0.out.b0, "preprocess", "false")
+        bet_mask(extract_target_b0.out.b0, "preprocess", "false", "")
         dwi_mask_channel = bet_mask.out.mask
 
         mask_target_b0(extract_target_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
@@ -580,7 +580,7 @@ workflow t1_mask_to_b0 {
                 .join(t1_to_b0_registration_wkf.out.transform)
                 .map{ it + ["", "", ""] },
             "preprocess",
-            "","$publish_mask", "mask",
+            "","$publish_mask", "dwi_mask",
             params.ants_transform_mask_config
         )
     emit:

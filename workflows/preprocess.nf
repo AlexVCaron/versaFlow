@@ -209,12 +209,12 @@ workflow preprocess_wkf {
             .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() }
 
         // Copy input channels for later
-        raw_dwi_channel = dwi_channel
-        raw_rev_channel = rev_channel
-        raw_t1_channel = t1_channel
-        raw_t1_mask_channel = t1_mask_channel
-        raw_meta_channel = meta_channel
-        raw_rev_meta_channel = rev_meta_channel
+        dwi_channel.tap{ raw_dwi_channel }
+        rev_channel.tap{ raw_rev_channel }
+        t1_channel.tap{ raw_t1_channel }
+        t1_mask_channel.tap{ raw_t1_mask_channel }
+        meta_channel.tap{ raw_meta_channel }
+        rev_meta_channel.tap{ raw_rev_meta_channel }
 
         // Perform DWI and b0 denoising
         if ( params.gaussian_noise_correction ) {
@@ -445,7 +445,8 @@ workflow preprocess_wkf {
         bet_mask(
             empty_dwi_mask_id_channel.join(b0_channel),
             "preprocess",
-            "${!params.dwi_mask_from_t1_mask}"
+            "${!params.dwi_mask_from_t1_mask}",
+            "dwi_mask"
         )
         dwi_mask_channel = dwi_mask_channel.mix(bet_mask.out.mask)
 
@@ -471,7 +472,7 @@ workflow preprocess_wkf {
                 t1_mask_to_b0.out.mask,
                 "uint8", "preprocess",
                 !params.register_t1_to_dwi,
-                "mask", ""
+                "dwi_mask", ""
             )
 
             dwi_mask_channel = t1_mask_convert_datatype.out.image
@@ -572,8 +573,8 @@ workflow preprocess_wkf {
         dwi_mask_convert_datatype(
             dwi_mask_registration_wkf.out.image,
             "uint8", "preprocess",
-            false,
-            "", ""
+            true,
+            "t1_mask", ""
         )
 
         t1_mask_channel = existing_t1_mask_id_channel
@@ -600,7 +601,7 @@ workflow preprocess_wkf {
                 .join(meta_channel),
             "preprocess", "lin",
             true, true,
-            "mask", ""
+            "dwi_mask", ""
         )
 
         resample_t1(
@@ -610,7 +611,7 @@ workflow preprocess_wkf {
                 .map{ it + [""] },
             "preprocess", "lin",
             true, true,
-            "", ""
+            "t1_mask", ""
         )
 
         resample_wm(
@@ -756,7 +757,7 @@ workflow preprocess_wkf {
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
-                "preprocess", "", "true", "",
+                "preprocess", "segmentation", "true", "",
                 params.ants_transform_base_config
             )
             ants_transform_base_gm(
@@ -765,7 +766,7 @@ workflow preprocess_wkf {
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
-                "preprocess", "", "true", "",
+                "preprocess", "segmentation", "true", "",
                 params.ants_transform_base_config
             )
             ants_transform_base_csf(
@@ -774,7 +775,7 @@ workflow preprocess_wkf {
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
-                "preprocess", "", "true", "",
+                "preprocess", "segmentation", "true", "",
                 params.ants_transform_base_config
             )
             ants_transform_wm_mask(
@@ -783,7 +784,7 @@ workflow preprocess_wkf {
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
-                "preprocess", "", "true", "",
+                "preprocess", "segmentation", "true", "",
                 params.ants_transform_mask_config
             )
             ants_transform_gm_mask(
@@ -792,7 +793,7 @@ workflow preprocess_wkf {
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
-                "preprocess", "", "true", "",
+                "preprocess", "segmentation", "true", "",
                 params.ants_transform_mask_config
             )
             ants_transform_csf_mask(
@@ -801,7 +802,7 @@ workflow preprocess_wkf {
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
-                "preprocess", "", "true", "",
+                "preprocess", "segmentation", "true", "",
                 params.ants_transform_mask_config
             )
             ants_transform_safe_wm_mask(
@@ -810,7 +811,7 @@ workflow preprocess_wkf {
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
-                "preprocess", "", "true", "",
+                "preprocess", "segmentation", "true", "",
                 params.ants_transform_mask_config
             )
 
@@ -840,7 +841,7 @@ workflow preprocess_wkf {
                     "preprocess",
                     "raw",
                     "true",
-                    "",
+                    "t1",
                     params.ants_transform_base_config
                 )
 
@@ -852,7 +853,7 @@ workflow preprocess_wkf {
                     "preprocess",
                     "raw",
                     "true",
-                    "",
+                    "t1_mask",
                     params.ants_transform_mask_config
                 )
 
@@ -867,7 +868,7 @@ workflow preprocess_wkf {
                 .join(dwi_mask_channel)
                 .map{ it + [""] }
                 .join(collect_paths(meta_channel)),
-            "preprocess", true, "mask", ""
+            "preprocess", true, "dwi_mask", ""
         )
 
         fit_bounding_box(
@@ -889,7 +890,7 @@ workflow preprocess_wkf {
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
-            "preprocess", false, "", ""
+            "preprocess", true, "t1_mask", ""
         )
 
         crop_wm(
@@ -898,7 +899,7 @@ workflow preprocess_wkf {
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
-            "preprocess", true, "", "segmentation"
+            "preprocess", false, "", "segmentation"
         )
         crop_gm(
             pvf_to_crop_channel
@@ -906,7 +907,7 @@ workflow preprocess_wkf {
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
-            "preprocess", true, "", "segmentation"
+            "preprocess", false, "", "segmentation"
         )
         crop_csf(
             pvf_to_crop_channel
@@ -914,7 +915,7 @@ workflow preprocess_wkf {
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
-            "preprocess", true, "", "segmentation"
+            "preprocess", false, "", "segmentation"
         )
 
         crop_wm_mask(
@@ -923,7 +924,7 @@ workflow preprocess_wkf {
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
-            "preprocess", true, "", "segmentation"
+            "preprocess", false, "", "segmentation"
         )
         crop_gm_mask(
             tissue_mask_to_crop_channel
@@ -931,7 +932,7 @@ workflow preprocess_wkf {
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
-            "preprocess", true, "", "segmentation"
+            "preprocess", false, "", "segmentation"
         )
         crop_csf_mask(
             tissue_mask_to_crop_channel
@@ -939,7 +940,7 @@ workflow preprocess_wkf {
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
-            "preprocess", true, "", "segmentation"
+            "preprocess", false, "", "segmentation"
         )
         crop_safe_wm_mask(
             safe_wm_mask_channel
@@ -947,8 +948,13 @@ workflow preprocess_wkf {
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
-            "preprocess", true, "", "segmentation"
+            "preprocess", false, "", "segmentation"
         )
+
+        dwi_channel = replace_dwi_file(dwi_channel, crop_dwi.out.image)
+        dwi_mask_channel = crop_dwi.out.mask
+        t1_channel = crop_t1.out.image
+        t1_mask_channel = crop_t1.out.mask
 
         pvf_channel = collect_paths(
             crop_wm.out.image

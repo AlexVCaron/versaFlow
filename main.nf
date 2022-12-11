@@ -60,7 +60,6 @@ workflow.onComplete {
 
 def validate_required_parameters () {
     if ( !params.data_root ) error "Error ~ Input data root not specified, use --data_root"
-    if ( params.resample_data && !params.resampling_resolution ) error "Error ~ Resampling is enabled, but resampling resolution is not defined, use --resampling_resolution"
     if ( params.pft_tracking && !params.recons_csd ) error "Error ~ CSD reconstruction is required for tracking step, use --recons_csd to enable fodf reconstruction, or disable tracking with --pft_tracking false"
 }
 
@@ -127,8 +126,8 @@ def display_run_info () {
     log.info " - Resample T1 and DWI ${params.resample_data ? "(enabled)" : "(disabled)"}"
     if (params.resample_data) {
         log.info "    - Sequential processing ${params.force_resampling_sequential ? "(enabled)" : "(disabled)"}"
-        if (params.resampling_resolution) {
-            log.info "    - Force resampling resolution : ${params.resampling_resolution ? params.resampling_resolution : "(disabled)"}"
+        if (params.force_resampling_resolution) {
+            log.info "    - Force resampling resolution : ${params.force_resampling_resolution ? params.force_resampling_resolution : "(disabled)"}"
         }
         else {
             log.info "    - Minimum resampling resolution : ${params.resampling_min_resolution ? params.resampling_min_resolution : "(disabled)"}"
@@ -214,6 +213,9 @@ def display_usage () {
             "verbose_outputs" : "$params.verbose_outputs",
             "resample_data" : "$params.resample_data",
             "force_resampling_sequential" : "$params.force_resampling_sequential",
+            "force_resampling_resolution" : "${params.force_resampling_resolution ? params.force_resampling_resolution : false}",
+            "resampling_subdivision" : "$params.resampling_subdivision",
+            "resampling_min_resolution" : "$params.resampling_min_resolution",
             "b0_threshold" : "$params.b0_threshold",
             "b0_normalization_strategy" : "$params.b0_normalization_strategy",
             "bet_f" : "$params.bet_f",
@@ -285,7 +287,8 @@ def display_usage () {
             "pft_back_tracking_length" : "$params.pft_back_tracking_length",
             "pft_forward_tracking_length" : "$params.pft_forward_tracking_length",
             "raw_to_processed_space": "$params.raw_to_processed_space",
-            "cuda_max_parallel": "$params.cuda_max_parallel"
+            "cuda_max_parallel": "$params.cuda_max_parallel",
+            "random_seed": "$params.random_seed"
     ]
 
     engine = new groovy.text.SimpleTemplateEngine()
