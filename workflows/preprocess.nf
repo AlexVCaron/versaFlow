@@ -419,7 +419,9 @@ workflow preprocess_wkf {
 
                 raw_apply_topup_wkf(
                     topup_wkf.out.topupable_indexes.join(raw_dwi_channel),
-                    topup_wkf.out.topupable_indexes.join(raw_rev_channel),
+                    topup_wkf.out.topupable_indexes
+                        .join(raw_rev_channel)
+                        .map{ it[0..1] },
                     topup2eddy_channel,
                     collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
                     "raw"
@@ -489,7 +491,10 @@ workflow preprocess_wkf {
             rev_channel = rename_rev_for_eddy(
                 collect_paths(rev_channel).filter{ it[1] },
                 "to_eddy"
-            ).map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
+            )
+            rev_channel = rev_channel
+                .map{ it.flatten() }
+                .map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
 
             rev_channel = fill_missing_datapoints(
                 rev_channel,
