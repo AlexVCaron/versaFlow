@@ -399,7 +399,10 @@ workflow preprocess_wkf {
                 raw_rev_channel = rename_transformed_raw_rev(
                     collect_paths(raw_rev_channel).filter{ it[1] },
                     "raw"
-                ).map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
+                )
+                raw_rev_channel = raw_rev_channel
+                    .map{ it.flatten() }
+                    .map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
 
                 raw_meta_channel = excluded_id_channel.join(raw_meta_channel)
                     .mix(
