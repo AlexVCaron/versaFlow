@@ -268,6 +268,26 @@ workflow preprocess_wkf {
             )
         }
 
+        // Average consecutive b0 volumes just like for Topup
+        squash_wkf(
+            dwi_channel,
+            rev_channel,
+            meta_channel.join(rev_meta_channel),
+            ""
+        )
+
+        dwi_channel = squash_wkf.out.dwi
+        rev_channel = squash_wkf.out.rev
+
+        meta_channel = squash_wkf.out.metadata
+            .map{ it.flatten() }
+            .map{ [it[0], it[1..-1]] }
+            .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
+        rev_meta_channel = squash_wkf.out.metadata
+            .map{ it.flatten() }
+            .map{ [it[0], it[1..-1]] }
+            .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() }
+
         // Extract mean b0
         dwi_b0(
             dwi_channel
