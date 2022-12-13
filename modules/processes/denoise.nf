@@ -125,14 +125,14 @@ process n4_denoise {
         }
         else {
             args += "--in $anat --apply $image"
-            after_denoise += "mv tmp_n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz"
+            after_denoise += "mv tmp_n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
         }
 
         if ( !metadata.empty() ) {
             after_denoise += "mv n4denoise_metadata.py ${image.simpleName}__n4denoised_metadata.py\n"
             args += " --metadata $metadata"
         }
-        after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz \n"
+        after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz\n"
 
         if ( !mask.empty() )
             args += " --mask $mask"
