@@ -23,6 +23,7 @@ include {
 } from '../processes/preprocess.nf'
 include {
     n4_denoise;
+    apply_n4_bias_field;
     dwi_denoise;
     nlmeans_denoise;
     nlmeans_denoise as nlmeans_denoise_b0_from_fwd_dwi;
