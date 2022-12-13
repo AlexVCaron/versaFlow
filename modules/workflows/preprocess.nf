@@ -457,7 +457,8 @@ workflow n4_denoise_wkf {
             image_channel
                 .join(n4_denoise.out.bias_field)
                 .join(mask_channel)
-                .join(n4_denoise.out.metadata)
+                .join(n4_denoise.out.metadata),
+            "preprocess"
         )
     emit:
         reference = n4_denoise.out.image
