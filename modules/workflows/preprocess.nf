@@ -459,7 +459,7 @@ workflow n4_denoise_wkf {
                 .join(mask_channel)
                 .join(fill_missing_datapoints(metadata_channel, ref_id_channel, 1, [""])),
             "preprocess",
-            publish
+            publish,
             config
         )
         apply_n4_bias_field(
