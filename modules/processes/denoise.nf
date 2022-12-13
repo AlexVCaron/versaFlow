@@ -115,6 +115,7 @@ process n4_denoise {
     output:
         tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${image.simpleName}_n4_bias_field.nii.gz"), emit: bias_field
     script:
         def after_denoise = ""
         def args = ""
@@ -138,8 +139,40 @@ process n4_denoise {
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
         mrhardi n4 $args --out n4denoise --config $config
+        mv tmp_n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz
         $after_denoise
         """
+}
+
+process apply_n4_bias_field {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(image), path(bias_field), file(mask), file(metadata)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
+        tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
+    script:
+        def after_denoise = ""
+        def args = ""
+        if ( !metadata.empty() ) {
+            after_denoise += "cp $metadata ${image.simpleName}__n4denoised_metadata.py\n"
+        }
+
+        if ( !mask.empty() )
+            args += " --mask $mask"
+
+        """
+        scil_apply_bias_field_on_dwi.py $image $bias_field n4denoised.nii.gz -f $args
+        fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz
+        $after_denoise
+        """    
+
 }
 
 process normalize_inter_b0 {
