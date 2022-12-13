@@ -85,6 +85,7 @@ include {
     dwi_denoise_wkf;
     dwi_denoise_wkf as rev_denoise_wkf;
     n4_denoise_wkf;
+    n4_denoise_wkf as n4_denoise_t1_to_b0_wkf;
     squash_wkf;
     squash_wkf as squash_raw_wkf;
     squash_wkf as squash_for_topup_wkf;
@@ -149,6 +150,7 @@ params.ants_transform_base_config = file("${get_config_path()}/ants_transform_ba
 params.ants_transform_mask_config = file("${get_config_path()}/ants_transform_mask_config.py")
 params.extract_mean_b0_base_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
 params.dwi_n4_normalization_config = file("${get_config_path()}/dwi_n4_normalization_config.py")
+params.dwi_n4_normalization_quick_config = file("${get_config_path()}/dwi_n4_normalization_quick_config.py")
 params.t1_n4_normalization_config = file("${get_config_path()}/t1_n4_normalization_config.py")
 params.b0_to_b0_normalization_config = file("${get_config_path()}/b0_to_b0_normalization_config.py")
 
@@ -486,8 +488,16 @@ workflow preprocess_wkf {
                 { it[1] == "" }
             ).map{ [it[0]] }
 
+            n4_denoise_t1_to_b0_wkf(
+                existing_t1_mask_id_channel.join(dwi_after_topup_channel.map{ it[0..1] }),
+                existing_t1_mask_id_channel.join(b0_channel),
+                existing_t1_mask_id_channel.join(dwi_mask_channel),
+                existing_t1_mask_id_channel.join(meta_after_topup_channel),
+                params.dwi_n4_normalization_quick_config
+            )
+
             t1_mask_to_b0(
-                existing_t1_mask_id_channel.join(dwi_after_topup_channel),
+                replace_dwi_file(dwi_after_topup_channel, n4_denoise_t1_to_b0_wkf.out.image),
                 existing_t1_mask_id_channel.join(t1_channel),
                 existing_t1_mask_id_channel.join(t1_mask_channel),
                 "false"
