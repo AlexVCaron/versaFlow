@@ -119,10 +119,14 @@ process n4_denoise {
     script:
         def after_denoise = ""
         def args = ""
-        if ( anat.empty() )
+        if ( anat.empty() ) {
             args += "--in $image"
-        else
+            after_denoise += "mv n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz"
+        }
+        else {
             args += "--in $anat --apply $image"
+            after_denoise += "mv tmp_n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz"
+        }
 
         if ( !metadata.empty() ) {
             after_denoise += "mv n4denoise_metadata.py ${image.simpleName}__n4denoised_metadata.py\n"
@@ -139,7 +143,6 @@ process n4_denoise {
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
         mrhardi n4 $args --out n4denoise --config $config
-        mv tmp_n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz
         $after_denoise
         """
 }
