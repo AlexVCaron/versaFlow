@@ -121,7 +121,7 @@ process n4_denoise {
         def args = ""
         if ( anat.empty() ) {
             args += "--in $image"
-            after_denoise += "mv n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
+            after_denoise += "mv n4denoise_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
         }
         else {
             args += "--in $anat --apply $image"
