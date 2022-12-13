@@ -444,9 +444,16 @@ workflow n4_denoise_wkf {
         config
     main:
         ref_id_channel = image_channel.map{ [it[0]] }
+        absent_ref_anat_id_channel = filter_datapoints(ref_anat_channel, { it[1] == "" })
+            .map{ [it[0]] }
+
+        ref_anat_channel = exclude_missing_datapoints(ref_anat_channel, 1, "")
         mask_channel = fill_missing_datapoints(mask_channel, ref_id_channel, 1, [""])
+
         n4_denoise(
-            fill_missing_datapoints(ref_anat_channel, ref_id_channel, 1, [""])
+            absent_ref_anat_id_channel
+                .join(image_channel)
+                .mix(ref_anat_channel)
                 .map{ it + [""] }
                 .join(mask_channel)
                 .join(fill_missing_datapoints(metadata_channel, ref_id_channel, 1, [""])),
@@ -454,7 +461,9 @@ workflow n4_denoise_wkf {
             config
         )
         apply_n4_bias_field(
-            image_channel
+            ref_anat_channel
+                .map{ [it[0]] }
+                .join(image_channel)
                 .join(n4_denoise.out.bias_field)
                 .join(mask_channel)
                 .join(n4_denoise.out.metadata),
@@ -462,6 +471,10 @@ workflow n4_denoise_wkf {
         )
     emit:
         reference = n4_denoise.out.image
-        image = apply_n4_bias_field.out.image
-        metadata = apply_n4_bias_field.out.metadata
+        image = absent_ref_anat_id_channel
+            .join(n4_denoise.out.image)
+            .mix(apply_n4_bias_field.out.image)
+        metadata = absent_ref_anat_id_channel
+            .join(n4_denoise.out.metadata)
+            .mix(apply_n4_bias_field.out.metadata)
 }
