@@ -106,11 +106,12 @@ process n4_denoise {
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(anat), file(mask), file(metadata)
         val(caller_name)
+        val(publish)
         path(config)
     output:
         tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
@@ -152,11 +153,12 @@ process apply_n4_bias_field {
     label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), path(bias_field), file(mask), file(metadata)
         val(caller_name)
+        val(publish)
     output:
         tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
@@ -172,7 +174,7 @@ process apply_n4_bias_field {
 
         """
         scil_apply_bias_field_on_dwi.py $image $bias_field n4denoised.nii.gz -f $args
-        fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz
+        fslmaths n4denoised.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz
         $after_denoise
         """    
 

@@ -442,6 +442,7 @@ workflow n4_denoise_wkf {
         mask_channel
         metadata_channel
         config
+        publish
     main:
         ref_id_channel = image_channel.map{ [it[0]] }
         absent_ref_anat_id_channel = filter_datapoints(ref_anat_channel, { it[1] == "" })
@@ -458,6 +459,7 @@ workflow n4_denoise_wkf {
                 .join(mask_channel)
                 .join(fill_missing_datapoints(metadata_channel, ref_id_channel, 1, [""])),
             "preprocess",
+            publish
             config
         )
         apply_n4_bias_field(
@@ -467,7 +469,8 @@ workflow n4_denoise_wkf {
                 .join(n4_denoise.out.bias_field)
                 .join(mask_channel)
                 .join(n4_denoise.out.metadata),
-            "preprocess"
+            "preprocess",
+            publish
         )
     emit:
         reference = n4_denoise.out.image

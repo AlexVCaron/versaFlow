@@ -493,7 +493,8 @@ workflow preprocess_wkf {
                 existing_t1_mask_id_channel.join(b0_channel),
                 existing_t1_mask_id_channel.join(dwi_mask_channel),
                 existing_t1_mask_id_channel.join(meta_after_topup_channel),
-                params.dwi_n4_normalization_quick_config
+                params.dwi_n4_normalization_quick_config,
+                false
             )
 
             t1_mask_to_b0(
@@ -576,7 +577,8 @@ workflow preprocess_wkf {
                 b0_channel,
                 dwi_mask_channel,
                 meta_channel,
-                params.dwi_n4_normalization_config
+                params.dwi_n4_normalization_config,
+                true
             )
 
             dwi_channel = replace_dwi_file(dwi_channel, n4_denoise_wkf.out.image)
@@ -1114,7 +1116,14 @@ workflow t1_preprocess_wkf {
         }
 
         if ( params.t1_intensity_normalization ) {
-            n4_denoise_wkf(t1_channel, Channel.empty(), mask_channel, Channel.empty(), params.t1_n4_normalization_config)
+            n4_denoise_wkf(
+                t1_channel,
+                Channel.empty(),
+                mask_channel,
+                Channel.empty(),
+                params.t1_n4_normalization_config,
+                true
+            )
             t1_channel = n4_denoise_wkf.out.image
         }
     emit:
