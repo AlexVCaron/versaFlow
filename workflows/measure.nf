@@ -2,8 +2,18 @@
 
 nextflow.enable.dsl=2
 
-include { dti_metrics; dti_metrics as dti_for_odfs_metrics; diamond_metrics; odf_metrics; scil_compute_dti_fa } from '../modules/processes/measure.nf'
-include { rename; get_config_path } from '../modules/functions.nf'
+include {
+    dti_metrics;
+    dti_metrics as dti_for_odfs_metrics;
+    diamond_metrics;
+    odf_metrics;
+    scil_compute_dti_fa
+} from '../modules/processes/measure.nf'
+inclue {
+    change_name as rename_metadata_for_diamond;
+    change_name as rename_mask_for_diamond
+} from '../modules/processes"io.nf'
+include { get_config_path } from '../modules/functions.nf'
 include { dti_wkf } from './reconstruct.nf'
 
 params.recons_dti = true
@@ -29,27 +39,56 @@ workflow measure_wkf {
 
         if ( params.recons_diamond ) {
             data_diamond = data_channel.map{ [it[0], it[3]] }
-            metadata = rename(metadata_channel, "diamond_metadata")
-            mask_diamond = rename(mask_channel, "diamond_mask")
-            prefix_channel = data_diamond.map{ [it[0], "${it[0]}_diamond"] }
+
+            metadata = rename_metadata_for_diamond(
+                collect_paths(metadata_channel).filter{ it[1] },
+                "to_diamond_metadata"
+            ).map{ it.flatten() }
+            mask_diamond = rename_mask_for_diamond(
+                collect_paths(mask_channel),
+                "to_diamond_mask"
+            )
+
             diamond_metrics(
-                prefix_channel.join(mask_diamond).join(data_diamond).join(diamond_summary_channel).join(metadata),
+                data_diamond
+                    .map{ [it[0], "${it[0]}_to_diamond"] }
+                    .join(mask_diamond)
+                    .join(data_diamond)
+                    .join(diamond_summary_channel)
+                    .join(metadata),
                 "measure",
                 params.measures_on_diamond_config
             )
+
             diamond_channel = diamond_metrics.out.metrics
         }
 
         if ( params.recons_csd ) {
-            scil_compute_dti_fa(dwi_channel.join(mask_channel), "preprocess", "measure", false)
+            scil_compute_dti_fa(
+                dwi_channel.join(mask_channel),
+                "preprocess", "measure",
+                false
+            )
 
             if ( params.msmt_odf )
                 data_odfs = data_channel.map{ [it[0]] + it[2] }
             else
                 data_odfs = data_channel.map{ [it[0], it[2][0], "", ""] }
 
-            data_odfs = data_odfs.join(scil_compute_dti_fa.out.fa).join(scil_compute_dti_fa.out.md)
-            odf_metrics(data_odfs.join(tissue_masks_channel.map{ [it[0]] + it[1][0..-2] }).filter{ !it.contains(null) }, "measure", "descoteaux07")
+            data_odfs = data_odfs
+                .join(scil_compute_dti_fa.out.fa)
+                .join(scil_compute_dti_fa.out.md)
+
+            odf_metrics(
+                data_odfs
+                    .join(scil_compute_dti_fa.out.fa)
+                    .join(scil_compute_dti_fa.out.md)
+                    .join(tissue_masks_channel.map{ [it[0]] + it[1][0..-2] })
+                    .filter{ !it.contains(null) },
+                "measure",
+                "descoteaux07"
+            )
+
             odfs_channel = odf_metrics.out.metrics
         }
     emit:
