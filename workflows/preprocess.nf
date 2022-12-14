@@ -1118,9 +1118,9 @@ workflow t1_preprocess_wkf {
         if ( params.t1_intensity_normalization ) {
             n4_denoise_wkf(
                 t1_channel,
-                Channel.empty(),
+                t1_channel.map{ [it[0], ""] },
                 mask_channel,
-                Channel.empty(),
+                t1_channel.map{ [it[0], ""] },
                 params.t1_n4_normalization_config,
                 true
             )
