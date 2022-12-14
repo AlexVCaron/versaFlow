@@ -106,7 +106,11 @@ process n4_denoise {
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
+    publishDir "${params.output_root}/${sid}", saveAs: {
+        f -> ("$publish" == "true") ? f.contains("metadata") || f.contains("bias_field") ? null 
+                                                                                         : remove_alg_suffixes(f)
+                                    : null
+    }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(anat), file(mask), file(metadata)
