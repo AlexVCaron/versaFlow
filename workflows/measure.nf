@@ -9,7 +9,7 @@ include {
     odf_metrics;
     scil_compute_dti_fa
 } from '../modules/processes/measure.nf'
-inclue {
+include {
     change_name as rename_metadata_for_diamond;
     change_name as rename_mask_for_diamond
 } from '../modules/processes"io.nf'
