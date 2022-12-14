@@ -13,7 +13,7 @@ include {
     change_name as rename_metadata_for_diamond;
     change_name as rename_mask_for_diamond
 } from '../modules/processes/io.nf'
-include { get_config_path } from '../modules/functions.nf'
+include { get_config_path; collect_paths } from '../modules/functions.nf'
 include { dti_wkf } from './reconstruct.nf'
 
 params.recons_dti = true
