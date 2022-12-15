@@ -296,6 +296,7 @@ process prepare_eddy {
         tuple val(sid), path("${prefix}__eddy_metadata.*"), emit: metadata, optional: true
     script:
         def args = ""
+        def after_script = ""
         def will_gen_acqp = true
         if ( !topup_acqp.empty() ) {
             args += " --acqp $topup_acqp"
@@ -321,23 +322,17 @@ process prepare_eddy {
         if ( params.eddy_force_shelled )
             args += " --shelled"
 
-        if ( will_gen_acqp )
-            """
-            mrhardi eddy \
-                --in $prefix \
-                --out ${prefix}__eddy \ 
-                --config $config \
-                --seed $args
-            """
-        else
-            """
-            mrhardi eddy \
-                --in $prefix \
-                --out ${prefix}__eddy \
-                --config $config \
-                --seed $args
-            cp $topup_acqp "${prefix}__eddy_acqp.txt"
-            """
+        if ( !will_gen_acqp )
+            after_script += "cp $topup_acqp ${prefix}__eddy_acqp.txt\n"
+
+        """
+        mrhardi eddy \
+            --in $prefix \
+            --out ${prefix}__eddy \ 
+            --config $config \
+            --seed $args
+        $after_script
+        """
 }
 
 process eddy {
