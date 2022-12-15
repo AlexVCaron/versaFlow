@@ -58,8 +58,6 @@ process scil_compute_dti_fa {
         tuple val(sid), path("${sid}_dti_evecs_v1.nii.gz"), emit: main_peak
         tuple val(sid), path("${sid}_dti_evecs*.nii.gz"), emit: evecs
     script:
-        def avail_threads = Math.round(task.cpus / 3)
-        def remainder_threads = task.cpus - avail_threads
         def args = "--tensor ${sid}_dti_dti.nii.gz"
         args += " --fa ${sid}_dti_fa.nii.gz --md ${sid}_dti_md.nii.gz"
         args += " --evecs ${sid}_dti_evecs.nii.gz"
@@ -80,8 +78,8 @@ process scil_compute_dti_fa {
         }
 
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
-        export OMP_NUM_THREADS=$avail_threads
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+        export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         $before
         scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
@@ -111,8 +109,6 @@ process scil_compute_dti_fa_np {
         tuple val(sid), path("${sid}_dti_evecs*.nii.gz"), emit: evecs
         tuple val(sid), path("${sid}_dti_non_physical.nii.gz"), emit: np_outliers_mask
     script:
-        def avail_threads = Math.round(task.cpus / 3)
-        def remainder_threads = task.cpus - avail_threads
         def args = "--tensor ${sid}_dti_dti.nii.gz"
         args += " --fa ${sid}_dti_fa.nii.gz --md ${sid}_dti_md.nii.gz"
         args += " --evecs ${sid}_dti_evecs.nii.gz"
@@ -134,8 +130,8 @@ process scil_compute_dti_fa_np {
         }
 
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
-        export OMP_NUM_THREADS=$avail_threads
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+        export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         $before
         scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
@@ -164,8 +160,6 @@ process scil_dti_and_metrics {
         tuple val(sid), path("${sid}_dti_non_physical.nii.gz"), path("${sid}_dti_pulsation*.nii.gz"), emit: artifacts, optional: true
         tuple val(sid), path("${sid}_dti_residuals.nii.gz"), path("${sid}_dti_residuals*.nii.gz"), emit: residuals, optional: true
     script:
-        def avail_threads = Math.round(task.cpus / 3)
-        def remainder_threads = task.cpus - avail_threads
         def args = "--tensor ${sid}_dti_dti.nii.gz --evals ${sid}_dti_evals.nii.gz --evecs ${sid}_dti_evecs.nii.gz"
         args += " --fa ${sid}_dti_fa.nii.gz --ga ${sid}_dti_ga.nii.gz --rgb ${sid}_dti_rgb.nii.gz"
         args += " --md ${sid}_dti_md.nii.gz --ad ${sid}_dti_ad.nii.gz --rd ${sid}_dti_rd.nii.gz --mode ${sid}_dti_mode.nii.gz --norm ${sid}_dti_norm.nii.gz"
@@ -185,8 +179,8 @@ process scil_dti_and_metrics {
         }
 
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=${avail_threads + remainder_threads}
-        export OMP_NUM_THREADS=$avail_threads
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+        export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         $before

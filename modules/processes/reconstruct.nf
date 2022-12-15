@@ -249,8 +249,8 @@ process scilpy_csd {
         if ( params.strict_parameters )
             args += " --strict"
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-        export OMP_NUM_THREADS=1
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+        export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         mrhardi sh_order --bvals $bval --bvecs $bvec --out sh_order.txt $args
@@ -282,8 +282,8 @@ process scilpy_msmt_csd {
         if ( params.strict_parameters )
             args += " --strict"
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-        export OMP_NUM_THREADS=1
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+        export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         mrhardi sh_order --bvals $bval --bvecs $bvec --msmt --out sh_order.txt $args

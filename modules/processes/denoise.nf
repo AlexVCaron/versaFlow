@@ -32,13 +32,13 @@ process dwi_denoise {
         if ( !metadata.empty() )
             after_denoise += "cp $metadata ${dwi.simpleName}__dwidenoised_metadata.py"
 
-        def args = "-nthreads $task.cpus -datatype float64"
+        def args = ""
         if ( !mask.empty() )
             args += " -mask $mask"
 
         """
         export MRTRIX_RNG_SEED=$params.random_seed
-        dwidenoise $args $dwi dwidenoise.nii.gz
+        dwidenoise -nthreads $task.cpus $args $dwi dwidenoise.nii.gz
         $after_denoise
         """
 }
@@ -97,7 +97,10 @@ process ants_gaussian_denoise {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
-        DenoiseImage --input-image $image --noise-model Gaussian --output [${image.simpleName}__ants_denoised.nii.gz,${image.simpleName}__ants_denoised_noise_map.nii.gz] --verbose 1 $args
+        DenoiseImage --input-image $image \
+            --noise-model Gaussian \
+            --output [${image.simpleName}__ants_denoised.nii.gz,${image.simpleName}__ants_denoised_noise_map.nii.gz] \
+            --verbose 1 $args
         """
 }
 
@@ -147,7 +150,9 @@ process n4_denoise {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
-        mrhardi n4 $args --out n4denoise --config $config
+        mrhardi n4 $args \
+            --out n4denoise \
+            --config $config
         $after_denoise
         """
 }
@@ -201,7 +206,7 @@ process normalize_inter_b0 {
         tuple val(sid), path("${dwi.simpleName}*_metadata.*"), optional: true, emit: dwi_metadata
         tuple val(sid), path("${rev_dwi.simpleName}*_metadata.*"), optional: true, emit: rev_metadata
     script:
-        def args = "--in $dwi --bvals $bval"
+        def args = ""
         def after_script = ""
         if ( !rev_dwi.empty() )
             args += " --rev $rev_dwi"
@@ -219,7 +224,12 @@ process normalize_inter_b0 {
             args += " --ceil ${params.b0_threshold}"
 
         """
-        mrhardi b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized --ref $params.b0_normalization_strategy
+        mrhardi b0 normalize \
+            --in $dwi \
+            --bvals $bval \
+            --out ${dwi.simpleName}__inter_b0_normalized \
+            --rout ${rev_dwi.simpleName}__inter_b0_normalized \
+            --ref $params.b0_normalization_strategy $args 
         $after_script
         """
 }
@@ -285,7 +295,7 @@ process prepare_eddy {
         tuple val(sid), path("${sid}*non_zero.bvec"), emit: bvec, optional: true
         tuple val(sid), path("${prefix}__eddy_metadata.*"), emit: metadata, optional: true
     script:
-        def args = "--in $prefix"
+        def args = ""
         def will_gen_acqp = true
         if ( !topup_acqp.empty() ) {
             args += " --acqp $topup_acqp"
@@ -313,11 +323,20 @@ process prepare_eddy {
 
         if ( will_gen_acqp )
             """
-            mrhardi eddy $args --out ${prefix}__eddy --config $config --seed
+            mrhardi eddy \
+                --in $prefix \
+                --out ${prefix}__eddy \ 
+                --config $config \
+                --seed $args
             """
         else
             """
-            mrhardi eddy $args --out ${prefix}__eddy --config $config --seed && cp $topup_acqp "${prefix}__eddy_acqp.txt"
+            mrhardi eddy \
+                --in $prefix \
+                --out ${prefix}__eddy \
+                --config $config \
+                --seed $args
+            cp $topup_acqp "${prefix}__eddy_acqp.txt"
             """
 }
 
@@ -392,7 +411,7 @@ process gibbs_removal {
 
     """
     export MRTRIX_RNG_SEED=$params.random_seed
-    mrdegibbs -nthreads $task.cpus -datatype float64 $dwi gibbs_corrected.nii.gz
+    mrdegibbs -nthreads $task.cpus $dwi gibbs_corrected.nii.gz
     $after_denoise
     """
 }

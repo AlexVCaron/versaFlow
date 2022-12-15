@@ -176,6 +176,9 @@ process tournier2descoteaux_odf {
         tuple val(sid), path("${odfs.simpleName}_desc07_odf.nii.gz"), emit: odfs
     script:
         """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+        export OMP_NUM_THREADS=$task.cpus
+        export OPENBLAS_NUM_THREADS=1
         scil_convert_sh_basis.py $odfs ${odfs.simpleName}_desc07_odf.nii.gz tournier07
         """
 }
@@ -705,6 +708,9 @@ process validate_gradients {
         if ( !mask.empty() ) args += " --mask $mask"
         if ( !peaks_vals.empty() ) args += " --peaks_vals $peaks_vals"
         """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
         scil_validate_and_correct_bvecs.py $bvec $peaks $fa ${bvec.simpleName}__validated.bvec --fa_th $params.validate_bvecs_fa_thr -f $args
         """
 

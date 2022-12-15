@@ -146,6 +146,9 @@ process ants_transform {
             args += " --inv ${invert.join(",")}"
         }
         """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
         mrhardi ants_transform $args --out ${img.simpleName}__transformed --config $config
         """
@@ -177,6 +180,9 @@ process align_to_closest {
         }
         """
         $single_copy_and_exit
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
         antsMultivariateTemplateConstruction2.sh \
             -i $n_iterations \
             -d 3 \
@@ -212,6 +218,9 @@ process align_to_average {
         images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate0${img.simpleName}${idx}WarpedToTemplate.nii.gz ${img.simpleName}__${idx}_average_aligned.nii.gz\n" }
         images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${img.simpleName}__${idx}_average_aligned_metadata.py\n" }
         """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
         antsMultivariateTemplateConstruction2.sh \
             -i $n_iterations \
             -d 3 \
