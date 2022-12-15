@@ -328,7 +328,7 @@ process prepare_eddy {
         """
         mrhardi eddy \
             --in $prefix \
-            --out ${prefix}__eddy \ 
+            --out ${prefix}__eddy \
             --config $config \
             --seed $args
         $after_script
