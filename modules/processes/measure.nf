@@ -38,7 +38,7 @@ process dti_metrics {
 
 process scil_compute_dti_fa {
     label "MEDIUM"
-    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
+    label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/all/${sid}/$measuring_caller_name/${task.index}_${task.process.replaceAll(":", "_")}",saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f },  mode: params.publish_mode, enabled: params.publish_all
@@ -78,8 +78,8 @@ process scil_compute_dti_fa {
         }
 
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
-        export OMP_NUM_THREADS=$task.cpus
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         $before
         scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
@@ -88,7 +88,7 @@ process scil_compute_dti_fa {
 
 process scil_compute_dti_fa_np {
     label "MEDIUM"
-    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
+    label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/all/${sid}/$measuring_caller_name/${task.index}_${task.process.replaceAll(":", "_")}",saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f },  mode: params.publish_mode, enabled: params.publish_all
@@ -130,8 +130,8 @@ process scil_compute_dti_fa_np {
         }
 
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
-        export OMP_NUM_THREADS=$task.cpus
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         $before
         scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
@@ -140,7 +140,7 @@ process scil_compute_dti_fa_np {
 
 process scil_dti_and_metrics {
     label "LONG"
-    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
+    label "res_single_cpu"
 
     publishDir "${params.output_root}/all/${sid}/$processing_caller_name/${task.index}_${task.process.replaceAll(":", "_")}", saveAs: { f -> f.contains("dti_dti") ? f : f.contains("metadata") ? f : null }, mode: params.publish_mode, enabled: params.publish_all
     publishDir "${params.output_root}/all/${sid}/$measuring_caller_name/${task.index}_${task.process.replaceAll(":", "_")}",saveAs: { f -> f.contains("dti_dti") ? null : f.contains("metadata") ? null : f },  mode: params.publish_mode, enabled: params.publish_all
@@ -179,8 +179,8 @@ process scil_dti_and_metrics {
         }
 
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
-        export OMP_NUM_THREADS=$task.cpus
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         $before
