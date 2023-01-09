@@ -17,7 +17,7 @@ process dwi_denoise {
     label "MPCA_DENOISE"
     label params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
@@ -47,7 +47,7 @@ process nlmeans_denoise {
     label "NLMEANS_3D"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
@@ -78,7 +78,7 @@ process ants_gaussian_denoise {
     label "LONG"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
@@ -108,7 +108,7 @@ process n4_denoise {
     label "N4_CORRECTION"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: {
         f -> ("$publish" == "true") ? f.contains("metadata") || f.contains("bias_field") ? null 
                                                                                          : remove_alg_suffixes(f)
@@ -161,7 +161,7 @@ process apply_n4_bias_field {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
@@ -193,7 +193,7 @@ process normalize_inter_b0 {
     label "MEDIUM"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("${rev_dwi.simpleName}") ? null : f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
@@ -262,7 +262,7 @@ process topup {
     label "TOPUP"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("b0") ? null : f.contains("metadata") ? null : f.contains("topup.nii.gz") ? remove_alg_suffixes(f): null }, mode: params.publish_mode
 
     input:
@@ -340,7 +340,7 @@ process eddy {
     label params.use_cuda ? "res_single_cpu" : params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
     label params.use_cuda ? "res_gpu" : ""
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
@@ -389,7 +389,7 @@ process gibbs_removal {
     label "MEDIUM"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
