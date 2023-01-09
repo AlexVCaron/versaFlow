@@ -23,6 +23,7 @@ include {
 } from '../processes/preprocess.nf'
 include {
     n4_denoise;
+    apply_n4_bias_field;
     dwi_denoise;
     nlmeans_denoise;
     nlmeans_denoise as nlmeans_denoise_b0_from_fwd_dwi;
@@ -441,20 +442,42 @@ workflow n4_denoise_wkf {
         mask_channel
         metadata_channel
         config
+        publish
     main:
         ref_id_channel = image_channel.map{ [it[0]] }
+        absent_ref_anat_id_channel = filter_datapoints(ref_anat_channel, { it[1] == "" })
+            .map{ [it[0]] }
+
+        ref_anat_channel = exclude_missing_datapoints(ref_anat_channel, 1, "")
+        mask_channel = fill_missing_datapoints(mask_channel, ref_id_channel, 1, [""])
+
         n4_denoise(
-            image_channel.join(
-                fill_missing_datapoints(ref_anat_channel, ref_id_channel, 1, [""])
-            ).join(
-                fill_missing_datapoints(mask_channel, ref_id_channel, 1, [""])
-            ).join(
-                fill_missing_datapoints(metadata_channel, ref_id_channel, 1, [""])
-            ),
+            absent_ref_anat_id_channel
+                .join(image_channel)
+                .mix(ref_anat_channel)
+                .map{ it + [""] }
+                .join(mask_channel)
+                .join(fill_missing_datapoints(metadata_channel, ref_id_channel, 1, [""])),
             "preprocess",
+            publish,
             config
         )
+        apply_n4_bias_field(
+            ref_anat_channel
+                .map{ [it[0]] }
+                .join(image_channel)
+                .join(n4_denoise.out.bias_field)
+                .join(mask_channel)
+                .join(n4_denoise.out.metadata),
+            "preprocess",
+            publish
+        )
     emit:
-        image = n4_denoise.out.image
-        metadata = n4_denoise.out.metadata
+        reference = n4_denoise.out.image
+        image = absent_ref_anat_id_channel
+            .join(n4_denoise.out.image)
+            .mix(apply_n4_bias_field.out.image)
+        metadata = absent_ref_anat_id_channel
+            .join(n4_denoise.out.metadata)
+            .mix(apply_n4_bias_field.out.metadata)
 }

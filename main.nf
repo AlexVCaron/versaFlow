@@ -39,9 +39,10 @@ workflow {
 
         measure_wkf(
             preprocess_wkf.out.dwi,
-            reconstruct_wkf.out.all,
             preprocess_wkf.out.mask,
             preprocess_wkf.out.tissue_masks,
+            reconstruct_wkf.out.csd,
+            reconstruct_wkf.out.diamond,
             reconstruct_wkf.out.diamond_summary,
             preprocess_wkf.out.metadata
         )

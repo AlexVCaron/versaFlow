@@ -21,7 +21,7 @@ include { remove_alg_suffixes } from "../functions.nf"
 process PFT_maps {
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/tracking", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
@@ -42,7 +42,7 @@ process PFT_maps {
 process PFT_tracking {
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/tracking", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:

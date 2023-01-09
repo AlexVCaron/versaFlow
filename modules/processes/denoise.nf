@@ -17,7 +17,7 @@ process dwi_denoise {
     label "MPCA_DENOISE"
     label params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
@@ -32,13 +32,13 @@ process dwi_denoise {
         if ( !metadata.empty() )
             after_denoise += "cp $metadata ${dwi.simpleName}__dwidenoised_metadata.py"
 
-        def args = "-nthreads $task.cpus -datatype float64"
+        def args = ""
         if ( !mask.empty() )
             args += " -mask $mask"
 
         """
         export MRTRIX_RNG_SEED=$params.random_seed
-        dwidenoise $args $dwi dwidenoise.nii.gz
+        dwidenoise -nthreads $task.cpus $args $dwi dwidenoise.nii.gz
         $after_denoise
         """
 }
@@ -47,7 +47,7 @@ process nlmeans_denoise {
     label "NLMEANS_3D"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
@@ -78,7 +78,7 @@ process ants_gaussian_denoise {
     label "LONG"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
@@ -97,7 +97,10 @@ process ants_gaussian_denoise {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
-        DenoiseImage --input-image $image --noise-model Gaussian --output [${image.simpleName}__ants_denoised.nii.gz,${image.simpleName}__ants_denoised_noise_map.nii.gz] --verbose 1 $args
+        DenoiseImage --input-image $image \
+            --noise-model Gaussian \
+            --output [${image.simpleName}__ants_denoised.nii.gz,${image.simpleName}__ants_denoised_noise_map.nii.gz] \
+            --verbose 1 $args
         """
 }
 
@@ -105,29 +108,39 @@ process n4_denoise {
     label "N4_CORRECTION"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: {
+        f -> ("$publish" == "true") ? f.contains("metadata") || f.contains("bias_field") ? null 
+                                                                                         : remove_alg_suffixes(f)
+                                    : null
+    }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(anat), file(mask), file(metadata)
         val(caller_name)
+        val(publish)
         path(config)
     output:
         tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
         tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
+        tuple val(sid), path("${image.simpleName}_n4_bias_field.nii.gz"), emit: bias_field
     script:
         def after_denoise = ""
         def args = ""
-        if ( anat.empty() )
+        if ( anat.empty() ) {
             args += "--in $image"
-        else
+            after_denoise += "mv n4denoise_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
+        }
+        else {
             args += "--in $anat --apply $image"
+            after_denoise += "mv tmp_n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
+        }
 
         if ( !metadata.empty() ) {
             after_denoise += "mv n4denoise_metadata.py ${image.simpleName}__n4denoised_metadata.py\n"
             args += " --metadata $metadata"
         }
-        after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz \n"
+        after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz\n"
 
         if ( !mask.empty() )
             args += " --mask $mask"
@@ -137,16 +150,50 @@ process n4_denoise {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
-        mrhardi n4 $args --out n4denoise --config $config
+        mrhardi n4 $args \
+            --out n4denoise \
+            --config $config
         $after_denoise
         """
+}
+
+process apply_n4_bias_field {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(image), path(bias_field), file(mask), file(metadata)
+        val(caller_name)
+        val(publish)
+    output:
+        tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
+        tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
+    script:
+        def after_denoise = ""
+        def args = ""
+        if ( !metadata.empty() ) {
+            after_denoise += "cp $metadata ${image.simpleName}__n4denoised_metadata.py\n"
+        }
+
+        if ( !mask.empty() )
+            args += " --mask $mask"
+
+        """
+        scil_apply_bias_field_on_dwi.py $image $bias_field n4denoised.nii.gz -f $args
+        fslmaths n4denoised.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz
+        $after_denoise
+        """    
+
 }
 
 process normalize_inter_b0 {
     label "MEDIUM"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("${rev_dwi.simpleName}") ? null : f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
@@ -159,7 +206,7 @@ process normalize_inter_b0 {
         tuple val(sid), path("${dwi.simpleName}*_metadata.*"), optional: true, emit: dwi_metadata
         tuple val(sid), path("${rev_dwi.simpleName}*_metadata.*"), optional: true, emit: rev_metadata
     script:
-        def args = "--in $dwi --bvals $bval"
+        def args = ""
         def after_script = ""
         if ( !rev_dwi.empty() )
             args += " --rev $rev_dwi"
@@ -177,7 +224,12 @@ process normalize_inter_b0 {
             args += " --ceil ${params.b0_threshold}"
 
         """
-        mrhardi b0 normalize $args --out ${dwi.simpleName}__inter_b0_normalized --rout ${rev_dwi.simpleName}__inter_b0_normalized --ref $params.b0_normalization_strategy
+        mrhardi b0 normalize \
+            --in $dwi \
+            --bvals $bval \
+            --out ${dwi.simpleName}__inter_b0_normalized \
+            --rout ${rev_dwi.simpleName}__inter_b0_normalized \
+            --ref $params.b0_normalization_strategy $args 
         $after_script
         """
 }
@@ -210,7 +262,7 @@ process topup {
     label "TOPUP"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("b0") ? null : f.contains("metadata") ? null : f.contains("topup.nii.gz") ? remove_alg_suffixes(f): null }, mode: params.publish_mode
 
     input:
@@ -243,7 +295,8 @@ process prepare_eddy {
         tuple val(sid), path("${sid}*non_zero.bvec"), emit: bvec, optional: true
         tuple val(sid), path("${prefix}__eddy_metadata.*"), emit: metadata, optional: true
     script:
-        def args = "--in $prefix"
+        def args = ""
+        def after_script = ""
         def will_gen_acqp = true
         if ( !topup_acqp.empty() ) {
             args += " --acqp $topup_acqp"
@@ -269,14 +322,17 @@ process prepare_eddy {
         if ( params.eddy_force_shelled )
             args += " --shelled"
 
-        if ( will_gen_acqp )
-            """
-            mrhardi eddy $args --out ${prefix}__eddy --config $config --seed
-            """
-        else
-            """
-            mrhardi eddy $args --out ${prefix}__eddy --config $config --seed && cp $topup_acqp "${prefix}__eddy_acqp.txt"
-            """
+        if ( !will_gen_acqp )
+            after_script += "cp $topup_acqp ${prefix}__eddy_acqp.txt\n"
+
+        """
+        mrhardi eddy \
+            --in $prefix \
+            --out ${prefix}__eddy \
+            --config $config \
+            --seed $args
+        $after_script
+        """
 }
 
 process eddy {
@@ -284,7 +340,7 @@ process eddy {
     label params.use_cuda ? "res_single_cpu" : params.on_hcp ? "res_full_node_override" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
     label params.use_cuda ? "res_gpu" : ""
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
@@ -333,7 +389,7 @@ process gibbs_removal {
     label "MEDIUM"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
@@ -350,7 +406,7 @@ process gibbs_removal {
 
     """
     export MRTRIX_RNG_SEED=$params.random_seed
-    mrdegibbs -nthreads $task.cpus -datatype float64 $dwi gibbs_corrected.nii.gz
+    mrdegibbs -nthreads $task.cpus $dwi gibbs_corrected.nii.gz
     $after_denoise
     """
 }

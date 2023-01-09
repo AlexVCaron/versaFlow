@@ -26,7 +26,7 @@ process diamond {
     label "DIAMOND"
     label params.on_hcp ? "res_full_node_override" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/diamond", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -69,7 +69,7 @@ process mrtrix_dti {
     label "MEDIUM"
     label "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/dti", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -93,7 +93,7 @@ process response {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -121,7 +121,7 @@ process csd {
     label "MEDIUM"
     label "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -149,7 +149,7 @@ process scilpy_response {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -196,7 +196,7 @@ process scilpy_msmt_response {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -234,7 +234,7 @@ process scilpy_csd {
     label "MEDIUM"
     label "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -249,8 +249,8 @@ process scilpy_csd {
         if ( params.strict_parameters )
             args += " --strict"
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-        export OMP_NUM_THREADS=1
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+        export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         mrhardi sh_order --bvals $bval --bvecs $bvec --out sh_order.txt $args
@@ -266,7 +266,7 @@ process scilpy_msmt_csd {
     label "LONG"
     label "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
@@ -282,8 +282,8 @@ process scilpy_msmt_csd {
         if ( params.strict_parameters )
             args += " --strict"
         """
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
-        export OMP_NUM_THREADS=1
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+        export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         mrhardi sh_order --bvals $bval --bvecs $bvec --msmt --out sh_order.txt $args

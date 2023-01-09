@@ -25,7 +25,7 @@ c.AntsConfiguration.accross_modalities = True
 
 c.AntsConfiguration.dimension = 3
 
-c.AntsConfiguration.init_moving_transform = [[0, 0, 1], [1, 0, 1]]
+c.AntsConfiguration.init_moving_transform = [[1, 0, 1]]
 
 c.AntsConfiguration.inlier_range = [0.005, 0.995]
 
@@ -43,21 +43,10 @@ c.AntsConfiguration.passes = [{
     "klass": "mrHARDI.traits.ants.AntsRigid",
     "metrics": [
         {
-            "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                0.2,
-                64,
-                "Regular",
-                0.5
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        },
-        {
             "target_index": 1,
             "moving_index": 0,
             "args": [
-                0.1,
+                1.0,
                 64,
                 "Regular",
                 0.5
@@ -85,21 +74,10 @@ c.AntsConfiguration.passes = [{
     "klass": "mrHARDI.traits.ants.AntsAffine",
     "metrics": [
         {
-            "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                0.2,
-                64,
-                "Regular",
-                0.5
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        },
-        {
             "target_index": 1,
             "moving_index": 0,
             "args": [
-                0.1,
+                1.0,
                 64,
                 "Regular",
                 0.5
@@ -122,4 +100,3 @@ c.AntsConfiguration.passes = [{
 }]
 
 c.AntsConfiguration.use_float = False
-

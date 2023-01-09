@@ -11,7 +11,7 @@ process atropos {
     label "ATROPOS"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.index}_${task.process.replaceAll(":", "_")}", mode: params.publish_mode, enabled: params.publish_all
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/segmentation", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
@@ -28,6 +28,9 @@ process atropos {
             i += 1
         }
         """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+        export OMP_NUM_THREADS=$task.cpus
+        export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
         mrhardi seg2mask --in $segmentation --values 1,2,3,4,5 --labels 01,02,04,03,05 --out ${segmentation.simpleName}
         scil_image_math.py addition ${segmentation.simpleName}_02.nii.gz ${segmentation.simpleName}_04.nii.gz ${segmentation.simpleName}_02.nii.gz --data_type uint8 -f

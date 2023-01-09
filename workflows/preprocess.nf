@@ -85,6 +85,7 @@ include {
     dwi_denoise_wkf;
     dwi_denoise_wkf as rev_denoise_wkf;
     n4_denoise_wkf;
+    n4_denoise_wkf as n4_denoise_t1_to_b0_wkf;
     squash_wkf;
     squash_wkf as squash_raw_wkf;
     squash_wkf as squash_for_topup_wkf;
@@ -149,6 +150,7 @@ params.ants_transform_base_config = file("${get_config_path()}/ants_transform_ba
 params.ants_transform_mask_config = file("${get_config_path()}/ants_transform_mask_config.py")
 params.extract_mean_b0_base_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
 params.dwi_n4_normalization_config = file("${get_config_path()}/dwi_n4_normalization_config.py")
+params.dwi_n4_normalization_quick_config = file("${get_config_path()}/dwi_n4_normalization_quick_config.py")
 params.t1_n4_normalization_config = file("${get_config_path()}/t1_n4_normalization_config.py")
 params.b0_to_b0_normalization_config = file("${get_config_path()}/b0_to_b0_normalization_config.py")
 
@@ -267,6 +269,26 @@ workflow preprocess_wkf {
                 1, [""]
             )
         }
+
+        // Average consecutive b0 volumes just like for Topup
+        squash_wkf(
+            dwi_channel,
+            rev_channel,
+            meta_channel.join(rev_meta_channel),
+            ""
+        )
+
+        dwi_channel = squash_wkf.out.dwi
+        rev_channel = squash_wkf.out.rev
+
+        meta_channel = squash_wkf.out.metadata
+            .map{ it.flatten() }
+            .map{ [it[0], it[1..-1]] }
+            .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
+        rev_meta_channel = squash_wkf.out.metadata
+            .map{ it.flatten() }
+            .map{ [it[0], it[1..-1]] }
+            .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() }
 
         // Extract mean b0
         dwi_b0(
@@ -399,7 +421,10 @@ workflow preprocess_wkf {
                 raw_rev_channel = rename_transformed_raw_rev(
                     collect_paths(raw_rev_channel).filter{ it[1] },
                     "raw"
-                ).map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
+                )
+                raw_rev_channel = raw_rev_channel
+                    .map{ it.flatten() }
+                    .map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
 
                 raw_meta_channel = excluded_id_channel.join(raw_meta_channel)
                     .mix(
@@ -419,7 +444,9 @@ workflow preprocess_wkf {
 
                 raw_apply_topup_wkf(
                     topup_wkf.out.topupable_indexes.join(raw_dwi_channel),
-                    topup_wkf.out.topupable_indexes.join(raw_rev_channel),
+                    topup_wkf.out.topupable_indexes
+                        .join(raw_rev_channel)
+                        .map{ it[0..1] },
                     topup2eddy_channel,
                     collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
                     "raw"
@@ -461,8 +488,17 @@ workflow preprocess_wkf {
                 { it[1] == "" }
             ).map{ [it[0]] }
 
+            n4_denoise_t1_to_b0_wkf(
+                existing_t1_mask_id_channel.join(dwi_after_topup_channel.map{ it[0..1] }),
+                existing_t1_mask_id_channel.join(b0_channel),
+                existing_t1_mask_id_channel.join(dwi_mask_channel),
+                existing_t1_mask_id_channel.join(meta_after_topup_channel),
+                params.dwi_n4_normalization_quick_config,
+                false
+            )
+
             t1_mask_to_b0(
-                existing_t1_mask_id_channel.join(dwi_after_topup_channel),
+                replace_dwi_file(dwi_after_topup_channel, n4_denoise_t1_to_b0_wkf.out.image),
                 existing_t1_mask_id_channel.join(t1_channel),
                 existing_t1_mask_id_channel.join(t1_mask_channel),
                 "false"
@@ -489,7 +525,10 @@ workflow preprocess_wkf {
             rev_channel = rename_rev_for_eddy(
                 collect_paths(rev_channel).filter{ it[1] },
                 "to_eddy"
-            ).map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
+            )
+            rev_channel = rev_channel
+                .map{ it.flatten() }
+                .map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
 
             rev_channel = fill_missing_datapoints(
                 rev_channel,
@@ -538,7 +577,8 @@ workflow preprocess_wkf {
                 b0_channel,
                 dwi_mask_channel,
                 meta_channel,
-                params.dwi_n4_normalization_config
+                params.dwi_n4_normalization_config,
+                true
             )
 
             dwi_channel = replace_dwi_file(dwi_channel, n4_denoise_wkf.out.image)
@@ -1076,7 +1116,14 @@ workflow t1_preprocess_wkf {
         }
 
         if ( params.t1_intensity_normalization ) {
-            n4_denoise_wkf(t1_channel, Channel.empty(), mask_channel, Channel.empty(), params.t1_n4_normalization_config)
+            n4_denoise_wkf(
+                t1_channel,
+                t1_channel.map{ [it[0], ""] },
+                mask_channel,
+                t1_channel.map{ [it[0], ""] },
+                params.t1_n4_normalization_config,
+                true
+            )
             t1_channel = n4_denoise_wkf.out.image
         }
     emit:
