@@ -75,7 +75,7 @@ process enforce_sid_convention {
         }
         else {
             def cmd = ""
-            images.eachWithIndex{ img, i -> cmd += ( "${img.simpleName}.${extract_extension(img)}" == "${sid}_${suffix}.${extract_extension(img)}" )
+            images.eachWithIndex{ img, i -> cmd += ( "${img.simpleName}.${extract_extension(img)}" == "${sid}_${suffix[i]}.${extract_extension(img)}" )
                 ? ""
                 : "ln -s $img ${sid}_${suffix[i]}.${extract_extension(img)}\n" 
             }
