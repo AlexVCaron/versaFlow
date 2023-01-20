@@ -99,7 +99,7 @@ process change_name {
         if ( (files instanceof Path ? files.getNameCount() : files.size()) == 1 ) {
             extension = extract_extension(files)
             name = "${files.simpleName.split("__")[0]}__${prefix}.${extension}"
-            if ( "${f.simpleName}.$extension" != name ) {
+            if ( "${files.simpleName}.$extension" != name ) {
                 """
                 ln -s $files $name
                 """
