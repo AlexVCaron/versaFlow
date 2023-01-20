@@ -60,7 +60,7 @@ process enforce_sid_convention {
     input:
         tuple val(sid), path(images), val(suffix)
     output:
-        tuple val(sid), path("${sid}_*"), emit: image
+        tuple val(sid), path("${sid}_*", includeInputs: true), emit: image
     script:
         def name = ""
         if ( (images instanceof Path ? images.getNameCount() : images.size()) == 1 ) {
@@ -92,16 +92,18 @@ process change_name {
         tuple val(sid), file(files)
         val(prefix)
     output:
-        tuple val(sid), path("*__${prefix}*")
+        tuple val(sid), path("*__${prefix}*", includeInputs: true)
     script:
         def extension = ""
         def name = ""
         if ( (files instanceof Path ? files.getNameCount() : files.size()) == 1 ) {
             extension = extract_extension(files)
             name = "${files.simpleName.split("__")[0]}__${prefix}.${extension}"
-            """
-            ln -s $files $name
-            """
+            if ( "${f.simpleName}.$extension" != name ) {
+                """
+                ln -s $files $name
+                """
+            }
         }
         else {
             def cmd = ""
@@ -109,7 +111,7 @@ process change_name {
                 if ( !f.empty() ) {
                     extension = extract_extension(f)
                     name = "${f.simpleName.split("__")[0]}__${prefix}.${extension}"
-                    if ( f.simpleName != name )
+                    if ( "${f.simpleName}.$extension" != name )
                         cmd += "ln -s $f $name\n"
                 }
             }
