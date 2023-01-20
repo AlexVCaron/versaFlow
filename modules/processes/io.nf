@@ -60,16 +60,25 @@ process enforce_sid_convention {
     input:
         tuple val(sid), path(images), val(suffix)
     output:
-        tuple val(sid), path("${sid}_*"), emit: image
+        tuple val(sid), path("${sid}_*", includeInputs: true), emit: image
     script:
+        def name = ""
         if ( (images instanceof Path ? images.getNameCount() : images.size()) == 1 ) {
+            name = "${sid}_${suffix}.${extract_extension(images)}"
+            if ( name != "${images.simpleName}.${extract_extension(images)}" ) {
+                """
+                ln -s $images $name
+                """
+            }
             """
-            ln -s $images ${sid}_${suffix}.${extract_extension(images)}
             """
         }
         else {
             def cmd = ""
-            images.eachWithIndex{ img, i -> cmd += "ln -s $img ${sid}_${suffix[i]}.${extract_extension(img)}\n" }
+            images.eachWithIndex{ img, i -> cmd += ( "${img.simpleName}.${extract_extension(img)}" == "${sid}_${suffix[i]}.${extract_extension(img)}" )
+                ? ""
+                : "ln -s $img ${sid}_${suffix[i]}.${extract_extension(img)}\n" 
+            }
             """
             $cmd
             """
@@ -83,18 +92,27 @@ process change_name {
         tuple val(sid), file(files)
         val(prefix)
     output:
-        tuple val(sid), path("*__${prefix}*")
+        tuple val(sid), path("*__${prefix}*", includeInputs: true)
     script:
+        def extension = ""
+        def name = ""
         if ( (files instanceof Path ? files.getNameCount() : files.size()) == 1 ) {
-            """
-            ln -s $files ${files.simpleName.split("__")[0]}__${prefix}.${extract_extension(files)}
-            """
+            extension = extract_extension(files)
+            name = "${files.simpleName.split("__")[0]}__${prefix}.${extension}"
+            if ( "${files.simpleName}.$extension" != name ) {
+                """
+                ln -s $files $name
+                """
+            }
         }
         else {
             def cmd = ""
             for (f in files) {
-                if (!f.empty()) {
-                    cmd += "ln -s $f ${f.simpleName.split("__")[0]}__${prefix}.${extract_extension(f)}\n"
+                if ( !f.empty() ) {
+                    extension = extract_extension(f)
+                    name = "${f.simpleName.split("__")[0]}__${prefix}.${extension}"
+                    if ( "${f.simpleName}.$extension" != name )
+                        cmd += "ln -s $f $name\n"
                 }
             }
             """
