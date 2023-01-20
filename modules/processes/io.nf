@@ -62,20 +62,23 @@ process enforce_sid_convention {
     output:
         tuple val(sid), path("${sid}_*"), emit: image
     script:
-        def extension = ""
         def name = ""
         if ( (images instanceof Path ? images.getNameCount() : images.size()) == 1 ) {
-            extension = extract_extension(images)
-            name = "${sid}_${suffix}.${extension}"
-            if ( name != images.simpleName ) {
+            name = "${sid}_${suffix}.${extract_extension(images)}"
+            if ( name != "${images.simpleName}.${extract_extension(images)}" ) {
                 """
                 ln -s $images $name
                 """
             }
+            """
+            """
         }
         else {
             def cmd = ""
-            images.eachWithIndex{ img, i -> cmd += "ln -s $img ${sid}_${suffix[i]}.${extract_extension(img)}\n" }
+            images.eachWithIndex{ img, i -> cmd += ( "${img.simpleName}.${extract_extension(img)}" == "${sid}_${suffix}.${extract_extension(images)}" )
+                ? ""
+                : "ln -s $img ${sid}_${suffix[i]}.${extract_extension(img)}\n" 
+            }
             """
             $cmd
             """
