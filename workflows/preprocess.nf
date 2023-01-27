@@ -306,6 +306,7 @@ workflow preprocess_wkf {
         // Topup correction
         topup2eddy_channel = ref_id_channel.map{ it + ["", "", []] }
         dwi_after_topup_channel = dwi_channel
+        meta_after_topup_channel = meta_channel
         if ( params.topup_correction ) {
             ref_rev_id_channel = exclude_missing_datapoints(
                 raw_rev_channel, 1, ""
