@@ -70,8 +70,6 @@ process enforce_sid_convention {
                 ln -s $images $name
                 """
             }
-            """
-            """
         }
         else {
             def cmd = ""
