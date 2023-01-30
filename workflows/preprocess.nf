@@ -143,6 +143,7 @@ params.t1_intensity_normalization = true
 
 params.quick_t1_mask_registration = true
 params.quick_denoised_t1_registration = false
+params.t1_registration_in_subject_space = false
 
 params.b02t1_mask_registration_config = file("${get_config_path()}/b02t1_mask_registration_config.py")
 params.t1_mask_to_topup_b0_registration_config = file("${get_config_path()}/t1_mask_to_topup_b0_registration_config.py")
@@ -778,7 +779,8 @@ workflow preprocess_wkf {
                 meta_channel,
                 true,
                 true,
-                params.quick_denoised_t1_registration
+                params.quick_denoised_t1_registration,
+                params.t1_registration_in_subject_space
             )
 
             t1_channel = t1_registration_wkf.out.t1

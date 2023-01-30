@@ -108,6 +108,7 @@ workflow t12b0_registration {
         publish_mask
         publish_t1
         use_quick
+        register_in_subject_space
     main:
         extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
 
@@ -121,10 +122,24 @@ workflow t12b0_registration {
             t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_no_bv_dilated.nii.gz")] }
         )
 
-        resampling_reference(dwi_channel.map{ it.subList(0, 2) }.join(t1_channel).join(template_channel).map{ [it[0], it[1..-1]] }, "preprocess")
+        if ( register_in_subject_space ) {
+            registration_reference = t1_channel.map{ it[0..1] }
+        }
+        else {
+            resampling_reference(
+                dwi_channel
+                    .map{ it[0..1] }
+                    .join(t1_channel)
+                    .join(template_channel)
+                    .map{ [it[0], it[1..-1]] },
+                "preprocess"
+            )
+            registration_reference = resampling_reference.out.reference
+        }
+
         resample_template(
             template_channel
-                .join(resampling_reference.out.reference)
+                .join(registration_reference)
                 .join(template_mask_channel)
                 .map{ it + [""] },
             "preprocess",
@@ -135,7 +150,7 @@ workflow t12b0_registration {
         )
         resample_dilated_mask(
             template_dilated_mask_channel
-                .join(resampling_reference.out.reference)
+                .join(registration_reference)
                 .map{ it + ["", ""] },
             "preprocess",
             "nn",
