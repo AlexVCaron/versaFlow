@@ -77,6 +77,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
     --publish_mode                          Strategy used to copy the processed files in the output root [copy|link] ($publish_mode)
     --verbose_outputs                       Output of additional files and of debug messages in logs [true|false] ($verbose_outputs)
     --random_seed                           Random seed to input to all random number generators ($random_seed)
+    --check_memory_requirements             Check if enough memory is available to run the pipeline ($check_memory_requirements)
 
 - Resource allocation :
     --use_cuda                              Enable usage of CUDA for Eddy (Require a Nvidia GPU) [true|false] ($use_cuda)
