@@ -23,6 +23,10 @@ include {
 } from '../processes/upsample.nf'
 include { get_config_path; get_data_path } from '../functions.nf'   
 
+params.force_resampling_resolution = false
+params.resampling_min_resolution = false
+params.resampling_subdivision = 2
+
 params.tissue_segmentation_root = "${get_data_path()}/maccaca_mulatta/tissue_segmentation"
 params.wm_segmentation_root = "${get_data_path()}/maccaca_mulatta/wm_segmentation"
 
@@ -39,7 +43,13 @@ workflow segment_nmt_wkf {
         template_mask_channel = prepend_sid_template_mask(t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask.nii.gz")] })
         segmentation_channel = prepend_sid_segmentation(t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation.nii.gz")] })
 
-        resampling_reference(t1_channel.join(template_channel).map{ [it[0], it[1..-1]] }, "segmentation")
+        resampling_reference(
+            t1_channel.join(template_channel).map{ [it[0], it[1..-1]] },
+            "segmentation",
+            params.resampling_subdivision,
+            params.resampling_min_resolution,
+            ""
+        )
         resample_template(
             template_channel
                 .join(resampling_reference.out.reference)
@@ -93,7 +103,13 @@ workflow segment_wm_wkf {
         template_fa_channel = prepend_sid_template_fa(dwi_channel.map{ [it[0], file("${params.wm_segmentation_root}/wm_segmentation_fa.nii.gz")] })
         wm_atlas_channel = prepend_sid_wm_atlas(dwi_channel.map{ [it[0], file("${params.wm_segmentation_root}/wm_segmentation_atlas.nii.gz")] })
 
-        resampling_reference_fa(dwi_channel.map{ it.subList(0, 2) }.join(template_fa_channel).map{ [it[0], it[1..-1]] }, "segmentation")
+        resampling_reference_fa(
+            dwi_channel.map{ it.subList(0, 2) }.join(template_fa_channel).map{ [it[0], it[1..-1]] },
+            "segmentation",
+            params.resampling_subdivision,
+            params.resampling_min_resolution,
+            ""
+        )
         resample_template_fa(
             template_fa_channel
                 .join(resampling_reference_fa.out.reference)

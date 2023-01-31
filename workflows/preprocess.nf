@@ -135,6 +135,9 @@ params.register_t1_to_dwi = true
 params.generate_tissue_segmentation = false
 params.generate_wm_segmentation = true
 params.raw_to_processed_space = false
+params.resampling_subdivision = 2
+params.resampling_min_resolution = false
+params.force_resampling_resolution = false
 
 // T1 preprocess workflow parameters
 params.denoise_t1 = true
@@ -628,7 +631,10 @@ workflow preprocess_wkf {
         // Compute best resampling reference
         resampling_reference(
             collect_paths(dwi_channel.map{ it[0..1] }.join(t1_channel)),
-            "preprocess"
+            "preprocess",
+            params.resample_data ? params.resampling_subdivision : "1",
+            params.resample_data ? params.resampling_min_resolution : "",
+            params.resample_data ? params.force_resampling_resolution : ""
         )
 
         reference_channel = resampling_reference.out.reference

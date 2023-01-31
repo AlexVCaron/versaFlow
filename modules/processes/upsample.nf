@@ -99,17 +99,20 @@ process resampling_reference {
     input:
         tuple val(sid), path(images)
         val(caller_name)
+        val(max_subdivisions)
+        val(min_voxel_size)
+        val(force_voxel_size)
     output:
         tuple val(sid), path("${sid}_resampling_reference.nii.gz"), emit: reference
     script:
         def args = ""
-        if (params.force_resampling_resolution)
-            args += " --force-resolution ${params.force_resampling_resolution}"
-        if (params.resampling_min_resolution)
-            args += " --min_voxel_size ${params.resampling_min_resolution}"
+        if ( "$force_voxel_size" )
+            args += " --force-resolution $force_voxel_size"
+        if ( "$min_voxel_size" )
+            args += " --min_voxel_size $min_voxel_size"
         """
         mrhardi resampling_reference \
-            --subdiv $params.resampling_subdivision \
+            --subdiv $max_subdivisions \
             --in ${images.join(",")} \
             --out ${sid}_resampling_reference.nii.gz \
             $args

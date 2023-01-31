@@ -78,6 +78,9 @@ include {
 
 
 params.use_quick = false
+params.resampling_subdivision = 2
+params.resampling_min_resolution = false
+
 params.tissue_segmentation_root = "${get_data_path()}/maccaca_mulatta/tissue_segmentation"
 
 params.t1_registration_extract_b0_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
@@ -132,7 +135,10 @@ workflow t12b0_registration {
                     .join(t1_channel)
                     .join(template_channel)
                     .map{ [it[0], it[1..-1]] },
-                "preprocess"
+                "preprocess",
+                params.resampling_subdivision,
+                params.resampling_min_resolution,
+                ""
             )
             registration_reference = resampling_reference.out.reference
         }
