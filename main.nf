@@ -81,7 +81,7 @@ def display_run_info () {
     log.info " - Publish all outputs ${params.publish_all ? "(enabled)" : "(disabled)"}"
     log.info " - Verbose ${params.verbose_outputs ? "(enabled)" : "(disabled)"}"
     log.info " - Random seed     : $params.random_seed"
-    log.info " - Check memory    : $check_memory_requirements"
+    log.info " - Check memory    : $params.check_memory_requirements"
     log.info "Resources allocation :"
     log.info " - Use GPU ${params.use_cuda ? "(enabled)" : "(disabled)"}"
     if (params.use_cuda) {
