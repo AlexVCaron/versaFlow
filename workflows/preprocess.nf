@@ -176,6 +176,10 @@ workflow preprocess_wkf {
             dwi_mask_channel,
             { it[1] == "" }
         ).map{ [it[0]] }
+        present_rev_id_channel = filter_datapoints(
+            rev_channel,
+            { it[1] != "" }
+        ).map{ [it[0]] }
 
         // T1 preprocessing
         t1_preprocess_wkf(t1_channel, t1_mask_channel)
@@ -209,10 +213,22 @@ workflow preprocess_wkf {
             1, [""]
         )
 
-        meta_channel = check_odd_dimensions.out.metadata
-            .map{ [it[0], it[1] instanceof Path ? it[1] : it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
-        rev_meta_channel = check_odd_dimensions.out.metadata
-            .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() }
+        checked_meta_channel = exclude_missing_datapoints(
+            check_odd_dimensions.out.metadata
+                .map{ it.flatten() }
+                .map{ [it[0], it[1..-1]] }
+                .transpose(),
+             1, ""
+        ).groupTuple()
+
+        meta_channel = checked_meta_channel
+            .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
+        rev_meta_channel = fill_missing_datapoints(
+            checked_meta_channel
+                .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() },
+            ref_id_channel,
+            1, [""]
+        )
 
         // Copy input channels for later
         dwi_channel.tap{ raw_dwi_channel }
@@ -230,7 +246,11 @@ workflow preprocess_wkf {
 
             rev_denoise_wkf(rev_channel, dwi_mask_channel, rev_meta_channel, "false")
             rev_channel = replace_dwi_file(rev_channel, rev_denoise_wkf.out.image)
-            rev_meta_channel = rev_denoise_wkf.out.metadata
+            rev_meta_channel = fill_missing_datapoints(
+                rev_denoise_wkf.out.metadata,
+                ref_id_channel,
+                1, [""]
+            )
         }
 
         // Perform DWI and b0 gibbs correction
@@ -285,14 +305,23 @@ workflow preprocess_wkf {
         dwi_channel = squash_wkf.out.dwi
         rev_channel = squash_wkf.out.rev
 
-        meta_channel = squash_wkf.out.metadata
-            .map{ it.flatten() }
-            .map{ [it[0], it[1..-1]] }
+        squashed_meta_channel = exclude_missing_datapoints(
+            squash_wkf.out.metadata
+                .map{ it.flatten() }
+                .map{ [it[0], it[1..-1]] }
+                .transpose(),
+             1, ""
+        ).groupTuple()
+
+        meta_channel = squashed_meta_channel
             .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
-        rev_meta_channel = squash_wkf.out.metadata
-            .map{ it.flatten() }
-            .map{ [it[0], it[1..-1]] }
-            .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() }
+
+        rev_meta_channel = fill_missing_datapoints(
+            squashed_meta_channel
+                .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() },
+            ref_id_channel,
+            1, [""]
+        )
 
         // Extract mean b0
         dwi_b0(
