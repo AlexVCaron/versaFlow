@@ -106,9 +106,9 @@ process resampling_reference {
         tuple val(sid), path("${sid}_resampling_reference.nii.gz"), emit: reference
     script:
         def args = ""
-        if ( "$force_voxel_size" )
+        if ( force_voxel_size )
             args += " --force-resolution $force_voxel_size"
-        if ( "$min_voxel_size" )
+        if ( min_voxel_size )
             args += " --min_voxel_size $min_voxel_size"
         """
         mrhardi resampling_reference \
