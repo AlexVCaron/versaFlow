@@ -713,5 +713,26 @@ process validate_gradients {
         export OPENBLAS_NUM_THREADS=1
         scil_validate_and_correct_bvecs.py $bvec $peaks $fa ${bvec.simpleName}__validated.bvec --fa_th $params.validate_bvecs_fa_thr -f $args
         """
+}
 
+process patch_in_mask {
+    label "FAST"
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(masked_image), path(mask), path(background_image)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${masked_image.simpleName}__patched.nii.gz"), emit: image
+    script:
+        """
+        mrhardi patch \
+            --in $masked_image \
+            --mask $mask \
+            --back $background_image \
+            --out ${masked_image.simpleName}__patched.nii.gz
+        """
 }

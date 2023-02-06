@@ -61,7 +61,8 @@ include {
     merge_masks;
     check_odd_dimensions;
     pvf_to_mask;
-    validate_gradients
+    validate_gradients;
+    patch_in_mask
 } from '../modules/processes/utils.nf'
 include {
     gibbs_removal as dwi_gibbs_removal;
@@ -1141,11 +1142,24 @@ workflow t1_preprocess_wkf {
     main:
         def ref_id_channel = t1_channel.map{ [it[0]] }
         mask_channel = fill_missing_datapoints(mask_channel, ref_id_channel, 1, [""])
+        missing_t1_mask = filter_datapoints(
+            mask_channel,
+            { it[1] == "" }
+        ).map{ [it[0]] }
 
         if ( params.denoise_t1 ) {
             if ( params.nlmeans_t1 ) {
                 nlmeans_denoise(t1_channel.join(mask_channel).map{ it + [""] }, "preprocess", "true")
-                t1_channel = nlmeans_denoise.out.image
+                images_to_patch = exclude_missing_datapoints(
+                    nlmeans_denoise.out.image
+                        .join(mask_channel)
+                        .join(t1_channel),
+                    2, ""
+                )
+                patch_in_mask(images_to_patch, "preprocess")
+                t1_channel = missing_t1_mask
+                    .join(nlmeans_denoise.out.image)
+                    .mix(patch_in_mask.out.image)
             }
             else {
                 ants_gaussian_denoise(t1_channel, "preprocess")
