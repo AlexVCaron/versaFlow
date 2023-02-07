@@ -216,6 +216,7 @@ def display_usage () {
             "verbose_outputs" : "$params.verbose_outputs",
             "resample_data" : "$params.resample_data",
             "check_memory_requirements": "$params.check_memory_requirements",
+            "memory_buffer_gb": "$params.memory_buffer_gb",
             "force_resampling_sequential" : "$params.force_resampling_sequential",
             "force_resampling_resolution" : "${params.force_resampling_resolution ? params.force_resampling_resolution : false}",
             "resampling_subdivision" : "$params.resampling_subdivision",
