@@ -860,7 +860,7 @@ workflow preprocess_wkf {
             )
             ants_transform_wm_mask(
                 tissue_mask_to_register_channel
-                    .map{ [it[0], it[1][1]] }
+                    .map{ [it[0], it[1][0]] }
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
@@ -869,7 +869,7 @@ workflow preprocess_wkf {
             )
             ants_transform_gm_mask(
                 tissue_mask_to_register_channel
-                    .map{ [it[0], it[1][2]] }
+                    .map{ [it[0], it[1][1]] }
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
