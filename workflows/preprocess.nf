@@ -62,7 +62,8 @@ include {
     check_odd_dimensions;
     pvf_to_mask;
     validate_gradients;
-    patch_in_mask
+    patch_in_mask;
+    apply_mask as mask_t1
 } from '../modules/processes/utils.nf'
 include {
     gibbs_removal as dwi_gibbs_removal;
@@ -1085,6 +1086,8 @@ workflow preprocess_wkf {
         )
 
         validate_gradients_wkf(dwi_channel, dwi_mask_channel)
+        mask_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", true)
+        t1_channel = mask_t1.out.image
 
         dwi_channel = rename_processed_dwi(
             collect_paths(validate_gradients_wkf.out.dwi),
