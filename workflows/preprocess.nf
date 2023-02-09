@@ -1152,17 +1152,8 @@ workflow t1_preprocess_wkf {
 
         if ( params.denoise_t1 ) {
             if ( params.nlmeans_t1 ) {
-                nlmeans_denoise(t1_channel.join(mask_channel).map{ it + [""] }, "preprocess", "true")
-                images_to_patch = exclude_missing_datapoints(
-                    nlmeans_denoise.out.image
-                        .join(mask_channel)
-                        .join(t1_channel),
-                    2, ""
-                )
-                patch_in_mask(images_to_patch, "preprocess")
-                t1_channel = missing_t1_mask
-                    .join(nlmeans_denoise.out.image)
-                    .mix(patch_in_mask.out.image)
+                nlmeans_denoise(t1_channel.map{ it + ["", ""] }, "preprocess", "true")
+                t1_channel = nlmeans_denoise.out.image
             }
             else {
                 ants_gaussian_denoise(t1_channel, "preprocess")
