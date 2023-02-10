@@ -122,7 +122,7 @@ workflow t12b0_registration {
             t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_no_bv.nii.gz")] }
         )
         template_dilated_mask_channel = prepend_sid_template_dilated_mask(
-            t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_no_bv_dilated.nii.gz")] }
+            t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_whole_no_bv.nii.gz")] }
         )
 
         if ( register_in_subject_space ) {
