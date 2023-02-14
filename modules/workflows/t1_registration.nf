@@ -270,7 +270,7 @@ workflow t1_to_b0_affine {
             .join(mask_pa_dwi_dilated.out.image)
             .join(dti_fa_eroded.out.fa)
             .map{ [it[0], it[1..-1]] }
-        t1_moving_channel = mask_t1_dilated.out.image
+        t1_moving_channel = t1_channel
             .map{ [it[0], [it[1]]] }
 
         t1_to_reference_affine(
@@ -416,7 +416,7 @@ workflow t1_to_b0_syn {
             .join(mask_pa_dwi.out.image)
             .join(mask_fa.out.image)
             .map{ [it[0], it[1..-1]] }
-        t1_moving_channel = mask_t1.out.image
+        t1_moving_channel = t1_channel
             .map{ [it[0], [it[1]]] }
         reference_fixed_channel = reference_channel.map{ [it[0], [it[1]]] }
 
@@ -424,7 +424,9 @@ workflow t1_to_b0_syn {
             reference_fixed_channel,
             t1_moving_channel,
             t1_mask_channel,
-            dilated_reference_mask_channel.join(syn_dilate_t1_mask.out.mask).map{ [it[0], it[1..-1]] },
+            dilated_reference_mask_channel
+                .join(syn_dilate_t1_mask.out.mask)
+                .map{ [it[0], it[1..-1]] },
             null,
             null,
             "",
@@ -438,8 +440,10 @@ workflow t1_to_b0_syn {
         b0_to_reference_syn(
             reference_fixed_channel,
             b0_moving_channel,
-            null,
-            dilated_reference_mask_channel.join(syn_dilate_dwi_mask.out.mask).map{ [it[0], it[1..-1]] },
+            dwi_mask_channel,
+            dilated_reference_mask_channel
+                .join(syn_dilate_dwi_mask.out.mask)
+                .map{ [it[0], it[1..-1]] },
             null,
             null,
             "",
@@ -462,12 +466,14 @@ workflow t1_to_b0_syn {
         )
 
         t1_to_b0_final_syn(
-            b0_to_reference_syn.out.image
+            b0_to_reference_syn.out.registration
                 .join(transform_fa_syn.out.image)
                 .map{ [it[0], it[1..-1]] },
-            t1_to_reference_syn.out.image,
+            t1_to_reference_syn.out.registration,
             null,
-            null,
+            b0_to_reference_syn.out.image
+                .join(t1_to_reference_syn.out.image)
+                .map{ [it[0], it[1..-1]] },
             null,
             null,
             "",
