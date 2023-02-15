@@ -2,7 +2,10 @@
 
 nextflow.enable.dsl=2
 
-include { registration_wkf as nmt_registration_wkf; registration_wkf as wm_seg_registration_wkf } from "./preprocess.nf"
+include {
+    registration_wkf as nmt_registration_wkf;
+    registration_wkf as wm_seg_registration_wkf
+} from "./preprocess.nf"
 include { atropos } from '../processes/segment.nf'
 include { scil_compute_dti_fa } from '../processes/measure.nf'
 include { 
@@ -11,6 +14,10 @@ include {
     prepend_sid as prepend_sid_segmentation;
     prepend_sid as prepend_sid_template_fa;
     prepend_sid as prepend_sid_wm_atlas;
+    prepend_sid as prepend_sid_d99;
+    prepend_sid as prepend_sid_charm;
+    prepend_sid as prepend_sid_sarm;
+    prepend_sid as prepend_sid_inia19
     pvf_to_mask
 } from '../processes/utils.nf'
 include {
@@ -19,13 +26,27 @@ include {
     scilpy_resample_to_reference as resample_template;
     scilpy_resample_to_reference as resample_segmentation;
     scilpy_resample_to_reference as resample_template_fa;
-    scilpy_resample_to_reference as resample_wm_atlas
+    scilpy_resample_to_reference as resample_wm_atlas;
+    scilpy_resample_to_reference as resample_d99;
+    scilpy_resample_to_reference as resample_charm;
+    scilpy_resample_to_reference as resample_sarm;
+    scilpy_resample_to_reference as resample_inia19
 } from '../processes/upsample.nf'
+include {
+    ants_transform as transform_d99;
+    ants_transform as transform_charm;
+    ants_transform as transform_sarm;
+    ants_transform as transform_inia19
+} from '../processes/register.nf'
 include { get_config_path; get_data_path } from '../functions.nf'   
 
 params.force_resampling_resolution = false
 params.resampling_min_resolution = false
 params.resampling_subdivision = 2
+params.register_d99 = true
+params.register_charm = true
+params.register_sarm = true
+params.register_inia19 = true
 
 params.tissue_segmentation_root = "${get_data_path()}/maccaca_mulatta/tissue_segmentation"
 params.wm_segmentation_root = "${get_data_path()}/maccaca_mulatta/wm_segmentation"
@@ -55,7 +76,7 @@ workflow segment_nmt_wkf {
                 .join(resampling_reference.out.reference)
                 .join(template_mask_channel)
                 .map{ it + [""] },
-            "preprocess",
+            "segmentation",
             "lin",
             false,
             false,
@@ -65,7 +86,7 @@ workflow segment_nmt_wkf {
             segmentation_channel
                 .join(resampling_reference.out.reference)
                 .map{ it + ["", ""] },
-            "preprocess",
+            "segmentation",
             "nn",
             false,
             false,
@@ -88,11 +109,142 @@ workflow segment_nmt_wkf {
 
         atropos(t1_channel.join(mask_channel).join(nmt_registration_wkf.out.image), "segment")
         pvf_to_mask(atropos.out.vol_fractions.map{ [it[0]] + it[1].reverse() }.join(mask_channel), "segment", "segmentation")
+
+        transform_atlases_wkf(
+            resampling_reference.out.reference,
+            nmt_registration_wkf.out.reference,
+            nmt_registration_wkf.out.transform
+        )
     emit:
         segmentation = atropos.out.segmentation
         volume_fractions = atropos.out.vol_fractions
         tissue_masks = pvf_to_mask.out.wm_mask.join(pvf_to_mask.out.gm_mask).join(pvf_to_mask.out.csf_mask).map{ [ it[0], it[1..-1] ]}
         safe_wm_mask = pvf_to_mask.out.safe_wm_mask
+}
+
+workflow transform_atlases_wkf {
+    take:
+        template_resampling_reference
+        template_registration_reference
+        template_registration_transform
+    main:
+        transformed_d99 = Channel.empty()
+        transformed_charm = Channel.empty()
+        transformed_sarm = Channel.empty()
+        transformed_inia19 = Channel.empty()
+
+        if ( params.register_d99 ) {
+            d99_channel = prepend_sid_d99(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/D99_atlas_in_NMT_v2.0_asym.nii.gz")] })
+            
+            resample_d99(
+                d99_channel
+                    .join(template_resampling_reference)
+                    .map{ it + ["", ""] },
+                "segmentation",
+                "nn",
+                false,
+                false,
+                "", ""
+            )
+            
+            transform_d99(
+                resample_d99.out.image
+                    .join(template_registration_reference)
+                    .join(template_registration_transform)
+                    .map{ it + ["", ""] },
+                "segmentation",
+                "atlases", "true", "D99_atlas",
+                params.ants_transform_segmentation_config
+            )
+
+            transformed_d99 = transform_d99.out.image
+        }
+
+        if ( params.register_charm ) {
+            charm_channel = prepend_sid_charm(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/CHARM_in_NMT_v2.0_asym.nii.gz")] })
+            
+            resample_charm(
+                charm_channel
+                    .join(template_resampling_reference)
+                    .map{ it + ["", ""] },
+                "segmentation",
+                "nn",
+                false,
+                false,
+                "", ""
+            )
+            
+            transform_charm(
+                resample_charm.out.image
+                    .join(template_registration_reference)
+                    .join(template_registration_transform)
+                    .map{ it + ["", ""] },
+                "segmentation",
+                "atlases", "true", "CHARM",
+                params.ants_transform_segmentation_config
+            )
+
+            transformed_charm = transform_charm.out.image
+        }
+
+        if ( params.register_sarm ) {
+            sarm_channel = prepend_sid_sarm(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/SARM_in_NMT_v2.0_asym.nii.gz")] })
+            
+            resample_sarm(
+                sarm_channel
+                    .join(template_resampling_reference)
+                    .map{ it + ["", ""] },
+                "segmentation",
+                "nn",
+                false,
+                false,
+                "", ""
+            )
+            
+            transform_sarm(
+                resample_sarm.out.image
+                    .join(template_registration_reference)
+                    .join(template_registration_transform)
+                    .map{ it + ["", ""] },
+                "segmentation",
+                "atlases", "true", "SARM",
+                params.ants_transform_segmentation_config
+            )
+
+            transformed_sarm = transform_sarm.out.image
+        }
+
+        if ( params.register_inia19 ) {
+            inia19_channel = prepend_sid_inia19(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/INIA19_in_NMT_v2.0_asym.nii.gz")] })
+            
+            resample_inia19(
+                inia19_channel
+                    .join(template_resampling_reference)
+                    .map{ it + ["", ""] },
+                "segmentation",
+                "nn",
+                false,
+                false,
+                "", ""
+            )
+            
+            transform_inia19(
+                resample_inia19.out.image
+                    .join(template_registration_reference)
+                    .join(template_registration_transform)
+                    .map{ it + ["", ""] },
+                "segmentation",
+                "atlases", "true", "INIA19",
+                params.ants_transform_segmentation_config
+            )
+
+            transformed_inia19 = transform_inia19.out.image
+        }
+    emit:
+        d99_atlas = transform_d99
+        charm = transformed_charm
+        sarm = transformed_sarm
+        inia19 = transformed_inia19
 }
 
 workflow segment_wm_wkf {
