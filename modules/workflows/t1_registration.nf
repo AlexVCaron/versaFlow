@@ -206,6 +206,10 @@ workflow t12b0_registration {
             .join(t1_to_b0_syn.out.b0_inverse_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
+        template_to_t1_transform = t1_to_b0_affine.out.t1_inverse_transform
+            .join(t1_to_b0_syn.out.t1_inverse_transform)
+            .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
+
         t1_to_b0_transform = template_to_b0_transform
             .join(t1_to_b0_syn.out.t1_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
@@ -239,6 +243,8 @@ workflow t12b0_registration {
         mask = clean_mask_borders.out.mask
         transform = t1_to_b0_transform
         reference = extract_b0.out.b0
+        resampling_reference = registration_reference
+        template_to_t1_transform = template_to_t1_transform
 }
 
 workflow t1_to_b0_affine {

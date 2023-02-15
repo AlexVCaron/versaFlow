@@ -868,28 +868,9 @@ workflow preprocess_wkf {
             .map{ [it[0], ""] }
             .mix(pvf_to_mask.out.safe_wm_mask)
 
-        // Generate tissue segmentation from T1
-        if ( params.generate_tissue_segmentation ) {
-            absent_pvf_id_channel = pvf_channel
-                .filter{ it[1].isEmpty() }
-                .map{ [it[0]] }
-
-            segment_nmt_wkf(
-                absent_pvf_id_channel.join(t1_channel),
-                absent_pvf_id_channel.join(t1_mask_channel)
-            )
-
-            pvf_channel = segment_nmt_wkf.out.volume_fractions
-                .map{ [it[0], it[1].reverse()] }
-                .mix(pvf_channel.filter{ !it[1].isEmpty() })
-
-            tissue_mask_channel = segment_nmt_wkf.out.tissue_masks
-                .mix(tissue_mask_channel.filter{ it[1] })
-            safe_wm_mask_channel = segment_nmt_wkf.out.safe_wm_mask
-                .mix(safe_wm_mask_channel.filter{ it[1] })
-        }
-
         // Register T1 to diffusion space (DWI) with masks and segmentations
+        template_resampling_reference = null
+        template_to_t1_transform = null
         if ( params.register_t1_to_dwi ) {
             t1_registration_wkf(
                 dwi_channel,
@@ -902,6 +883,9 @@ workflow preprocess_wkf {
                 params.quick_denoised_t1_registration,
                 params.t1_registration_in_subject_space
             )
+
+            template_resampling_reference = t1_registration_wkf.out.resampling_reference
+            template_to_t1_transform = t1_registration_wkf.out.template_to_t1_transform
 
             t1_channel = t1_registration_wkf.out.t1
             t1_mask_channel = t1_registration_wkf.out.mask
@@ -1023,6 +1007,29 @@ workflow preprocess_wkf {
                 raw_t1_channel = ants_transform_base_raw_t1.out.image
                 raw_t1_mask_channel = ants_transform_raw_t1_mask.out.image
             }
+        }
+
+        // Generate tissue segmentation from T1
+        if ( params.generate_tissue_segmentation ) {
+            absent_pvf_id_channel = pvf_channel
+                .filter{ it[1].isEmpty() }
+                .map{ [it[0]] }
+
+            segment_nmt_wkf(
+                absent_pvf_id_channel.join(t1_channel),
+                absent_pvf_id_channel.join(t1_mask_channel),
+                template_resampling_reference,
+                template_to_t1_transform
+            )
+
+            pvf_channel = segment_nmt_wkf.out.volume_fractions
+                .map{ [it[0], it[1].reverse()] }
+                .mix(pvf_channel.filter{ !it[1].isEmpty() })
+
+            tissue_mask_channel = segment_nmt_wkf.out.tissue_masks
+                .mix(tissue_mask_channel.filter{ it[1] })
+            safe_wm_mask_channel = segment_nmt_wkf.out.safe_wm_mask
+                .mix(safe_wm_mask_channel.filter{ it[1] })
         }
 
         crop_dwi(
