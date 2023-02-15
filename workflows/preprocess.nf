@@ -58,6 +58,10 @@ include {
     crop_image as crop_safe_wm_mask;
     crop_image as crop_raw_dwi;
     crop_image as crop_raw_t1;
+    crop_image as crop_d99_atlas;
+    crop_image as crop_sarm_atlas;
+    crop_image as crop_charm_atlas;
+    crop_image as crop_inia19_atlas;
     bet_mask;
     fit_bounding_box;
     merge_masks;
@@ -1010,6 +1014,10 @@ workflow preprocess_wkf {
         }
 
         // Generate tissue segmentation from T1
+        d99_atlas_channel = Channel.empty()
+        sarm_atlas_channel = Channel.empty()
+        charm_atlas_channel = Channel.empty()
+        inia19_atlas_channel = Channel.empty()
         if ( params.generate_tissue_segmentation ) {
             absent_pvf_id_channel = pvf_channel
                 .filter{ it[1].isEmpty() }
@@ -1030,6 +1038,12 @@ workflow preprocess_wkf {
                 .mix(tissue_mask_channel.filter{ it[1] })
             safe_wm_mask_channel = segment_nmt_wkf.out.safe_wm_mask
                 .mix(safe_wm_mask_channel.filter{ it[1] })
+
+            d99_atlas_channel = segment_nmt_wkf.out.d99_atlas
+            sarm_atlas_channel = segment_nmt_wkf.out.sarm_atlas
+            charm_atlas_channel = segment_nmt_wkf.out.charm_atlas
+            inia19_atlas_channel = segment_nmt_wkf.out.inia19_atlas
+
         }
 
         crop_dwi(
@@ -1121,6 +1135,39 @@ workflow preprocess_wkf {
             "preprocess", false, "", "segmentation"
         )
 
+        crop_d99_atlas(
+            d99_atlas_channel
+                .filter{ it[1] }
+                .join(t1_mask_channel)
+                .join(t1_bbox_channel)
+                .map{ it + [""] },
+            "preprocess", false, "", "atlases"
+        )
+        crop_sarm_atlas(
+            sarm_atlas_channel
+                .filter{ it[1] }
+                .join(t1_mask_channel)
+                .join(t1_bbox_channel)
+                .map{ it + [""] },
+            "preprocess", false, "", "atlases"
+        )
+        crop_charm_atlas(
+            charm_atlas_channel
+                .filter{ it[1] }
+                .join(t1_mask_channel)
+                .join(t1_bbox_channel)
+                .map{ it + [""] },
+            "preprocess", false, "", "atlases"
+        )
+        crop_inia19_atlas(
+            inia19_atlas_channel
+                .filter{ it[1] }
+                .join(t1_mask_channel)
+                .join(t1_bbox_channel)
+                .map{ it + [""] },
+            "preprocess", false, "", "atlases"
+        )
+
         dwi_channel = replace_dwi_file(dwi_channel, crop_dwi.out.image)
         dwi_mask_channel = crop_dwi.out.mask
         t1_channel = crop_t1.out.image
@@ -1142,6 +1189,11 @@ workflow preprocess_wkf {
             .filter{ it[1].isEmpty() }
             .map{ [it[0], ""] }
             .mix(crop_safe_wm_mask.out.image)
+
+        d99_atlas_channel = crop_d99_atlas.out.image
+        sarm_atlas_channel = crop_sarm_atlas.out.image
+        charm_atlas_channel = crop_sarm_atlas.out.image
+        inia19_atlas_channel = crop_inia19_atlas.out.image
 
         if ( params.raw_to_processed_space ) {
             crop_raw_dwi(

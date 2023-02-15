@@ -165,9 +165,9 @@ workflow segment_nmt_wkf {
             .map{ [ it[0], it[1..-1] ]}
         safe_wm_mask = pvf_to_mask.out.safe_wm_mask
         d99_atlas = transform_atlases_wkf.out.d99_atlas
-        charm = transform_atlases_wkf.out.charm
-        sarm = transform_atlases_wkf.out.sarm
-        inia19 = transform_atlases_wkf.out.inia19
+        charm_atlas = transform_atlases_wkf.out.charm_atlas
+        sarm_atlas = transform_atlases_wkf.out.sarm_atlas
+        inia19_atlas = transform_atlases_wkf.out.inia19_atlas
 }
 
 workflow transform_atlases_wkf {
@@ -290,9 +290,9 @@ workflow transform_atlases_wkf {
         }
     emit:
         d99_atlas = transform_d99
-        charm = transformed_charm
-        sarm = transformed_sarm
-        inia19 = transformed_inia19
+        charm_atlas = transformed_charm
+        sarm_atlas = transformed_sarm
+        inia19_atlas = transformed_inia19
 }
 
 workflow segment_wm_wkf {
