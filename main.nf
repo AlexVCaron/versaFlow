@@ -81,6 +81,7 @@ def display_run_info () {
     log.info " - Publish all outputs ${params.publish_all ? "(enabled)" : "(disabled)"}"
     log.info " - Verbose ${params.verbose_outputs ? "(enabled)" : "(disabled)"}"
     log.info " - Random seed     : $params.random_seed"
+    log.info " - Check memory    : $params.check_memory_requirements"
     log.info "Resources allocation :"
     log.info " - Use GPU ${params.use_cuda ? "(enabled)" : "(disabled)"}"
     if (params.use_cuda) {
@@ -122,6 +123,7 @@ def display_run_info () {
     log.info " - Register T1 to DWI ${params.register_t1_to_dwi ? "(enabled)" : "(disabled)"}"
     if (params.register_t1_to_dwi) {
         log.info " - Use Quick T1 to DWI ${params.quick_denoised_t1_registration ? "(enabled)" : "(disabled)"}"
+        log.info " - Register to template native resolution ${params.t1_registration_in_subject_space ? "(disabled)" : "(enabled)"}"
     }
     log.info "Upscaling :"
     log.info " - Resample T1 and DWI ${params.resample_data ? "(enabled)" : "(disabled)"}"
@@ -213,6 +215,8 @@ def display_usage () {
             "publish_mode" : "$params.publish_mode",
             "verbose_outputs" : "$params.verbose_outputs",
             "resample_data" : "$params.resample_data",
+            "check_memory_requirements": "$params.check_memory_requirements",
+            "memory_buffer_gb": "$params.memory_buffer_gb",
             "force_resampling_sequential" : "$params.force_resampling_sequential",
             "force_resampling_resolution" : "${params.force_resampling_resolution ? params.force_resampling_resolution : false}",
             "resampling_subdivision" : "$params.resampling_subdivision",
@@ -230,6 +234,7 @@ def display_usage () {
             "register_t1_to_dwi" : "$params.register_t1_to_dwi",
             "quick_t1_mask_registration" : "$params.quick_t1_mask_registration",
             "quick_denoised_t1_registration" : "$params.quick_denoised_t1_registration",
+            "t1_registration_in_subject_space": "$params.t1_registration_in_subject_space",
             "denoise_t1" : "$params.denoise_t1",
             "nlmeans_t1" : "$params.nlmeans_t1",
             "generate_tissue_segmentation" : "$params.generate_tissue_segmentation",

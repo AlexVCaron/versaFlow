@@ -61,7 +61,9 @@ include {
     merge_masks;
     check_odd_dimensions;
     pvf_to_mask;
-    validate_gradients
+    validate_gradients;
+    patch_in_mask;
+    apply_mask as mask_t1
 } from '../modules/processes/utils.nf'
 include {
     gibbs_removal as dwi_gibbs_removal;
@@ -135,6 +137,9 @@ params.register_t1_to_dwi = true
 params.generate_tissue_segmentation = false
 params.generate_wm_segmentation = true
 params.raw_to_processed_space = false
+params.resampling_subdivision = 2
+params.resampling_min_resolution = false
+params.force_resampling_resolution = false
 
 // T1 preprocess workflow parameters
 params.denoise_t1 = true
@@ -143,6 +148,7 @@ params.t1_intensity_normalization = true
 
 params.quick_t1_mask_registration = true
 params.quick_denoised_t1_registration = false
+params.t1_registration_in_subject_space = false
 
 params.b02t1_mask_registration_config = file("${get_config_path()}/b02t1_mask_registration_config.py")
 params.t1_mask_to_topup_b0_registration_config = file("${get_config_path()}/t1_mask_to_topup_b0_registration_config.py")
@@ -171,6 +177,10 @@ workflow preprocess_wkf {
         absent_dwi_mask_id_channel = filter_datapoints(
             dwi_mask_channel,
             { it[1] == "" }
+        ).map{ [it[0]] }
+        present_rev_id_channel = filter_datapoints(
+            rev_channel,
+            { it[1] != "" }
         ).map{ [it[0]] }
 
         // T1 preprocessing
@@ -205,10 +215,22 @@ workflow preprocess_wkf {
             1, [""]
         )
 
-        meta_channel = check_odd_dimensions.out.metadata
-            .map{ [it[0], it[1] instanceof Path ? it[1] : it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
-        rev_meta_channel = check_odd_dimensions.out.metadata
-            .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() }
+        checked_meta_channel = exclude_missing_datapoints(
+            check_odd_dimensions.out.metadata
+                .map{ it.flatten() }
+                .map{ [it[0], it[1..-1]] }
+                .transpose(),
+             1, ""
+        ).groupTuple()
+
+        meta_channel = checked_meta_channel
+            .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
+        rev_meta_channel = fill_missing_datapoints(
+            checked_meta_channel
+                .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() },
+            ref_id_channel,
+            1, [""]
+        )
 
         // Copy input channels for later
         dwi_channel.tap{ raw_dwi_channel }
@@ -226,7 +248,11 @@ workflow preprocess_wkf {
 
             rev_denoise_wkf(rev_channel, dwi_mask_channel, rev_meta_channel, "false")
             rev_channel = replace_dwi_file(rev_channel, rev_denoise_wkf.out.image)
-            rev_meta_channel = rev_denoise_wkf.out.metadata
+            rev_meta_channel = fill_missing_datapoints(
+                rev_denoise_wkf.out.metadata,
+                ref_id_channel,
+                1, [""]
+            )
         }
 
         // Perform DWI and b0 gibbs correction
@@ -281,14 +307,23 @@ workflow preprocess_wkf {
         dwi_channel = squash_wkf.out.dwi
         rev_channel = squash_wkf.out.rev
 
-        meta_channel = squash_wkf.out.metadata
-            .map{ it.flatten() }
-            .map{ [it[0], it[1..-1]] }
+        squashed_meta_channel = exclude_missing_datapoints(
+            squash_wkf.out.metadata
+                .map{ it.flatten() }
+                .map{ [it[0], it[1..-1]] }
+                .transpose(),
+             1, ""
+        ).groupTuple()
+
+        meta_channel = squashed_meta_channel
             .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
-        rev_meta_channel = squash_wkf.out.metadata
-            .map{ it.flatten() }
-            .map{ [it[0], it[1..-1]] }
-            .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() }
+
+        rev_meta_channel = fill_missing_datapoints(
+            squashed_meta_channel
+                .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() },
+            ref_id_channel,
+            1, [""]
+        )
 
         // Extract mean b0
         dwi_b0(
@@ -306,6 +341,7 @@ workflow preprocess_wkf {
         // Topup correction
         topup2eddy_channel = ref_id_channel.map{ it + ["", "", []] }
         dwi_after_topup_channel = dwi_channel
+        meta_after_topup_channel = meta_channel
         if ( params.topup_correction ) {
             ref_rev_id_channel = exclude_missing_datapoints(
                 raw_rev_channel, 1, ""
@@ -626,7 +662,10 @@ workflow preprocess_wkf {
         // Compute best resampling reference
         resampling_reference(
             collect_paths(dwi_channel.map{ it[0..1] }.join(t1_channel)),
-            "preprocess"
+            "preprocess",
+            params.resample_data ? params.resampling_subdivision : "1",
+            params.resample_data ? params.resampling_min_resolution : "",
+            params.resample_data ? params.force_resampling_resolution : ""
         )
 
         reference_channel = resampling_reference.out.reference
@@ -777,7 +816,8 @@ workflow preprocess_wkf {
                 meta_channel,
                 true,
                 true,
-                params.quick_denoised_t1_registration
+                params.quick_denoised_t1_registration,
+                params.t1_registration_in_subject_space
             )
 
             t1_channel = t1_registration_wkf.out.t1
@@ -820,7 +860,7 @@ workflow preprocess_wkf {
             )
             ants_transform_wm_mask(
                 tissue_mask_to_register_channel
-                    .map{ [it[0], it[1][1]] }
+                    .map{ [it[0], it[1][0]] }
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
@@ -829,7 +869,7 @@ workflow preprocess_wkf {
             )
             ants_transform_gm_mask(
                 tissue_mask_to_register_channel
-                    .map{ [it[0], it[1][2]] }
+                    .map{ [it[0], it[1][1]] }
                     .join(t1_channel)
                     .join(t1_registration_wkf.out.transform)
                     .map{ it + ["", ""] },
@@ -1046,6 +1086,8 @@ workflow preprocess_wkf {
         )
 
         validate_gradients_wkf(dwi_channel, dwi_mask_channel)
+        mask_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", true)
+        t1_channel = mask_t1.out.image
 
         dwi_channel = rename_processed_dwi(
             collect_paths(validate_gradients_wkf.out.dwi),
@@ -1103,10 +1145,14 @@ workflow t1_preprocess_wkf {
     main:
         def ref_id_channel = t1_channel.map{ [it[0]] }
         mask_channel = fill_missing_datapoints(mask_channel, ref_id_channel, 1, [""])
+        missing_t1_mask = filter_datapoints(
+            mask_channel,
+            { it[1] == "" }
+        ).map{ [it[0]] }
 
         if ( params.denoise_t1 ) {
             if ( params.nlmeans_t1 ) {
-                nlmeans_denoise(t1_channel.join(mask_channel).map{ it + [""] }, "preprocess", "true")
+                nlmeans_denoise(t1_channel.map{ it + ["", ""] }, "preprocess", "true")
                 t1_channel = nlmeans_denoise.out.image
             }
             else {
@@ -1119,7 +1165,7 @@ workflow t1_preprocess_wkf {
             n4_denoise_wkf(
                 t1_channel,
                 t1_channel.map{ [it[0], ""] },
-                mask_channel,
+                Channel.empty(),
                 t1_channel.map{ [it[0], ""] },
                 params.t1_n4_normalization_config,
                 true

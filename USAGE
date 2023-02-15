@@ -77,6 +77,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
     --publish_mode                          Strategy used to copy the processed files in the output root [copy|link] ($publish_mode)
     --verbose_outputs                       Output of additional files and of debug messages in logs [true|false] ($verbose_outputs)
     --random_seed                           Random seed to input to all random number generators ($random_seed)
+    --check_memory_requirements             Check if enough memory is available to run the pipeline [true|false] ($check_memory_requirements)
 
 - Resource allocation :
     --use_cuda                              Enable usage of CUDA for Eddy (Require a Nvidia GPU) [true|false] ($use_cuda)
@@ -133,6 +134,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
 
         --quick_t1_mask_registration        Use Quick parametrization to perform T1 mask to DWI registration [true|false] ($quick_t1_mask_registration)
         --quick_denoised_t1_registration    Use Quick parametrization to perform T1 to DWI registration [true|false] ($quick_t1_mask_registration)
+        --t1_registration_in_subject_space  Use subject anatomical image resolution to perform T1 to b0 registration, instead of the template's finer native resolution [true|false] ($t1_registration_in_subject_space)
 
         --resampling_subdivision            Number of subdivisions of the image spacing to perform when resampling ($resampling_subdivision)
         --resampling_min_resolution         Minimum resolution possible for resampled images ($resampling_min_resolution)

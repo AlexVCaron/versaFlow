@@ -78,6 +78,9 @@ include {
 
 
 params.use_quick = false
+params.resampling_subdivision = 2
+params.resampling_min_resolution = false
+
 params.tissue_segmentation_root = "${get_data_path()}/maccaca_mulatta/tissue_segmentation"
 
 params.t1_registration_extract_b0_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
@@ -108,6 +111,7 @@ workflow t12b0_registration {
         publish_mask
         publish_t1
         use_quick
+        register_in_subject_space
     main:
         extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
 
@@ -118,13 +122,30 @@ workflow t12b0_registration {
             t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_no_bv.nii.gz")] }
         )
         template_dilated_mask_channel = prepend_sid_template_dilated_mask(
-            t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_no_bv_dilated.nii.gz")] }
+            t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_whole_no_bv.nii.gz")] }
         )
 
-        resampling_reference(dwi_channel.map{ it.subList(0, 2) }.join(t1_channel).join(template_channel).map{ [it[0], it[1..-1]] }, "preprocess")
+        if ( register_in_subject_space ) {
+            registration_reference = t1_channel.map{ it[0..1] }
+        }
+        else {
+            resampling_reference(
+                dwi_channel
+                    .map{ it[0..1] }
+                    .join(t1_channel)
+                    .join(template_channel)
+                    .map{ [it[0], it[1..-1]] },
+                "preprocess",
+                params.resampling_subdivision,
+                params.resampling_min_resolution,
+                ""
+            )
+            registration_reference = resampling_reference.out.reference
+        }
+
         resample_template(
             template_channel
-                .join(resampling_reference.out.reference)
+                .join(registration_reference)
                 .join(template_mask_channel)
                 .map{ it + [""] },
             "preprocess",
@@ -135,7 +156,7 @@ workflow t12b0_registration {
         )
         resample_dilated_mask(
             template_dilated_mask_channel
-                .join(resampling_reference.out.reference)
+                .join(registration_reference)
                 .map{ it + ["", ""] },
             "preprocess",
             "nn",
@@ -243,13 +264,13 @@ workflow t1_to_b0_affine {
         aff_pa_dwi(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
         mask_pa_dwi_dilated(aff_pa_dwi.out.image.join(dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
         dti_fa_eroded(dwi_channel.join(erode_dwi_mask.out.mask), "preprocess", "preprocess", false)
-        mask_t1_dilated(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
+        mask_t1_dilated(t1_channel.join(dilate_t1_mask.out.mask).map{ it + [""] }, "preprocess", "false")
 
         b0_moving_channel = mask_b0_dilated.out.image
             .join(mask_pa_dwi_dilated.out.image)
             .join(dti_fa_eroded.out.fa)
             .map{ [it[0], it[1..-1]] }
-        t1_moving_channel = mask_t1_dilated.out.image
+        t1_moving_channel = t1_channel
             .map{ [it[0], [it[1]]] }
 
         t1_to_reference_affine(
@@ -389,13 +410,13 @@ workflow t1_to_b0_syn {
         mask_fa(dti_fa_np.out.fa.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         mask_b0(syn_extract_b0.out.b0.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         mask_pa_dwi(syn_pa_dwi.out.image.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
-        mask_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
+        mask_t1(t1_channel.join(syn_dilate_t1_mask.out.mask).map{ it + [""] }, "preprocess", "false")
 
         b0_moving_channel = mask_b0.out.image
             .join(mask_pa_dwi.out.image)
             .join(mask_fa.out.image)
             .map{ [it[0], it[1..-1]] }
-        t1_moving_channel = mask_t1.out.image
+        t1_moving_channel = t1_channel
             .map{ [it[0], [it[1]]] }
         reference_fixed_channel = reference_channel.map{ [it[0], [it[1]]] }
 
@@ -403,7 +424,9 @@ workflow t1_to_b0_syn {
             reference_fixed_channel,
             t1_moving_channel,
             t1_mask_channel,
-            dilated_reference_mask_channel.join(syn_dilate_t1_mask.out.mask).map{ [it[0], it[1..-1]] },
+            dilated_reference_mask_channel
+                .join(syn_dilate_t1_mask.out.mask)
+                .map{ [it[0], it[1..-1]] },
             null,
             null,
             "",
@@ -417,8 +440,10 @@ workflow t1_to_b0_syn {
         b0_to_reference_syn(
             reference_fixed_channel,
             b0_moving_channel,
-            null,
-            dilated_reference_mask_channel.join(syn_dilate_dwi_mask.out.mask).map{ [it[0], it[1..-1]] },
+            dwi_mask_channel,
+            dilated_reference_mask_channel
+                .join(syn_dilate_dwi_mask.out.mask)
+                .map{ [it[0], it[1..-1]] },
             null,
             null,
             "",
@@ -441,12 +466,14 @@ workflow t1_to_b0_syn {
         )
 
         t1_to_b0_final_syn(
-            b0_to_reference_syn.out.image
+            b0_to_reference_syn.out.registration
                 .join(transform_fa_syn.out.image)
                 .map{ [it[0], it[1..-1]] },
-            t1_to_reference_syn.out.image,
+            t1_to_reference_syn.out.registration,
             null,
-            null,
+            b0_to_reference_syn.out.image
+                .join(t1_to_reference_syn.out.image)
+                .map{ [it[0], it[1..-1]] },
             null,
             null,
             "",
