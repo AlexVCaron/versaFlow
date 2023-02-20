@@ -28,7 +28,7 @@ include {
     nlmeans_denoise;
     nlmeans_denoise as nlmeans_denoise_b0_from_fwd_dwi;
     nlmeans_denoise as nlmeans_denoise_b0_from_rev_dwi;
-    prepare_topup;
+    prepare_epi_correction;
     topup;
     prepare_eddy;
     eddy
@@ -56,12 +56,14 @@ include {
 
 params.eddy_with_reverse = true
 params.use_cuda = false
+params.epi_algorithm = "Topup"
 
 params.ants_registration_base_config = file("${get_config_path()}/ants_registration_base_config.py")
 params.ants_transform_base_config = file("${get_config_path()}/ants_transform_base_config.py")
 params.preproc_extract_b0_topup_config = file("${get_config_path()}/extract_mean_b0_base_config.py")
 params.preproc_squash_b0_config = file("${get_config_path()}/preproc_squash_b0_config.py")
 params.prepare_topup_base_config = file("${get_config_path()}/prepare_topup_base_config.py")
+params.prepare_bm_epi_base_config = file("${get_config_path()}/prepare_bm_epi_base_config.py")
 params.prepare_eddy_base_config = file("${get_config_path()}/prepare_eddy_base_config.py")
 params.prepare_eddy_cuda_base_config = file("${get_config_path()}/prepare_eddy_cuda_base_config.py")
 params.concatenate_base_config = file("${get_config_path()}/concatenate_base_config.py")
@@ -176,26 +178,51 @@ workflow topup_wkf {
 
         generate_b0_bval(b0_rev.map{ it.subList(0, 2) }, "false")
 
-        prepare_topup(
+        prepare_epi_correction(
             cat_topup.out.image.join(
                 topupable_dwi_channel.map{ [it[0], it[2]] }
             ).join(
                 dwi_rev.map{ [it[0], it[2]] }.mix(generate_b0_bval.out.bval)
             ).join(metadata_channel),
-            params.prepare_topup_base_config
+            params.epi_algorithm,
+            (params.epi_algorithm == "Topup") ? params.prepare_topup_base_config : params.prepare_bm_epi_base_config
         )
-        data_channel = prepare_topup.out.config.map{ it.subList(0, 4) }.join(cat_topup.out.image)
 
-        topup(data_channel.join(prepare_topup.out.metadata), "preprocess")
+        b0_output = Channel.empty()
+        field_output = Channel.empty()
+        movpar_output = Channel.empty()
+        coeff_output = Channel.empty()
+        topup_output = Channel.empty()
+        if ( params.epi_algorithm == "Topup" ) {
+            data_channel = prepare_epi_correction.out.config.map{ it.subList(0, 4) }.join(cat_topup.out.image)
+
+            topup(data_channel.join(prepare_epi_correction.out.metadata), "preprocess")
+            b0_output = topup.out.image
+            field_output = topup.out.field
+            movpar_output = topup.out.transfo.map{ [it[0], it[1]] }
+            coeff_output = topup.out.transfo.map{ [it[0], it[2]] }
+            topup_output = topup.out.pkg
+        }
+        else {
+            bm_epi_correction(
+                prepare_epi_correction.out.script
+                    .join(b0_channel)
+                    .join(b0_rev_channel),
+                "preprocess"
+            )
+            b0_output = bm_epi_correction.out.image
+            field_output = bm_epi_correction.out.field
+        }
+
         excluded_indexes = filter_datapoints(rev_channel, { it[1] == "" })
     emit:
-        b0 = topup.out.image
-        field = topup.out.field
-        movpar = topup.out.transfo.map{ [it[0], it[1]] }
-        coeff = topup.out.transfo.map{ [it[0], it[2]] }
+        b0 = b0_output
+        field = field_output
+        movpar = movpar_output
+        coeff = coeff_output
         param = prepare_topup.out.config.map{ [it[0], it[2]] }
         prefix = prepare_topup.out.config.map{ [it[0], it[-1]] }
-        topup = topup.out.pkg
+        topup = topup_output
         metadata = prepare_topup.out.metadata
         in_metadata_w_topup = sort_as_with_name(prepare_topup.out.in_metadata_w_topup, acq_channel.map{ it.flatten() })
         topupable_indexes = topupable_indexes

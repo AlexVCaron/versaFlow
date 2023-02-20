@@ -129,7 +129,8 @@ include {
 params.gaussian_noise_correction = true
 params.gibbs_ringing_correction = true
 params.dwi_mask_from_t1_mask = true
-params.topup_correction = true
+params.epi_correction = true
+params.epi_algorithm = "Topup"
 params.eddy_correction = true
 params.dwi_intensity_normalization = true
 params.resample_data = true
@@ -342,7 +343,7 @@ workflow preprocess_wkf {
         topup2eddy_channel = ref_id_channel.map{ it + ["", "", []] }
         dwi_after_topup_channel = dwi_channel
         meta_after_topup_channel = meta_channel
-        if ( params.topup_correction ) {
+        if ( params.epi_correction ) {
             ref_rev_id_channel = exclude_missing_datapoints(
                 raw_rev_channel, 1, ""
             ).map{ [it[0]] }
@@ -365,11 +366,7 @@ workflow preprocess_wkf {
                 topup_dwi_channel,
                 topup_rev_channel,
                 squash_for_topup_wkf.out.metadata.map{ it.flatten() }
-            )
-
-            topup2eddy_channel = topup_wkf.out.param
-                .join(topup_wkf.out.prefix)
-                .join(topup_wkf.out.topup.map{ [it[0], it.subList(1, it.size())] })
+            )        
 
             dwi2topup_channel = rename_dwi_for_topup(
                 collect_paths(topup_wkf.out.topupable_indexes.join(dwi_channel)),
@@ -392,25 +389,31 @@ workflow preprocess_wkf {
                 "dwi_to_topup_rev_metadata"
             ).map{ it.flatten() }
 
-            // Applied estimated susceptibility correction to DWI
-            apply_topup_wkf(
-                dwi2topup_channel,
-                rev2topup_channel,
-                topup2eddy_channel,
-                meta2topup_channel
-                    .join(rev_meta2topup_channel)
-                    .map{ [it[0], it[1..-1]] },
-                ""
-            )
+            if ( params.epi_algorithm == "Topup" ) {
+                topup2eddy_channel = topup_wkf.out.param
+                    .join(topup_wkf.out.prefix)
+                    .join(topup_wkf.out.topup.map{ [it[0], it.subList(1, it.size())] })
+                
+                // Applied estimated susceptibility correction to DWI
+                apply_topup_wkf(
+                    dwi2topup_channel,
+                    rev2topup_channel,
+                    topup2eddy_channel,
+                    meta2topup_channel
+                        .join(rev_meta2topup_channel)
+                        .map{ [it[0], it[1..-1]] },
+                    ""
+                )
 
-            topup_corrected_dwi_channel = rename_topup_corrected_dwi(
-                collect_paths(apply_topup_wkf.out.dwi),
-                "topup_corrected"
-            ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
-            topup_corrected_dwi_meta_channel = rename_topup_corrected_metadata(
-                collect_paths(apply_topup_wkf.out.metadata),
-                "topup_corrected_metadata"
-            ).map{ it.flatten() }
+                topup_corrected_dwi_channel = rename_topup_corrected_dwi(
+                    collect_paths(apply_topup_wkf.out.dwi),
+                    "topup_corrected"
+                ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+                topup_corrected_dwi_meta_channel = rename_topup_corrected_metadata(
+                    collect_paths(apply_topup_wkf.out.metadata),
+                    "topup_corrected_metadata"
+                ).map{ it.flatten() }
+            }
 
             dwi_after_topup_channel = excluded_id_channel
                 .join(dwi_channel)

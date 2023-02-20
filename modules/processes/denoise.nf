@@ -234,24 +234,27 @@ process normalize_inter_b0 {
         """
 }
 
-process prepare_topup {
+process prepare_epi_correction {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
     input:
         tuple val(sid), path(b0s), path(dwi_bval), file(rev_bval), file(metadata)
+        val(algo)
         path(config)
     output:
-        tuple val(sid), path("${b0s.simpleName}__topup_script.sh"), path("${b0s.simpleName}__topup_acqp.txt"), path("${b0s.simpleName}__topup_config.cnf"), val("${sid}__topup_results"), emit: config
-        tuple val(sid), path("${b0s.simpleName}__topup_metadata.*"), emit: metadata
-        tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_topup
+        tuple val(sid), path("${b0s.simpleName}__${algo}_script.sh"), path("${b0s.simpleName}__${algo}_acqp.txt"), path("${b0s.simpleName}__${algo}_config.cnf"), val("${sid}__${algo}_results"), emit: config
+        tuple val(sid), path("${b0s.simpleName}__${algo}_script.sh"), emit: script
+        tuple val(sid), path("${b0s.simpleName}__${algo}_metadata.*"), emit: metadata
+        tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_${algo}_indexes_metadata.*"), optional: true, emit : in_metadata_w_bm_correction
     script:
         """
-        mrhardi topup \
+        mrhardi epi_correction \
+            --algo $algo \
             --b0s $b0s \
             --bvals ${dwi_bval.join(',')} \
             --rev_bvals ${rev_bval.join(',')} \
-            --out ${b0s.simpleName}__topup \
+            --out ${b0s.simpleName}__${algo} \
             --b0-thr ${params.b0_threshold ? params.b0_threshold : "0"} \
             --config $config \
             --verbose
@@ -282,12 +285,28 @@ process topup {
         """
 }
 
+process bm_epi_correction {
+    label "BM_EPI_CORRECTION"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
+
+    input:
+        tuple val(sid), path(bm_script), path(b0), path(rev_b0)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${sid}_b0_epi_corrected.nii.gz"), emit: image
+        tuple val(sid), path("${sid}__epi_correction_field.nii.gz"), emit: field
+    script:
+        """
+        ./$bm_script --b0 $b0 --rev_b0 $rev_b0 ${sid}__bm_epi_corrected
+        """
+}
+
 process prepare_eddy {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
     input:
-        tuple val(sid), val(prefix), file(topup_acqp), val(rev_prefix), path(data), path(metadata)
+        tuple val(sid), val(prefix), file(topup_acqp), file(field), val(rev_prefix), path(data), path(metadata)
         path(config)
     output:
         tuple val(sid), path("${prefix}__eddy_script.sh"), path("${prefix}__eddy_index.txt"), path("${prefix}__eddy_acqp.txt"), emit: config
@@ -344,7 +363,7 @@ process eddy {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(eddy_script), path(eddy_index), path(eddy_acqp), file(eddy_slspec), path(dwi), path(bval), path(bvec), path(mask), val(topup_prefix), file(topup_package), path(metadata)
+        tuple val(sid), path(eddy_script), path(eddy_index), path(eddy_acqp), file(eddy_slspec), file(epi_field), path(dwi), path(bval), path(bvec), path(mask), val(topup_prefix), file(topup_package), path(metadata)
         val(caller_name)
     output:
         tuple val(sid), path("${dwi.simpleName}__eddy_corrected.nii.gz"), emit: dwi
@@ -364,7 +383,10 @@ process eddy {
 
         args += " $eddy_acqp $eddy_index"
 
-        if ( topup_prefix ) {
+        if ( !epi_field.empty() ) {
+            args += " --field $epi_field"
+        }
+        else if ( topup_prefix ) {
             args += " --topup $topup_prefix"
         }
 

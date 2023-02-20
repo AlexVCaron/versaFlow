@@ -36,7 +36,7 @@ process atropos {
         scil_image_math.py addition ${segmentation.simpleName}_02.nii.gz ${segmentation.simpleName}_04.nii.gz ${segmentation.simpleName}_02.nii.gz --data_type uint8 -f
         scil_image_math.py addition ${segmentation.simpleName}_01.nii.gz ${segmentation.simpleName}_05.nii.gz ${segmentation.simpleName}_01.nii.gz --data_type uint8 -f
         rm ${segmentation.simpleName}_04.nii.gz ${segmentation.simpleName}_05.nii.gz
-        antsAtroposN4.sh -u 0 -d 3 -a $t1_image -x $mask -c ${params.segmentation_classes.size()} -p ${segmentation.simpleName}_%02d.nii.gz -o ${sid}_ -w 0.5
+        antsAtroposN4.sh -u 0 -d 3 -a $t1_image -x $mask -c ${params.segmentation_classes.size()} -p ${segmentation.simpleName}_%02d.nii.gz -o ${sid}_
         mv ${sid}_Segmentation.nii.gz tmp.nii.gz
         mv tmp.nii.gz ${sid}_segmentation.nii.gz
         $after_script

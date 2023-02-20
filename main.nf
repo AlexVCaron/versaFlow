@@ -102,8 +102,11 @@ def display_run_info () {
     if (params.normalize_inter_b0) {
         log.info "    - Normalization strategy : $params.b0_normalization_strategy"
     }
-    log.info " - Topup ${params.topup_correction ? "(enabled)" : "(disabled)"}"
-    log.info " - Eddy ${params.eddy_correction ? "(enabled)" : "(disabled)"}"
+    log.info " - EPI correction ${params.epi_correction ? "(enabled)" : "(disabled)"}"
+    if (params.epi_correction) {
+        log.info "    - EPI correction algorithm : ${params.epi_algorithm}"
+    }
+    log.info " - Eddy correction ${params.eddy_correction ? "(enabled)" : "(disabled)"}"
     if (params.eddy_correction) {
         log.info "    - DWI shells check ${params.eddy_force_shelled ? "(disabled)" : "(enabled)"}"
         log.info "    - Use reverse phase ${params.eddy_with_reverse ? "(enabled)" : "(disabled)"}"
@@ -242,7 +245,8 @@ def display_usage () {
             "gaussian_noise_correction" : "$params.gaussian_noise_correction",
             "gibbs_ringing_correction" : "$params.gibbs_ringing_correction",
             "normalize_inter_b0" : "$params.normalize_inter_b0",
-            "topup_correction" : "$params.topup_correction",
+            "epi_correction" : "$params.epi_correction",
+            "epi_algorithm": "$params.epi_algorithm",
             "eddy_correction" : "$params.eddy_correction",
             "eddy_force_shelled" : "$params.eddy_force_shelled",
             "eddy_with_reverse" : "$params.eddy_with_reverse",
