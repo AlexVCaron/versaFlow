@@ -58,6 +58,19 @@ process PFT_tracking {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_compute_pft.py $fodf $seeding_mask $map_include $map_exclude ${sid}_pft_${algo}_seed_${seed}_tracking.trk --algo $algo --${params.pft_seeding_strategy} $params.pft_number_of_seeds --seed $seed --step $params.pft_step_size --theta $params.pft_theta_max --sfthres $params.pft_sfthres --sfthres_init $params.pft_sfthres_init --min_length $params.pft_min_tract_length --max_length $params.pft_max_tract_length --particles $params.pft_number_of_particles --back $params.pft_back_tracking_length --forward $params.pft_forward_tracking_length $compress --sh_basis descoteaux07
+        scil_compute_pft.py $fodf $seeding_mask $map_include $map_exclude ${sid}_pft_${algo}_seed_${seed}_tracking.trk \
+            --algo $algo \
+            --${params.pft_seeding_strategy} $params.pft_number_of_seeds \
+            --seed $seed \
+            --step $params.pft_step_size \
+            --theta $params.pft_theta_max \
+            --sfthres $params.pft_sfthres \
+            --sfthres_init $params.pft_sfthres_init \
+            --min_length $params.pft_min_tract_length \
+            --max_length $params.pft_max_tract_length \
+            --particles $params.pft_number_of_particles \
+            --back $params.pft_back_tracking_length \
+            --forward $params.pft_forward_tracking_length $compress \
+            --sh_basis descoteaux07
         """
 }

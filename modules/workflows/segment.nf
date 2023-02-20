@@ -182,7 +182,7 @@ workflow transform_atlases_wkf {
         transformed_inia19 = Channel.empty()
 
         if ( params.register_d99 ) {
-            d99_channel = prepend_sid_d99(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/D99_atlas_in_NMT_v2.0_asym.nii.gz")] })
+            d99_channel = prepend_sid_d99(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/D99_atlas.nii.gz")] })
             
             resample_d99(
                 d99_channel
@@ -201,7 +201,7 @@ workflow transform_atlases_wkf {
                     .join(template_registration_transform)
                     .map{ it + ["", ""] },
                 "segmentation",
-                "atlases", "true", "D99_atlas",
+                "atlases", "true", "",
                 params.ants_transform_segmentation_config
             )
 
@@ -209,7 +209,7 @@ workflow transform_atlases_wkf {
         }
 
         if ( params.register_charm ) {
-            charm_channel = prepend_sid_charm(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/CHARM_in_NMT_v2.0_asym.nii.gz")] })
+            charm_channel = prepend_sid_charm(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/CHARM_atlas.nii.gz")] })
             
             resample_charm(
                 charm_channel
@@ -228,7 +228,7 @@ workflow transform_atlases_wkf {
                     .join(template_registration_transform)
                     .map{ it + ["", ""] },
                 "segmentation",
-                "atlases", "true", "CHARM",
+                "atlases", "true", "",
                 params.ants_transform_segmentation_config
             )
 
@@ -236,7 +236,7 @@ workflow transform_atlases_wkf {
         }
 
         if ( params.register_sarm ) {
-            sarm_channel = prepend_sid_sarm(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/SARM_in_NMT_v2.0_asym.nii.gz")] })
+            sarm_channel = prepend_sid_sarm(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/SARM_atlas.nii.gz")] })
             
             resample_sarm(
                 sarm_channel
@@ -255,7 +255,7 @@ workflow transform_atlases_wkf {
                     .join(template_registration_transform)
                     .map{ it + ["", ""] },
                 "segmentation",
-                "atlases", "true", "SARM",
+                "atlases", "true", "",
                 params.ants_transform_segmentation_config
             )
 
@@ -263,7 +263,7 @@ workflow transform_atlases_wkf {
         }
 
         if ( params.register_inia19 ) {
-            inia19_channel = prepend_sid_inia19(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/INIA19_in_NMT_v2.0_asym.nii.gz")] })
+            inia19_channel = prepend_sid_inia19(template_resampling_reference.map{ [it[0], file("${params.tissue_segmentation_root}/INIA19_atlas.nii.gz")] })
             
             resample_inia19(
                 inia19_channel
@@ -282,14 +282,14 @@ workflow transform_atlases_wkf {
                     .join(template_registration_transform)
                     .map{ it + ["", ""] },
                 "segmentation",
-                "atlases", "true", "INIA19",
+                "atlases", "true", "",
                 params.ants_transform_segmentation_config
             )
 
             transformed_inia19 = transform_inia19.out.image
         }
     emit:
-        d99_atlas = transform_d99
+        d99_atlas = transformed_d99
         charm_atlas = transformed_charm
         sarm_atlas = transformed_sarm
         inia19_atlas = transformed_inia19
