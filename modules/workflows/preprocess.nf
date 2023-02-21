@@ -48,6 +48,7 @@ include {
     cat_datasets as concatenate_rev_b0;
     timeseries_mean as get_average;
     apply_topup;
+    apply_epi_field;
     check_dwi_conformity;
     generate_b0_bval;
     split_image as split_b0;
@@ -207,7 +208,8 @@ workflow topup_wkf {
             bm_epi_correction(
                 prepare_epi_correction.out.script
                     .join(b0_channel)
-                    .join(b0_rev_channel),
+                    .join(b0_rev_channel)
+                    .join(prepare_epi_correction.out.metadata),
                 "preprocess"
             )
             b0_output = bm_epi_correction.out.image
@@ -312,6 +314,31 @@ workflow apply_topup_wkf {
         metadata = metadata
 }
 
+workflow apply_epi_field_wkf {
+    take:
+        dwi_channel
+        rev_channel
+        epi_field_channel
+        meta_channel
+        additional_publish_path
+    main:
+        data_channel = dwi_channel
+            .map{ it[0..1] }
+            .join(rev_channel.map{ it[0..1] })
+        apply_epi_field(
+            data_channel
+                .join(epi_field_channel)
+                .join(meta_channel),
+            "preprocess",
+            additional_publish_path
+        )
+        dwi = apply_topup.out.dwi
+        metadata = apply_topup.out.metadata
+    emit:
+        dwi = dwi
+        metadata = metadata
+}
+
 workflow squash_wkf {
     take:
         dwi_channel
@@ -338,6 +365,7 @@ workflow eddy_wkf {
         dwi_channel
         mask_channel
         topup_channel
+        epi_field_channel
         topup_b0_channel
         rev_channel
         metadata_channel
@@ -421,6 +449,7 @@ workflow eddy_wkf {
         eddy(
             prepare_eddy.out.config
                 .join(slspec_channel)
+                .join(epi_field_channel)
                 .join(dwi_channel)
                 .join(mask_channel)
                 .join(topup_channel.map{ [it[0], it[2], it[3]] })

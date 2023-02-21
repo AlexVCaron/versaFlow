@@ -290,11 +290,12 @@ process bm_epi_correction {
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
     input:
-        tuple val(sid), path(bm_script), path(b0), path(rev_b0)
+        tuple val(sid), path(bm_script), path(b0), path(rev_b0), path(output_metadata)
         val(caller_name)
     output:
         tuple val(sid), path("${sid}_b0_epi_corrected.nii.gz"), emit: image
         tuple val(sid), path("${sid}__epi_correction_field.nii.gz"), emit: field
+        tuple val(sid), path(output_metadata), optional: true, emit: metadata
     script:
         """
         ./$bm_script --b0 $b0 --rev_b0 $rev_b0 ${sid}__bm_epi_corrected
@@ -306,7 +307,7 @@ process prepare_eddy {
     label "res_single_cpu"
 
     input:
-        tuple val(sid), val(prefix), file(topup_acqp), file(field), val(rev_prefix), path(data), path(metadata)
+        tuple val(sid), val(prefix), file(topup_acqp), val(rev_prefix), path(data), path(metadata)
         path(config)
     output:
         tuple val(sid), path("${prefix}__eddy_script.sh"), path("${prefix}__eddy_index.txt"), path("${prefix}__eddy_acqp.txt"), emit: config

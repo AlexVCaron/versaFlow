@@ -94,7 +94,9 @@ include {
     topup_wkf;
     apply_topup_wkf;
     apply_topup_wkf as raw_apply_topup_wkf;
-    eddy_wkf
+    eddy_wkf;
+    apply_epi_field_wkf;
+    apply_epi_field_wkf as raw_apply_epi_field_wkf
 } from "../modules/workflows/preprocess.nf"
 include {
     t1_mask_to_b0;
@@ -389,6 +391,8 @@ workflow preprocess_wkf {
                 "dwi_to_topup_rev_metadata"
             ).map{ it.flatten() }
 
+            topup2eddy_channel = Channel.empty()
+            epi_field_channel = Channel.empty()
             if ( params.epi_algorithm == "Topup" ) {
                 topup2eddy_channel = topup_wkf.out.param
                     .join(topup_wkf.out.prefix)
@@ -414,6 +418,41 @@ workflow preprocess_wkf {
                     "topup_corrected_metadata"
                 ).map{ it.flatten() }
             }
+            else {
+                epi_field_channel = topup_wkf.out.field
+
+                // Applied estimated susceptibility correction to DWI
+                apply_epi_field_wkf(
+                    dwi2topup_channel,
+                    rev2topup_channel,
+                    epi_field_channel,
+                    meta2topup_channel
+                        .join(rev_meta2topup_channel)
+                        .map{ [it[0], it[1..-1]] },
+                    ""
+                )
+
+                topup_corrected_dwi_channel = rename_topup_corrected_dwi(
+                    collect_paths(apply_epi_field_wkf.out.dwi),
+                    "epi_corrected"
+                ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+                topup_corrected_dwi_meta_channel = rename_topup_corrected_metadata(
+                    collect_paths(apply_epi_field_wkf.out.metadata),
+                    "epi_corrected_metadata"
+                ).map{ it.flatten() }
+            }
+
+            epi_field_channel = fill_missing_datapoints(
+                epi_field_channel,
+                ref_id_channel,
+                1, [""]
+            )
+
+            topup2eddy_channel = fill_missing_datapoints(
+                topup2eddy_channel,
+                ref_id_channel,
+                1, ["", "", []]
+            )
 
             dwi_after_topup_channel = excluded_id_channel
                 .join(dwi_channel)
@@ -442,13 +481,6 @@ workflow preprocess_wkf {
             if ( !params.eddy_correction ) {
                 dwi_channel = dwi_after_topup_channel
                 meta_channel = meta_after_topup_channel
-            }
-            else {
-                topup2eddy_channel = fill_missing_datapoints(
-                    topup2eddy_channel,
-                    ref_id_channel,
-                    1, ["", "", []]
-                )
             }
 
             // Apply susceptibility corrections to raw images (for comparison)
@@ -481,23 +513,44 @@ workflow preprocess_wkf {
                         ).map{ it.flatten() }
                     )
 
-                raw_apply_topup_wkf(
-                    topup_wkf.out.topupable_indexes.join(raw_dwi_channel),
-                    topup_wkf.out.topupable_indexes
-                        .join(raw_rev_channel)
-                        .map{ it[0..1] },
-                    topup2eddy_channel,
-                    collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
-                    "raw"
-                )
+                if ( params.epi_algorithm == "Topup" ) {
+                    raw_apply_topup_wkf(
+                        topup_wkf.out.topupable_indexes.join(raw_dwi_channel),
+                        topup_wkf.out.topupable_indexes
+                            .join(raw_rev_channel)
+                            .map{ it[0..1] },
+                        topup2eddy_channel,
+                        collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
+                        "raw"
+                    )
 
-                raw_dwi_channel = excluded_id_channel
-                    .join(raw_dwi_channel)
-                    .mix(raw_apply_topup_wkf.out.dwi)
+                    raw_dwi_channel = excluded_id_channel
+                        .join(raw_dwi_channel)
+                        .mix(raw_apply_topup_wkf.out.dwi)
 
-                raw_meta_channel = excluded_id_channel
-                    .join(raw_meta_channel)
-                    .mix(raw_apply_topup_wkf.out.metadata)
+                    raw_meta_channel = excluded_id_channel
+                        .join(raw_meta_channel)
+                        .mix(raw_apply_topup_wkf.out.metadata)
+                }
+                else {
+                    raw_apply_epi_field_wkf(
+                        topup_wkf.out.topupable_indexes.join(raw_dwi_channel),
+                        topup_wkf.out.topupable_indexes
+                            .join(raw_rev_channel)
+                            .map{ it[0..1] },
+                        epi_field_channel,
+                        collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
+                        "raw"
+                    )
+
+                    raw_dwi_channel = excluded_id_channel
+                        .join(raw_dwi_channel)
+                        .mix(raw_apply_epi_field_wkf.out.dwi)
+
+                    raw_meta_channel = excluded_id_channel
+                        .join(raw_meta_channel)
+                        .mix(raw_apply_epi_field_wkf.out.metadata)
+                }
             }
         }
 
@@ -596,6 +649,7 @@ workflow preprocess_wkf {
                 dwi_channel,
                 dwi_mask_channel,
                 topup2eddy_channel,
+                epi_field_channel,
                 b0_channel,
                 rev_channel,
                 meta_channel.join(rev_meta_channel)
