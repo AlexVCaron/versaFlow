@@ -243,14 +243,15 @@ process prepare_epi_correction {
         val(algo)
         path(config)
     output:
-        tuple val(sid), path("${b0s.simpleName}__${algo}_script.sh"), path("${b0s.simpleName}__${algo}_acqp.txt"), path("${b0s.simpleName}__${algo}_config.cnf"), val("${sid}__${algo}_results"), emit: config
         tuple val(sid), path("${b0s.simpleName}__${algo}_script.sh"), emit: script
+        tuple val(sid), path("${b0s.simpleName}__${algo}_acqp.txt"), emit: acqp
+        tuple val(sid), path("${b0s.simpleName}__${algo}_config.cnf"), optional: true, emit: config
+        tuple val(sid), val("${sid}__${algo}_results"), emit: awaited_out_name
         tuple val(sid), path("${b0s.simpleName}__${algo}_metadata.*"), emit: metadata
-        tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_${algo}_indexes_metadata.*"), optional: true, emit : in_metadata_w_bm_correction
+        tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_${algo}_indexes_metadata.*"), optional: true, emit : in_metadata_w_epi_correction
     script:
         """
-        mrhardi epi_correction \
-            --algo $algo \
+        mrhardi epi $algo \
             --b0s $b0s \
             --bvals ${dwi_bval.join(',')} \
             --rev_bvals ${rev_bval.join(',')} \
@@ -293,12 +294,13 @@ process bm_epi_correction {
         tuple val(sid), path(bm_script), path(b0), path(rev_b0), path(output_metadata)
         val(caller_name)
     output:
-        tuple val(sid), path("${sid}_b0_epi_corrected.nii.gz"), emit: image
-        tuple val(sid), path("${sid}__epi_correction_field.nii.gz"), emit: field
+        tuple val(sid), path("${sid}_b0__bm_corrected.nii.gz"), emit: image
+        tuple val(sid), path("${sid}_b0__bm_field.nii.gz"), emit: field
         tuple val(sid), path(output_metadata), optional: true, emit: metadata
     script:
+
         """
-        ./$bm_script --b0 $b0 --rev_b0 $rev_b0 ${sid}__bm_epi_corrected
+        ./$bm_script $b0 $rev_b0 ${sid}_b0_ $task.cpus
         """
 }
 
@@ -307,7 +309,7 @@ process prepare_eddy {
     label "res_single_cpu"
 
     input:
-        tuple val(sid), val(prefix), file(topup_acqp), val(rev_prefix), path(data), path(metadata)
+        tuple val(sid), val(prefix), file(acqp), val(rev_prefix), path(data), path(metadata)
         path(config)
     output:
         tuple val(sid), path("${prefix}__eddy_script.sh"), path("${prefix}__eddy_index.txt"), path("${prefix}__eddy_acqp.txt"), emit: config
@@ -318,8 +320,8 @@ process prepare_eddy {
         def args = ""
         def after_script = ""
         def will_gen_acqp = true
-        if ( !topup_acqp.empty() ) {
-            args += " --acqp $topup_acqp"
+        if ( !acqp.empty() ) {
+            args += " --acqp $acqp"
             will_gen_acqp = false
         }
         if ( rev_prefix ) {
@@ -343,7 +345,7 @@ process prepare_eddy {
             args += " --shelled"
 
         if ( !will_gen_acqp )
-            after_script += "cp $topup_acqp ${prefix}__eddy_acqp.txt\n"
+            after_script += "cp $acqp ${prefix}__eddy_acqp.txt\n"
 
         """
         mrhardi eddy \

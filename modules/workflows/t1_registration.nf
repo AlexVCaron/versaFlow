@@ -113,7 +113,7 @@ workflow t12b0_registration {
         use_quick
         register_in_subject_space
     main:
-        extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
+        extract_b0(dwi_channel.map{ it[0..2] + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
 
         template_channel = prepend_sid_template(
             t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_t1.nii.gz")] }
@@ -259,9 +259,9 @@ workflow t1_to_b0_affine {
         dilate_dwi_mask(dwi_mask_channel, 8, "preprocess")
         erode_dwi_mask(dwi_mask_channel, 8, "preprocess")
 
-        aff_extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
+        aff_extract_b0(dwi_channel.map{ it[0..2] + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
         mask_b0_dilated(aff_extract_b0.out.b0.join(dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
-        aff_pa_dwi(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
+        aff_pa_dwi(dwi_channel.map{ it[0..2] }.map{ it + ["", ""] }, "preprocess", "false")
         mask_pa_dwi_dilated(aff_pa_dwi.out.image.join(dilate_dwi_mask.out.mask).map{ it + [""] }, "preprocess", "false")
         dti_fa_eroded(dwi_channel.join(erode_dwi_mask.out.mask), "preprocess", "preprocess", false)
         mask_t1_dilated(t1_channel.join(dilate_t1_mask.out.mask).map{ it + [""] }, "preprocess", "false")
@@ -405,8 +405,8 @@ workflow t1_to_b0_syn {
         intersect_masks(dti_fa_np.out.np_outliers_mask.join(invert_mask.out.mask), "preprocess")
         difference_masks(dwi_mask_channel.join(intersect_masks.out.mask), "preprocess")
 
-        syn_extract_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
-        syn_pa_dwi(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
+        syn_extract_b0(dwi_channel.map{ it[0..2] + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
+        syn_pa_dwi(dwi_channel.map{ it[0..2] }.map{ it + ["", ""] }, "preprocess", "false")
         mask_fa(dti_fa_np.out.fa.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         mask_b0(syn_extract_b0.out.b0.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         mask_pa_dwi(syn_pa_dwi.out.image.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
@@ -569,14 +569,14 @@ workflow t1_mask_to_b0 {
         t1_mask_channel
         publish_mask
     main:
-        extract_target_b0(dwi_channel.map{ it.subList(0, 3) + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
+        extract_target_b0(dwi_channel.map{ it[0..2] + [""] }, "preprocess", "false", params.t1_registration_extract_b0_config)
 
         bet_mask(extract_target_b0.out.b0, "preprocess", "false", "")
         dwi_mask_channel = bet_mask.out.mask
 
         mask_target_b0(extract_target_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
 
-        compute_target_pdavg(dwi_channel.map{ it.subList(0, 3) }.map{ it + ["", ""] }, "preprocess", "false")
+        compute_target_pdavg(dwi_channel.map{ it[0..2] }.map{ it + ["", ""] }, "preprocess", "false")
         mask_target_pdavg(compute_target_pdavg.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         mask_moving_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")

@@ -119,7 +119,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
 - Processing steps customization :
         --nlmeans_t1                        Use Non-local means to denoise T1 (if false, uses a basic gaussian denoising) [true|false] ($nlmeans_t1)
 
-        --epi_algorithm                     Algorithm to use for EPI correction [Topup|BMEpi] ($epi_algorithm)
+        --epi_algorithm                     Algorithm to use for EPI correction [topup|bmepi] ($epi_algorithm)
 
         --eddy_force_shelled                Disable Eddy check on b-value shells of diffusion volumes [true|false] ($eddy_force_shelled)
         --eddy_with_reverse                 Perform Eddy correction using reverse phase acquisition also [true|false] ($eddy_with_reverse)
