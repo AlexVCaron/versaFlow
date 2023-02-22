@@ -37,7 +37,9 @@ include {
     ants_transform as ants_transform_gm_mask;
     ants_transform as ants_transform_csf_mask;
     ants_transform as ants_transform_safe_wm_mask;
-    ants_transform as ants_transform_raw_t1_mask
+    ants_transform as ants_transform_raw_t1_mask;
+    ants_transform as apply_transform_epi_dwi;
+    ants_transform as apply_transform_epi_rev
 } from '../modules/processes/register.nf'
 include {
     convert_float_to_integer as convert_wm_segmentation;
@@ -420,9 +422,21 @@ workflow preprocess_wkf {
                 epi_field_channel = epi_correction_wkf.out.field
 
                 // Applied estimated susceptibility correction to DWI
+                apply_transform_epi_dwi(
+                    ec_input_dwi
+                        .join(epi_correction_wkf.out.transform_reference)
+                        .join(epi_correction_wkf.out.forward_transform)
+                        .map{ it + [it[-1].collect{ "false" }, "", ""] }
+                )
+                apply_transform_epi_rev(
+                    ec_input_dwi
+                        .join(epi_correction_wkf.out.transform_reference)
+                        .join(epi_correction_wkf.out.reverse_transform)
+                        .map{ it + [it[-1].collect{ "false" }, "", ""] }
+                )
                 apply_epi_field_wkf(
-                    ec_input_dwi_channel,
-                    ec_input_rev_channel,
+                    apply_transform_epi_dwi.out.image,
+                    apply_transform_epi_rev.out.image,
                     epi_field_channel,
                     ec_input_dwi_meta_channel,
                     ""

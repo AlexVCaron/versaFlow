@@ -292,6 +292,9 @@ workflow epi_correction_wkf {
         excluded_dwi_metadata = excluded_indexes
             .join(metadata_channel)
             .map{ it[0..1] }
+        forward_transform = ec_align_b0_wkf.out.b0_transform
+        reverse_transform = ec_align_b0_wkf.out.rev_transform
+        transform_reference = ec_align_b0_wkf.out.reference
 }
 
 workflow ec_align_b0_wkf {
@@ -301,6 +304,7 @@ workflow ec_align_b0_wkf {
         b0_meta_channel
         b0_rev_meta_channel
     main:
+        ref_id_channel = b0_channel.map{ [it[0]] }
         meta_channel = b0_meta_channel
             .join(b0_rev_meta_channel)
             .map{ [it[0], it[1..-1]] }
@@ -319,6 +323,13 @@ workflow ec_align_b0_wkf {
             false,
             ""
         )
+        b0_transform = fill_missing_datapoints(
+            b0_align_to_closest.out.transformation,
+            ref_id_channel,
+            1,
+            [""]
+        )
+
         rev_align_to_closest(
             split_rev.out.images
                 .map{ it[1] instanceof Path ? [it[0], [it[1]]] : it  }
@@ -330,16 +341,55 @@ workflow ec_align_b0_wkf {
             false,
             ""
         )
+        rev_transform = fill_missing_datapoints(
+            rev_align_to_closest.out.transformation,
+            ref_id_channel,
+            1,
+            [""]
+        )
 
         b0_data_channel = b0_align_to_closest.out.images
             .join(rev_align_to_closest.out.images)
             .map{ [it[0], it[1..-1].inject([]){ c, t -> t instanceof Path ? c + [t] : c + t }] }
 
-        concatenate_for_average(b0_data_channel.map{ it + [[], []] }.join(meta_channel), 3, "b0", "preprocess", params.concatenate_base_config)
+        concatenate_for_average(
+            b0_data_channel
+                .map{ it + [[], []] }
+                .join(meta_channel),
+            3,
+            "b0",
+            "preprocess",
+            params.concatenate_base_config
+        )
         get_average(concatenate_for_average.out.image, "preprocess")
 
-        metadata_channel = b0_align_to_closest.out.metadata.join(rev_align_to_closest.out.metadata).map{ [it[0], [it[1], it[2]]] }
-        b0_align_to_average(b0_data_channel.join(get_average.out.image).join(metadata_channel), 1, false, "preprocess", "", false, "")
+        metadata_channel = b0_align_to_closest.out.metadata
+            .join(rev_align_to_closest.out.metadata)
+            .map{ [it[0], [it[1], it[2]]] }
+        b0_align_to_average(
+            b0_data_channel
+                .join(get_average.out.image)
+                .join(metadata_channel),
+            1,
+            false,
+            "preprocess",
+            "",
+            false,
+            ""
+        )
+
+        average_transform_map = b0_align_to_average.out.transformation
+            .multiMap{ it ->
+                forward: [it[0], it[1][0]],
+                reverse: [it[0], it[1][1]]
+            }
+
+        b0_transform = b0_transform
+            .join(average_transform_map.forward)
+            .map{ [it[0], it[1..-1]] }
+        rev_transform = rev_transform
+            .join(average_transform_map.reverse)
+            .map{ [it[0], it[1..-1]] }
 
         b0_map = b0_align_to_average.out.images
             .join(b0_align_to_closest.out.images)
@@ -356,6 +406,9 @@ workflow ec_align_b0_wkf {
         metadata = concatenate_b0.out.metadata
             .join(concatenate_rev_b0.out.metadata)
             .map{ [it[0], it[1..-1]] }
+        b0_transform = b0_transform
+        rev_transform = rev_transform
+        reference = get_average.out.image
 }
 
 workflow apply_topup_wkf {
