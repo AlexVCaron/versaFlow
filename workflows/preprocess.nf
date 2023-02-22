@@ -453,7 +453,7 @@ workflow preprocess_wkf {
                 )
 
                 epi_corrected_dwi_channel = rename_epi_corrected_dwi(
-                    collect_paths(apply_epi_field_wkf.out.dwi),
+                    collect_paths(replace_dwi_file(apply_epi_field_wkf.out.dwi, ec_input_dwi_channel)),
                     "epi_corrected"
                 ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
                 epi_corrected_meta_channel = rename_epi_corrected_meta(
@@ -473,10 +473,6 @@ workflow preprocess_wkf {
                 ref_id_channel,
                 1, ["", "", []]
             )
-
-            epi_corrected_dwi_channel = epi_corrected_dwi_channel
-                .join(dwi_channel)
-                .map{ it[0..1] + it[3..-1] }
 
             epi_corrected_dwi_channel = excluded_id_channel
                 .join(dwi_channel)
