@@ -379,6 +379,7 @@ process eddy {
             after_script += "cp $metadata ${dwi.simpleName}__eddy_corrected_metadata.py"
 
         def args = "eddy_in_image.nii.gz $bval $bvec"
+        def kwargs = ""
 
         if ( mask ) {
             args += " $mask"
@@ -387,21 +388,21 @@ process eddy {
         args += " $eddy_acqp $eddy_index"
 
         if ( !epi_field.empty() ) {
-            args += " --field $epi_field"
+            kwargs += " --field $epi_field"
         }
         else if ( topup_prefix ) {
-            args += " --topup $topup_prefix"
+            kwargs += " --topup $topup_prefix"
         }
 
         if ( !eddy_slspec.empty() )
-            args += " --slspec $eddy_slspec"
+            kwargs += " --slspec $eddy_slspec"
 
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         fslmaths $dwi -thr 0 eddy_in_image.nii.gz
-        ./$eddy_script $args eddy_corrected
+        ./$eddy_script $args eddy_corrected $kwargs
         mv eddy_corrected.eddy_rotated_bvecs ${dwi.simpleName}__eddy_corrected.bvec
         cp $bval ${dwi.simpleName}__eddy_corrected.bval
         cp eddy_corrected.nii.gz ${dwi.simpleName}__eddy_corrected.nii.gz

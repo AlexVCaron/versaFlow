@@ -457,7 +457,7 @@ workflow preprocess_wkf {
                     "epi_corrected"
                 ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
                 epi_corrected_meta_channel = rename_epi_corrected_meta(
-                    collect_paths(apply_epi_field_wkf.out.metadata),
+                    collect_paths(ec_input_dwi_meta_channel),
                     "epi_corrected_metadata"
                 ).map{ it.flatten() }
             }
