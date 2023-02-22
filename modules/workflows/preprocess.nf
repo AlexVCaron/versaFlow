@@ -181,7 +181,7 @@ workflow epi_correction_wkf {
             .map{ [it[0], it[1][1]] }
             .mix(ec_extract_rev_b0.out.metadata)
         b0_metadata = ec_extract_b0.out.metadata
-        meta_with_reverse_channel = b0_metadata
+        b0_meta_with_reverse_channel = b0_metadata
             .join(rev_b0_metadata)
             .map{ [it[0], it[1..-1]] }
 
@@ -195,7 +195,7 @@ workflow epi_correction_wkf {
 
             b0_channel = ec_align_b0_wkf.out.b0
             reverse_b0_channel = ec_align_b0_wkf.out.rev_b0
-            meta_with_reverse_channel = ec_align_b0_wkf.out.metadata
+            b0_meta_with_reverse_channel = ec_align_b0_wkf.out.metadata
         }
 
         acq_channel = dwi_with_reverse_channel
@@ -206,7 +206,7 @@ workflow epi_correction_wkf {
             .join(reverse_b0_channel.map{ [it[0], it[1..-1]] })
             .map{ [it[0], it[1..-1].inject([]){ c, t -> c + t }] }
             .map{ it + [[], []] }
-            .join(meta_with_reverse_channel)
+            .join(b0_meta_with_reverse_channel)
 
         ec_concatenate_b0(
             b0_data_channel,
