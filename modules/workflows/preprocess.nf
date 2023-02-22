@@ -406,8 +406,8 @@ workflow ec_align_b0_wkf {
         metadata = concatenate_b0.out.metadata
             .join(concatenate_rev_b0.out.metadata)
             .map{ [it[0], it[1..-1]] }
-        b0_transform = b0_transform
-        rev_transform = rev_transform
+        b0_transform = b0_transform.map{ [it[0], it[1].findAll{ it } ] }
+        rev_transform = rev_transform.map{ [it[0], it[1].findAll{ it } ] }
         reference = get_average.out.image
 }
 
