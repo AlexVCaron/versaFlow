@@ -114,7 +114,7 @@ process change_name {
             def cmd = ""
             for (f in files) {
                 if ( !f.empty() ) {
-                    name = "${f.simpleName.split("__")[0]}__${prefix}.${extract_extension(f)}"
+                    name = "${f.simpleName.split("__")[0]}__${suffix}.${extract_extension(f)}"
                     if ( "${f.simpleName}.${extract_extension(f)}" != name )
                         cmd += "ln -s $f $name\n"
                 }
