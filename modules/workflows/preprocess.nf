@@ -380,7 +380,7 @@ workflow ec_align_b0_wkf {
 
         average_transform_map = b0_align_to_average.out.transformation
             .multiMap{ it ->
-                forward: [it[0], it[1][0]],
+                forward: [it[0], it[1][0]]
                 reverse: [it[0], it[1][1]]
             }
 

@@ -175,7 +175,7 @@ process align_to_closest {
         def rename_warps = ""
         images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate1${img}${idx}WarpedToTemplate.nii.gz ${img.simpleName}__${idx}_aligned.nii.gz\n" }
         images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${img.simpleName}__${idx}_aligned_metadata.py\n" }
-        images.eachWithIndex{ img, idx -> rename_warps += "cp aligned${img.simpleName}_aligned${idx}0GenericAffine.mat ${img.simpleName}_closest_affine_transform.mat" }
+        images.eachWithIndex{ img, idx -> rename_warps += "cp aligned${img.simpleName}_aligned${idx}0GenericAffine.mat ${img.simpleName}_closest_affine_transform.mat\n" }
         if ( images.getNameCount() == 1 ) {
             single_copy_and_exit = "cp $images ${images.simpleName}__0_aligned.nii.gz\n"
             single_copy_and_exit += "cp $metadata ${images.simpleName}__0_aligned_metadata.py\n"
@@ -199,6 +199,7 @@ process align_to_closest {
 
         $copy_warped
         $copy_metadata
+        $rename_warps
         """
 }
 
@@ -242,5 +243,6 @@ process align_to_average {
 
         $copy_warped
         $copy_metadata
+        $rename_warps
         """
 }
