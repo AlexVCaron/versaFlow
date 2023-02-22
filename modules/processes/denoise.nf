@@ -248,7 +248,7 @@ process prepare_epi_correction {
         tuple val(sid), path("${b0s.simpleName}__${algo}_config.cnf"), optional: true, emit: config
         tuple val(sid), val("${sid}__${algo}_results"), emit: awaited_out_name
         tuple val(sid), path("${b0s.simpleName}__${algo}_metadata.*"), emit: metadata
-        tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_${algo}_indexes_metadata.*"), optional: true, emit : in_metadata_w_epi_correction
+        tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_epi_correction
     script:
         """
         mrhardi epi $algo \

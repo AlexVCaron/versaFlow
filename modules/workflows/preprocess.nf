@@ -176,28 +176,37 @@ workflow epi_correction_wkf {
         reverse_b0_channel = reverse_b0_channel
             .map{ it[0..1] }
             .mix(ec_extract_rev_b0.out.b0)
+        rev_b0_metadata = indexes_with_reverse_b0
+            .join(meta_with_reverse_channel)
+            .map{ [it[0], it[1][1]] }
+            .mix(ec_extract_rev_b0.out.metadata)
+        b0_metadata = ec_extract_b0.out.metadata
+        meta_with_reverse_channel = b0_metadata
+            .join(rev_b0_metadata)
+            .map{ [it[0], it[1..-1]] }
 
-        ec_align_b0_wkf(
-            b0_channel,
-            reverse_b0_channel,
-            ec_extract_b0.out.metadata,
-            indexes_with_reverse_b0
-                .join(meta_with_reverse_channel)
-                .map{ [it[0], it[1][1]] }
-                .mix(ec_extract_rev_b0.out.metadata)
-        )
+        if ( params.epi_algorithm == "topup" ) {
+            ec_align_b0_wkf(
+                b0_channel,
+                reverse_b0_channel,
+                b0_metadata,
+                rev_b0_metadata
+            )
 
-        b0_channel = ec_align_b0_wkf.out.b0.map{ [it[0], it[1..-1]] }
-        reverse_b0_channel = ec_align_b0_wkf.out.rev_b0.map{ [it[0], it[1..-1]] }
+            b0_channel = ec_align_b0_wkf.out.b0
+            reverse_b0_channel = ec_align_b0_wkf.out.rev_b0
+            meta_with_reverse_channel = ec_align_b0_wkf.out.metadata
+        }
 
         acq_channel = dwi_with_reverse_channel
             .map{ [it[0], [it[2]]] }
             .join(existing_rev.map{ [it[0], [it[2]]] })
         b0_data_channel = b0_channel
-            .join(reverse_b0_channel)
+            .map{ [it[0], it[1..-1]] }
+            .join(reverse_b0_channel.map{ [it[0], it[1..-1]] })
             .map{ [it[0], it[1..-1].inject([]){ c, t -> c + t }] }
             .map{ it + [[], []] }
-            .join(ec_align_b0_wkf.out.metadata)
+            .join(meta_with_reverse_channel)
 
         ec_concatenate_b0(
             b0_data_channel,
@@ -208,9 +217,8 @@ workflow epi_correction_wkf {
         )
 
         metadata_channel = ec_concatenate_b0.out.metadata
-            .join(ec_align_b0_wkf.out.metadata)
             .join(meta_with_reverse_channel)
-            .map{ [it[0], [it[1]] + it[2] + it[3]] }
+            .map{ [it[0], [it[1]] + it[2]] }
 
         generate_b0_bval(
             reverse_b0_channel.map{ it[0..1] },

@@ -382,6 +382,7 @@ workflow preprocess_wkf {
                     .map{ [it[0], it[1][(0..<it[1].size()).step(2)]] },
                 "ec_input_dwi_metadata"
             ).map{ it.flatten() }
+
             ec_input_rev_meta_channel = rename_ec_input_rev_meta(
                 epi_correction_wkf.out.in_metadata_w_epi_correction
                     .map{ [it[0], it[1][(1..<it[1].size()).step(2)]] },
@@ -423,9 +424,7 @@ workflow preprocess_wkf {
                     ec_input_dwi_channel,
                     ec_input_rev_channel,
                     epi_field_channel,
-                    ec_input_dwi_meta_channel
-                        .join(ec_input_rev_meta_channel)
-                        .map{ [it[0], it[1..-1]] },
+                    ec_input_dwi_meta_channel,
                     ""
                 )
 
