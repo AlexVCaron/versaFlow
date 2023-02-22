@@ -474,6 +474,10 @@ workflow preprocess_wkf {
                 1, ["", "", []]
             )
 
+            epi_corrected_dwi_channel = epi_corrected_dwi_channel
+                .join(dwi_channel)
+                .map{ it[0..1] + it[3..-1] }
+
             epi_corrected_dwi_channel = excluded_id_channel
                 .join(dwi_channel)
                 .mix(epi_corrected_dwi_channel)
