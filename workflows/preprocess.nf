@@ -423,7 +423,7 @@ workflow preprocess_wkf {
 
                 // Applied estimated susceptibility correction to DWI
                 apply_transform_epi_dwi(
-                    ec_input_dwi_channel
+                    ec_input_dwi_channel.map{ it[0..2] }
                         .join(epi_correction_wkf.out.transform_reference)
                         .join(epi_correction_wkf.out.forward_transform)
                         .map{ it + [it[-1].collect{ "false" }, "", ""] },
@@ -434,7 +434,7 @@ workflow preprocess_wkf {
                     params.ants_transform_base_config
                 )
                 apply_transform_epi_rev(
-                    ec_input_rev_channel
+                    ec_input_rev_channel.map{ it[0..2] }
                         .join(epi_correction_wkf.out.transform_reference)
                         .join(epi_correction_wkf.out.reverse_transform)
                         .map{ it + [it[-1].collect{ "false" }, "", ""] },
