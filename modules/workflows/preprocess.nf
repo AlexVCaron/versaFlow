@@ -185,18 +185,16 @@ workflow epi_correction_wkf {
             .join(rev_b0_metadata)
             .map{ [it[0], it[1..-1]] }
 
-        if ( params.epi_algorithm == "topup" ) {
-            ec_align_b0_wkf(
-                b0_channel,
-                reverse_b0_channel,
-                b0_metadata,
-                rev_b0_metadata
-            )
+        ec_align_b0_wkf(
+            b0_channel,
+            reverse_b0_channel,
+            b0_metadata,
+            rev_b0_metadata
+        )
 
-            b0_channel = ec_align_b0_wkf.out.b0
-            reverse_b0_channel = ec_align_b0_wkf.out.rev_b0
-            b0_meta_with_reverse_channel = ec_align_b0_wkf.out.metadata
-        }
+        b0_channel = ec_align_b0_wkf.out.b0
+        reverse_b0_channel = ec_align_b0_wkf.out.rev_b0
+        b0_meta_with_reverse_channel = ec_align_b0_wkf.out.metadata
 
         acq_channel = dwi_with_reverse_channel
             .map{ [it[0], [it[2]]] }
