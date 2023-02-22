@@ -216,7 +216,8 @@ workflow epi_correction_wkf {
 
         metadata_channel = ec_concatenate_b0.out.metadata
             .join(meta_with_reverse_channel)
-            .map{ [it[0], [it[1]] + it[2]] }
+            .join(b0_meta_with_reverse_channel)
+            .map{ [it[0], [it[1]] + it[2] + it[3]] }
 
         generate_b0_bval(
             reverse_b0_channel.map{ it[0..1] },
