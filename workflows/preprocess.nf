@@ -392,7 +392,8 @@ workflow preprocess_wkf {
             ).map{ it.flatten() }
 
             ec2eddy_channel = Channel.empty()
-            epi_field_channel = Channel.empty()
+            epi_fieldmap_channel = Channel.empty()
+            epi_displacement_field_channel = Channel.empty()
             if ( params.epi_algorithm == "topup" ) {
                 ec2eddy_channel = epi_correction_wkf.out.param
                     .join(epi_correction_wkf.out.prefix)
@@ -419,7 +420,8 @@ workflow preprocess_wkf {
                 ).map{ it.flatten() }
             }
             else {
-                epi_field_channel = epi_correction_wkf.out.field
+                epi_displacement_field_channel = epi_correction_wkf.out.field
+                epi_fieldmap_channel = epi_correction_wkf.out.fieldmap
 
                 // Applied estimated susceptibility correction to DWI
                 apply_transform_epi_dwi(
@@ -447,7 +449,7 @@ workflow preprocess_wkf {
                 apply_epi_field_wkf(
                     apply_transform_epi_dwi.out.image,
                     apply_transform_epi_rev.out.image,
-                    epi_field_channel,
+                    epi_displacement_field_channel,
                     ec_input_dwi_meta_channel,
                     ""
                 )
@@ -462,8 +464,13 @@ workflow preprocess_wkf {
                 ).map{ it.flatten() }
             }
 
-            epi_field_channel = fill_missing_datapoints(
-                epi_field_channel,
+            epi_displacement_field_channel = fill_missing_datapoints(
+                epi_displacement_field_channel,
+                ref_id_channel,
+                1, [""]
+            )
+            epi_fieldmap_channel = fill_missing_datapoints(
+                epi_fieldmap_channel,
                 ref_id_channel,
                 1, [""]
             )
@@ -558,7 +565,7 @@ workflow preprocess_wkf {
                         epi_correction_wkf.out.corrected_indexes
                             .join(raw_rev_channel)
                             .map{ it[0..1] },
-                        epi_field_channel,
+                        epi_displacement_field_channel,
                         collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
                         "raw"
                     )
@@ -669,7 +676,8 @@ workflow preprocess_wkf {
                 dwi_channel,
                 dwi_mask_channel,
                 ec2eddy_channel,
-                epi_field_channel,
+                epi_fieldmap_channel,
+                epi_displacement_field_channel,
                 rev_channel,
                 meta_channel.join(rev_meta_channel)
             )

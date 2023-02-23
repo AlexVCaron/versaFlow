@@ -295,7 +295,8 @@ process bm_epi_correction {
         val(caller_name)
     output:
         tuple val(sid), path("${sid}_b0__bm_corrected.nii.gz"), emit: image
-        tuple val(sid), path("${sid}_b0__bm_field.nii.gz"), emit: field
+        tuple val(sid), path("${sid}_b0__bm_field.nii.gz"), emit: displacement_field
+        tuple val(sid), path("${sid}_b0__bm_fieldmap.nii.gz"), emit: fieldmap
         tuple val(sid), path(output_metadata), optional: true, emit: metadata
     script:
 
@@ -366,7 +367,7 @@ process eddy {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(eddy_script), path(eddy_index), path(eddy_acqp), file(eddy_slspec), file(epi_field), path(dwi), path(bval), path(bvec), path(mask), val(topup_prefix), file(topup_package), path(metadata)
+        tuple val(sid), path(eddy_script), path(eddy_index), path(eddy_acqp), file(eddy_slspec), file(epi_field), file(disp_field), path(dwi), path(bval), path(bvec), path(mask), val(topup_prefix), file(topup_package), path(metadata)
         val(caller_name)
     output:
         tuple val(sid), path("${dwi.simpleName}__eddy_corrected.nii.gz"), emit: dwi
@@ -375,6 +376,7 @@ process eddy {
         tuple val(sid), path("${dwi.simpleName}__eddy_corrected_metadata.py"), optional: true, emit: metadata
     script:
         def after_script = ""
+        def after_eddy = ""
         if ( metadata )
             after_script += "cp $metadata ${dwi.simpleName}__eddy_corrected_metadata.py"
 
@@ -388,7 +390,7 @@ process eddy {
         args += " $eddy_acqp $eddy_index"
 
         if ( !epi_field.empty() ) {
-            kwargs += " --field $epi_field"
+            if ( !disp_field.empty() ) after_eddy += "animaApplyDistortionCorrection -f eddy_corrected.nii.gz -t $disp_field -o eddy_corrected.nii.gz -T $task.cpus\n"
         }
         else if ( topup_prefix ) {
             kwargs += " --topup $topup_prefix"
@@ -403,6 +405,7 @@ process eddy {
         export OPENBLAS_NUM_THREADS=1
         fslmaths $dwi -thr 0 eddy_in_image.nii.gz
         ./$eddy_script $args eddy_corrected $kwargs
+        $after_eddy
         mv eddy_corrected.eddy_rotated_bvecs ${dwi.simpleName}__eddy_corrected.bvec
         cp $bval ${dwi.simpleName}__eddy_corrected.bval
         cp eddy_corrected.nii.gz ${dwi.simpleName}__eddy_corrected.nii.gz

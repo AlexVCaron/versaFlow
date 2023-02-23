@@ -238,7 +238,8 @@ workflow epi_correction_wkf {
         )
 
         b0_output = Channel.empty()
-        field_output = Channel.empty()
+        displacement_field_output = Channel.empty()
+        fieldmap_output = Channel.empty()
         movpar_output = Channel.empty()
         coeff_output = Channel.empty()
         topup_output = Channel.empty()
@@ -255,7 +256,7 @@ workflow epi_correction_wkf {
                 "preprocess"
             )
             b0_output = topup.out.image
-            field_output = topup.out.field
+            displacement_field_output = topup.out.field
             movpar_output = topup.out.transfo.map{ [it[0], it[1]] }
             coeff_output = topup.out.transfo.map{ [it[0], it[2]] }
             topup_output = topup.out.pkg
@@ -269,13 +270,15 @@ workflow epi_correction_wkf {
                 "preprocess"
             )
             b0_output = bm_epi_correction.out.image
-            field_output = bm_epi_correction.out.field
+            displacement_field_output = bm_epi_correction.out.displacement_field
+            fieldmap_output = bm_epi_correction.out.fieldmap
         }
 
         excluded_indexes = filter_datapoints(rev_channel, { it[1] == "" })
     emit:
         b0 = b0_output
-        field = field_output
+        field = displacement_field_output
+        fieldmap = fieldmap_output
         movpar = movpar_output
         coeff = coeff_output
         param = prepare_epi_correction.out.config
@@ -485,6 +488,7 @@ workflow eddy_wkf {
         mask_channel
         topup_channel
         epi_field_channel
+        epi_displacement_field_channel
         rev_channel
         metadata_channel
     main:
@@ -564,10 +568,19 @@ workflow eddy_wkf {
             1, ""
         )
 
+        eddy_epi_field_channel = epi_field_channel
+        if ( params.epi_algorithm == "topup" ) {
+            eddy_epi_field_channel = eddy_epi_field_channel.map{ it + [""] }
+        }
+        else {
+            eddy_epi_field_channel = eddy_epi_field_channel
+                .join(epi_displacement_field_channel)
+        }
+
         eddy(
             prepare_eddy.out.config
                 .join(slspec_channel)
-                .join(epi_field_channel)
+                .join(eddy_epi_field_channel)
                 .join(dwi_channel)
                 .join(mask_channel)
                 .join(topup_channel.map{ [it[0], it[2], it[3]] })
