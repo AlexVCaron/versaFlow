@@ -38,7 +38,7 @@ c.AntsConfiguration.passes = [{
     "conv_eps": 1e-5,
     "conv_max_iter": [1000, 500, 300, 200, 100],
     "conv_win": 30,
-    "grad_step": 0.1,
+    "grad_step": 0.2,
     "var_penality": 3,
     "var_total": 0,
     "klass": "mrHARDI.traits.ants.AntsSyN",
@@ -59,7 +59,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 2,
             "args": [
                 0.35,
-                4,
+                2,
                 "Regular",
                 1.
             ],
