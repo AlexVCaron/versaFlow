@@ -93,7 +93,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
         --gibbs_ringing_correction          Do gibbs ringing artifact correction [true|false] ($gibbs_ringing_correction)
                                             ONLY USE ON DATA WITHOUT PARTIAL FOURIER
         --normalize_inter_b0                Normalize diffusion volumes between sets of b0 volumes [true|false] ($normalize_inter_b0)
-        --topup_correction                  Run Topup to correct for susceptibility artifacts [true|false] ($topup_correction)
+        --epi_correction                    Correct for EPI susceptibility artifacts [true|false] ($epi_correction)
         --eddy_correction                   Run Eddy to correct for motion and eddy currents [true|false] ($eddy_correction)
         --dwi_intensity_normalization       Do N4 intensity normalization of diffusion volumes [true|false] ($dwi_intensity_normalization)
     - T1 preprocessing :
@@ -118,6 +118,8 @@ OPTIONAL ARGUMENTS [possible values] (default values)
 
 - Processing steps customization :
         --nlmeans_t1                        Use Non-local means to denoise T1 (if false, uses a basic gaussian denoising) [true|false] ($nlmeans_t1)
+
+        --epi_algorithm                     Algorithm to use for EPI correction [topup|bmepi] ($epi_algorithm)
 
         --eddy_force_shelled                Disable Eddy check on b-value shells of diffusion volumes [true|false] ($eddy_force_shelled)
         --eddy_with_reverse                 Perform Eddy correction using reverse phase acquisition also [true|false] ($eddy_with_reverse)

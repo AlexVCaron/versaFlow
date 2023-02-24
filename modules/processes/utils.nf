@@ -162,6 +162,35 @@ process apply_topup {
         """
 }
 
+process apply_epi_field {
+    label "FAST"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(dwi), path(rev_dwi), path(epi_field), file(metadata)
+        val(caller_name)
+        val(additional_publish_path)
+    output:
+        tuple val(sid), path("${sid}_dwi__epi_corrected.nii.gz"), emit: dwi
+        tuple val(sid), path("${sid}_dwi__epi_corrected_metadata.py"), optional: true, emit: metadata
+    script:
+        def after_script = ""
+        if ( !metadata.empty() )
+            after_script += "cp $metadata ${sid}_dwi__epi_corrected_metadata.py\n"
+        """
+        animaApplyDistortionCorrection \
+            -T $task.cpus \
+            -f $dwi \
+            -b $rev_dwi \
+            -t $epi_field \
+            -o ${sid}_dwi__epi_corrected.nii.gz
+        $after_script
+        """
+}
+
 process tournier2descoteaux_odf {
     label "MEDIUM"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"

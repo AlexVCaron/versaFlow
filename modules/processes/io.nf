@@ -92,18 +92,21 @@ process change_name {
     label "res_single_cpu"
     input:
         tuple val(sid), file(files)
-        val(prefix)
+        val(suffix)
     output:
-        tuple val(sid), path("*__${prefix}*", includeInputs: true)
+        tuple val(sid), path("*__${suffix}*", includeInputs: true)
     script:
         def extension = ""
         def name = ""
         if ( (files instanceof Path ? files.getNameCount() : files.size()) == 1 ) {
-            extension = extract_extension(files)
-            name = "${files.simpleName.split("__")[0]}__${prefix}.${extension}"
-            if ( "${files.simpleName}.$extension" != name ) {
+            name = "${files.simpleName.split("__")[0]}__${suffix}.${extract_extension(files)}"
+            if ( "${files.simpleName}.${extract_extension(files)}" != name ) {
                 """
                 ln -s $files $name
+                """
+            }
+            else {
+                """
                 """
             }
         }
@@ -111,9 +114,8 @@ process change_name {
             def cmd = ""
             for (f in files) {
                 if ( !f.empty() ) {
-                    extension = extract_extension(f)
-                    name = "${f.simpleName.split("__")[0]}__${prefix}.${extension}"
-                    if ( "${f.simpleName}.$extension" != name )
+                    name = "${f.simpleName.split("__")[0]}__${suffix}.${extract_extension(f)}"
+                    if ( "${f.simpleName}.${extract_extension(f)}" != name )
                         cmd += "ln -s $f $name\n"
                 }
             }

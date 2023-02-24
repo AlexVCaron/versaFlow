@@ -167,12 +167,15 @@ process align_to_closest {
     output:
         tuple val(sid), path("${sid}_*__[0-9]*_aligned.nii.gz"), emit: images
         tuple val(sid), path("${sid}_*__[0-9]*_aligned_metadata.py"), emit: metadata
+        tuple val(sid), path("${sid}_*_closest_affine_transform.mat"), optional: true, emit: transformation
     script:
         def single_copy_and_exit = ""
         def copy_warped = ""
         def copy_metadata = ""
+        def rename_warps = ""
         images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate1${img}${idx}WarpedToTemplate.nii.gz ${img.simpleName}__${idx}_aligned.nii.gz\n" }
         images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${img.simpleName}__${idx}_aligned_metadata.py\n" }
+        images.eachWithIndex{ img, idx -> rename_warps += "cp aligned${img.simpleName}${idx}0GenericAffine.mat ${img.simpleName}_closest_affine_transform.mat\n" }
         if ( images.getNameCount() == 1 ) {
             single_copy_and_exit = "cp $images ${images.simpleName}__0_aligned.nii.gz\n"
             single_copy_and_exit += "cp $metadata ${images.simpleName}__0_aligned_metadata.py\n"
@@ -196,6 +199,7 @@ process align_to_closest {
 
         $copy_warped
         $copy_metadata
+        $rename_warps
         """
 }
 
@@ -212,11 +216,14 @@ process align_to_average {
     output:
         tuple val(sid), path("${sid}_*__[0-9]*_average_aligned.nii.gz"), emit: images
         tuple val(sid), path("${sid}_*__[0-9]*_average_aligned_metadata.py"), emit: metadata
+        tuple val(sid), path("${sid}_*_average_affine_transform.mat"), optional: true, emit: transformation
     script:
         def copy_warped = ""
         def copy_metadata = ""
+        def rename_warps = ""
         images.eachWithIndex{ img, idx -> copy_warped += "cp alignedtemplate0${img.simpleName}${idx}WarpedToTemplate.nii.gz ${img.simpleName}__${idx}_average_aligned.nii.gz\n" }
         images.eachWithIndex{ img, idx -> copy_metadata += "cp ${metadata[idx]} ${img.simpleName}__${idx}_average_aligned_metadata.py\n" }
+        images.eachWithIndex{ img, idx -> rename_warps += "cp aligned${img.simpleName}${idx}0GenericAffine.mat ${img.simpleName}_average_affine_transform.mat\n" }
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
@@ -236,5 +243,6 @@ process align_to_average {
 
         $copy_warped
         $copy_metadata
+        $rename_warps
         """
 }

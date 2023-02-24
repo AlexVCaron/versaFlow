@@ -3,20 +3,20 @@
 c = get_config()
 
 # -----------------------------------------------------------------------------
-# Topup(mrHARDIBaseApplication) configuration
+# EpiCorrection(mrHARDIBaseApplication) configuration
 # -----------------------------------------------------------------------------
 
-c.Topup.extra_arguments = ""
+c.EpiCorrection.extra_arguments = ""
 
 # Application traits configuration
 
-c.Topup.log_datefmt = "%Y-%m-%d %H:%M:%S"
+c.EpiCorrection.log_datefmt = "%Y-%m-%d %H:%M:%S"
 
-c.Topup.log_format = "[%(name)s]%(highlevel)s %(message)s"
+c.EpiCorrection.log_format = "[%(name)s]%(highlevel)s %(message)s"
 
-c.Topup.log_level = 30
+c.EpiCorrection.log_level = 30
 
-c.Topup.base_config_file = ""
+c.EpiCorrection.base_config_file = ""
 
 
 # -----------------------------------------------------------------------------

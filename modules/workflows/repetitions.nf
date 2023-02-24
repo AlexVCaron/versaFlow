@@ -29,13 +29,13 @@ workflow register_dwi_repetitions_wkf {
         }
         metadata_channel = merge_repetitions(metadata_channel, true)
 
-        extract_rep_b0(dwi_channel.map{ [it[0], it[2][0], it[3][0]] }.join(metadata_channel.map{ [it[0]] + it.subList(2, it.size()) }), "preprocess", params.reps_registration_extract_b0_config)
+        extract_rep_b0(dwi_channel.map{ [it[0], it[2][0], it[3][0]] }.join(metadata_channel.map{ [it[0]] + it[2..-1] }), "preprocess", params.reps_registration_extract_b0_config)
         main_b0 = extract_rep_b0.out.b0
 
-        dwi_reg = dwi_channel.map{ [it[0]] + it.subList(1, it.size()).collect{ i -> i.subList(1, i.size()) } }.transpose()
+        dwi_reg = dwi_channel.map{ [it[0]] + it[1..-1].collect{ i -> i[1..-1] } }.transpose()
 
         ants_register_dwi_repetition(
-            main_b0.combine(dwi_reg, by: 0).combine(metadata_channel.map{ [it[0]] + it.subList(2, it.size()) }, by: 0),
+            main_b0.combine(dwi_reg, by: 0).combine(metadata_channel.map{ [it[0]] + it[2..-1] }, by: 0),
             "preprocess",
             additional_publish_path,
             params.reps_registration_extract_b0_config,
@@ -53,7 +53,7 @@ workflow register_dwi_repetitions_wkf {
             )
         }
     emit:
-        dwi = ants_register_dwi_repetition.out.dwi.concat(dwi_channel.map{ ["${it[0]}_${it[1][0]}"] + it.subList(2, it.size()).collect{ i -> i[0] } })
+        dwi = ants_register_dwi_repetition.out.dwi.concat(dwi_channel.map{ ["${it[0]}_${it[1][0]}"] + it[2..-1].collect{ i -> i[0] } })
         rev = rev_channel ? ants_register_rev_repetition.out.dwi : null
         metadata = ants_register_dwi_repetition.out.metadata.mix(metadata_channel.map{ ["${it[0]}_${it[1][0]}", it[2][0]] })
         rev_metadata = rev_channel ? ants_register_rev_repetition.out.metadata : null
@@ -67,7 +67,7 @@ workflow register_t1_repetitions_wkf {
         t1_channel = mask_channel ? t1_channel.join(mask_channel) : t1_channel.map{ it + [""] }
         t1_channel = merge_repetitions(t1_channel, true)
         template_t1 = t1_channel.map{ [it[0], it[2][0]] }
-        t1_reg = t1_channel.map{ [it[0]] + it.subList(1, it.size()).collect{ i -> i.subList(1, i.size()) } }.transpose()
+        t1_reg = t1_channel.map{ [it[0]] + it[1..-1].collect{ i -> i[1..-1] } }.transpose()
         ants_register_t1_repetition(template_t1.combine(t1_reg, by: 0), "preprocess", additional_publish_path, params.reps_registration_t1_registration_config)
     emit:
         t1 = ants_register_t1_repetition.out.t1.concat(t1_channel.map{ ["${it[0]}_${it[1][0]}", it[2][0]] })
@@ -81,7 +81,7 @@ workflow cat_dwi_repetitions_wkf {
         prefix
     main:
         dwi_channel = merge_repetitions(dwi_channel, false)
-        metadata_channel = merge_repetitions(metadata_channel, false).map{ [it[0], it.subList(1, it.size()).inject([]){ c, t -> c + t }] }
+        metadata_channel = merge_repetitions(metadata_channel, false).map{ [it[0], it[1..-1].inject([]){ c, t -> c + t }] }
         cat_repetitions(dwi_channel.join(metadata_channel), 3, prefix, "preprocess", params.concatenate_base_config)
     emit:
         dwi = cat_repetitions.out.image.join(cat_repetitions.out.bval).join(cat_repetitions.out.bvec)

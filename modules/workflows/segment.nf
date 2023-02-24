@@ -104,7 +104,7 @@ workflow segment_wm_wkf {
         wm_atlas_channel = prepend_sid_wm_atlas(dwi_channel.map{ [it[0], file("${params.wm_segmentation_root}/wm_segmentation_atlas.nii.gz")] })
 
         resampling_reference_fa(
-            dwi_channel.map{ it.subList(0, 2) }.join(template_fa_channel).map{ [it[0], it[1..-1]] },
+            dwi_channel.map{ it[0..1] }.join(template_fa_channel).map{ [it[0], it[1..-1]] },
             "segmentation",
             params.resampling_subdivision,
             params.resampling_min_resolution,

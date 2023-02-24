@@ -6,7 +6,7 @@ nextflow.enable.dsl=2
 
 def group_channel_rep ( chan ) {
     return chan.groupTuple().map{
-        [it[0]] + it.subList(1, it.size()).inject((1..it.size()).collect{ [] }) { sub, rep ->
+        [it[0]] + it[1..-1].inject((1..it.size()).collect{ [] }) { sub, rep ->
             sub.eachWithIndex { its, i -> its.add(rep[i]) } ; return sub
         }
     }
@@ -51,7 +51,7 @@ def prevent_sci_notation ( float_number ) {
 }
 
 def extract_extension ( f ) {
-    return "$f".tokenize(".").subList(1, "$f".tokenize(".").size()).join(".")
+    return "$f".tokenize(".")[1..-1].join(".")
 }
 
 def copy_and_rename ( fl, prefix, overwrite, copy ) {
@@ -66,7 +66,7 @@ def copy_and_rename ( fl, prefix, overwrite, copy ) {
 
 def uniformize_naming ( files_channel, prefix, overwrite, copy ) {
     return files_channel.map{ it ->
-        [it[0]] + it.subList(1, it.size()).collect{ i ->
+        [it[0]] + it[1..-1].collect{ i ->
             i == "" ? i : copy_and_rename(i, "${i.simpleName.split("__")[0]}__$prefix", overwrite, copy)
         }
     }
@@ -74,7 +74,7 @@ def uniformize_naming ( files_channel, prefix, overwrite, copy ) {
 
 def rename_according_to ( file_channel, ref_channel, suffix, overwrite ) {
     return file_channel.join(ref_channel).map{ it ->
-        [it[0]] + it.subList(1, it.size() - 1).collect{ i ->
+        [it[0]] + it[1..-1].collect{ i ->
             copy_and_rename(i, "${it[-1].simpleName.split("__")[0]}__$suffix", overwrite)
         }
     }
@@ -82,7 +82,7 @@ def rename_according_to ( file_channel, ref_channel, suffix, overwrite ) {
 
 def replace_naming_to_underscore ( files_channel, prefix, overwrite ) {
     return files_channel.map{ it ->
-        [it[0]] + it.subList(1, it.size()).collect{ i ->
+        [it[0]] + it[1..-1].collect{ i ->
             def suffix = i.simpleName().tokenize("_")[-1]
             copy_and_rename(i, "${prefix}_${suffix}", overwrite)
         }
@@ -94,7 +94,7 @@ def sort_by_name ( channel, reg_list ) {
 }
 
 def sort_by_extension ( channel, ext_list ) {
-    return channel.map{ [it[0]] + it[1].sort{ f -> f_token = "$f".tokenize('.'); ext_list.indexOf(f_token.subList(1, f_token.size()).join('.')) } }
+    return channel.map{ [it[0]] + it[1].sort{ f -> f_token = "$f".tokenize('.'); ext_list.indexOf(f_token[1..-1].join('.')) } }
 }
 
 def swap_configurations ( base_config, new_config ) {
@@ -104,8 +104,8 @@ def swap_configurations ( base_config, new_config ) {
 }
 
 def sort_as_with_name ( channel, sorting_channel ) {
-    channel.map{ [it[0], it.subList(1, it.size())] }.join(
-        sorting_channel.map{ [it[0], it.subList(1, it.size())] }
+    channel.map{ [it[0], it[1..-1]] }.join(
+        sorting_channel.map{ [it[0], it[1..-1]] }
     ).map{
         [it[0]] + it[1].sort{ f -> f_token = file("$f").getSimpleName(); it[2].find{ pt -> f_token ==~ pt } }
     }
@@ -114,10 +114,10 @@ def sort_as_with_name ( channel, sorting_channel ) {
 def merge_repetitions ( channel, keep_rep_key ) {
     def c = channel.map{ it ->
         def sub_rep = it[0].split("_");
-        [sub_rep[0], sub_rep[1..<sub_rep.size()].join("_")] + it.subList(1, it.size())
+        [sub_rep[0], sub_rep[1..<sub_rep.size()].join("_")] + it[1..-1]
     }.groupTuple()
     c = c.map{
-        [it[0]] + it.subList(keep_rep_key ? 1 : 2, it.size()).collect{
+        [it[0]] + it[(keep_rep_key ? 1 : 2)..-1].collect{
             s -> s.withIndex().collect{
                 o, i -> [o: o, i: i]
             }.sort{
@@ -135,8 +135,8 @@ def interleave ( l1, l2 ) {
 }
 
 def merge_channels_non_blocking ( c1, c2 ) {
-    def c3 = c1.map{ [it[0], it.subList(1, it.size())] }.join(c2.map{ [it[0], it.subList(1, it.size())] })
-    return c3.map{ [it[0]] + it.subList(1, 3).transpose() }
+    def c3 = c1.map{ [it[0], it[1..-1]] }.join(c2.map{ [it[0], it[1..-1]] })
+    return c3.map{ [it[0]] + it[1..2].transpose() }
 }
 
 def remove_alg_suffixes ( f ) {
@@ -159,7 +159,7 @@ def fill_missing_datapoints( data_channel, id_channel, filter_index, fill_tuple 
     return id_channel.join(data_channel, remainder: true).map{
         it instanceof ArrayList ? it : [it, null]
     }.map{
-        (it[filter_index] == null) ? it.subList(0, filter_index) + fill_tuple : it
+        (it[filter_index] == null) ? it[0..filter_index - 1] + fill_tuple : it
     }
 }
 

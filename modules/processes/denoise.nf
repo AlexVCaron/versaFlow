@@ -234,24 +234,28 @@ process normalize_inter_b0 {
         """
 }
 
-process prepare_topup {
+process prepare_epi_correction {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
     input:
         tuple val(sid), path(b0s), path(dwi_bval), file(rev_bval), file(metadata)
+        val(algo)
         path(config)
     output:
-        tuple val(sid), path("${b0s.simpleName}__topup_script.sh"), path("${b0s.simpleName}__topup_acqp.txt"), path("${b0s.simpleName}__topup_config.cnf"), val("${sid}__topup_results"), emit: config
-        tuple val(sid), path("${b0s.simpleName}__topup_metadata.*"), emit: metadata
-        tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_topup
+        tuple val(sid), path("${b0s.simpleName}__${algo}_script.sh"), emit: script
+        tuple val(sid), path("${b0s.simpleName}__${algo}_acqp.txt"), emit: acqp
+        tuple val(sid), path("${b0s.simpleName}__${algo}_config.cnf"), optional: true, emit: config
+        tuple val(sid), val("${sid}__${algo}_results"), emit: awaited_out_name
+        tuple val(sid), path("${b0s.simpleName}__${algo}_metadata.*"), emit: metadata
+        tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_epi_correction
     script:
         """
-        mrhardi topup \
+        mrhardi epi $algo \
             --b0s $b0s \
             --bvals ${dwi_bval.join(',')} \
             --rev_bvals ${rev_bval.join(',')} \
-            --out ${b0s.simpleName}__topup \
+            --out ${b0s.simpleName}__${algo} \
             --b0-thr ${params.b0_threshold ? params.b0_threshold : "0"} \
             --config $config \
             --verbose
@@ -282,12 +286,31 @@ process topup {
         """
 }
 
+process bm_epi_correction {
+    label "BM_EPI_CORRECTION"
+    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
+
+    input:
+        tuple val(sid), path(bm_script), path(b0), path(rev_b0), path(output_metadata)
+        val(caller_name)
+    output:
+        tuple val(sid), path("${sid}_b0__bm_corrected.nii.gz"), emit: image
+        tuple val(sid), path("${sid}_b0__bm_field.nii.gz"), emit: displacement_field
+        tuple val(sid), path("${sid}_b0__bm_fieldmap.nii.gz"), emit: fieldmap
+        tuple val(sid), path(output_metadata), optional: true, emit: metadata
+    script:
+
+        """
+        ./$bm_script $b0 $rev_b0 ${sid}_b0_ $task.cpus
+        """
+}
+
 process prepare_eddy {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
     input:
-        tuple val(sid), val(prefix), file(topup_acqp), val(rev_prefix), path(data), path(metadata)
+        tuple val(sid), val(prefix), file(acqp), val(rev_prefix), path(data), path(metadata)
         path(config)
     output:
         tuple val(sid), path("${prefix}__eddy_script.sh"), path("${prefix}__eddy_index.txt"), path("${prefix}__eddy_acqp.txt"), emit: config
@@ -298,8 +321,8 @@ process prepare_eddy {
         def args = ""
         def after_script = ""
         def will_gen_acqp = true
-        if ( !topup_acqp.empty() ) {
-            args += " --acqp $topup_acqp"
+        if ( !acqp.empty() ) {
+            args += " --acqp $acqp"
             will_gen_acqp = false
         }
         if ( rev_prefix ) {
@@ -323,7 +346,7 @@ process prepare_eddy {
             args += " --shelled"
 
         if ( !will_gen_acqp )
-            after_script += "cp $topup_acqp ${prefix}__eddy_acqp.txt\n"
+            after_script += "cp $acqp ${prefix}__eddy_acqp.txt\n"
 
         """
         mrhardi eddy \
@@ -344,7 +367,7 @@ process eddy {
     publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(eddy_script), path(eddy_index), path(eddy_acqp), file(eddy_slspec), path(dwi), path(bval), path(bvec), path(mask), val(topup_prefix), file(topup_package), path(metadata)
+        tuple val(sid), path(eddy_script), path(eddy_index), path(eddy_acqp), file(eddy_slspec), file(epi_field), file(disp_field), path(dwi), path(bval), path(bvec), path(mask), val(topup_prefix), file(topup_package), path(metadata)
         val(caller_name)
     output:
         tuple val(sid), path("${dwi.simpleName}__eddy_corrected.nii.gz"), emit: dwi
@@ -353,10 +376,12 @@ process eddy {
         tuple val(sid), path("${dwi.simpleName}__eddy_corrected_metadata.py"), optional: true, emit: metadata
     script:
         def after_script = ""
+        def after_eddy = ""
         if ( metadata )
             after_script += "cp $metadata ${dwi.simpleName}__eddy_corrected_metadata.py"
 
         def args = "eddy_in_image.nii.gz $bval $bvec"
+        def kwargs = ""
 
         if ( mask ) {
             args += " $mask"
@@ -364,19 +389,23 @@ process eddy {
 
         args += " $eddy_acqp $eddy_index"
 
-        if ( topup_prefix ) {
-            args += " --topup $topup_prefix"
+        if ( !epi_field.empty() ) {
+            if ( !disp_field.empty() ) after_eddy += "animaApplyDistortionCorrection -f eddy_corrected.nii.gz -t $disp_field -o eddy_corrected.nii.gz -T $task.cpus\n"
+        }
+        else if ( topup_prefix ) {
+            kwargs += " --topup $topup_prefix"
         }
 
         if ( !eddy_slspec.empty() )
-            args += " --slspec $eddy_slspec"
+            kwargs += " --slspec $eddy_slspec"
 
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         fslmaths $dwi -thr 0 eddy_in_image.nii.gz
-        ./$eddy_script $args eddy_corrected
+        ./$eddy_script $args eddy_corrected $kwargs
+        $after_eddy
         mv eddy_corrected.eddy_rotated_bvecs ${dwi.simpleName}__eddy_corrected.bvec
         cp $bval ${dwi.simpleName}__eddy_corrected.bval
         cp eddy_corrected.nii.gz ${dwi.simpleName}__eddy_corrected.nii.gz
