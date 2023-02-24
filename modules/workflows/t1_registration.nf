@@ -206,6 +206,10 @@ workflow t12b0_registration {
             .join(t1_to_b0_syn.out.b0_inverse_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
+        template_to_t1_transform = t1_to_b0_affine.out.t1_inverse_transform
+            .join(t1_to_b0_syn.out.t1_inverse_transform)
+            .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
+
         t1_to_b0_transform = template_to_b0_transform
             .join(t1_to_b0_syn.out.t1_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
@@ -239,6 +243,8 @@ workflow t12b0_registration {
         mask = clean_mask_borders.out.mask
         transform = t1_to_b0_transform
         reference = extract_b0.out.b0
+        resampling_reference = registration_reference
+        template_to_t1_transform = template_to_t1_transform
 }
 
 workflow t1_to_b0_affine {
@@ -396,7 +402,7 @@ workflow t1_to_b0_syn {
         publish_t1
         publish_b0
     main:
-        syn_dilate_t1_mask(t1_mask_channel, 8, "preprocess")
+        syn_dilate_t1_mask(t1_mask_channel, 16, "preprocess")
         syn_dilate_dwi_mask(dwi_mask_channel, 8, "preprocess")
         syn_erode_dwi_mask(dwi_mask_channel, 20, "preprocess")
 
@@ -412,8 +418,8 @@ workflow t1_to_b0_syn {
         mask_pa_dwi(syn_pa_dwi.out.image.join(difference_masks.out.mask).map{ it + [""] }, "preprocess", "false")
         mask_t1(t1_channel.join(syn_dilate_t1_mask.out.mask).map{ it + [""] }, "preprocess", "false")
 
-        b0_moving_channel = mask_b0.out.image
-            .join(mask_pa_dwi.out.image)
+        b0_moving_channel = syn_extract_b0.out.b0
+            .join(syn_pa_dwi.out.image)
             .join(mask_fa.out.image)
             .map{ [it[0], it[1..-1]] }
         t1_moving_channel = t1_channel
@@ -442,7 +448,7 @@ workflow t1_to_b0_syn {
             b0_moving_channel,
             dwi_mask_channel,
             dilated_reference_mask_channel
-                .join(syn_dilate_dwi_mask.out.mask)
+                .join(difference_masks.out.mask)
                 .map{ [it[0], it[1..-1]] },
             null,
             null,
