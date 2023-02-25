@@ -39,7 +39,7 @@ process atropos {
         scil_image_math.py blur ${segmentation.simpleName}_01.nii.gz 1 ${segmentation.simpleName}_01.nii.gz -f
         scil_image_math.py blur ${segmentation.simpleName}_02.nii.gz 1 ${segmentation.simpleName}_02.nii.gz -f
         scil_image_math.py blur ${segmentation.simpleName}_03.nii.gz 1 ${segmentation.simpleName}_03.nii.gz --data_type float32 -f
-        antsAtroposN4.sh -u 0 -d 3 -a $t1_image -x $mask -c ${params.segmentation_classes.size()} -p ${segmentation.simpleName}_%02d.nii.gz -o ${sid}_ -w 0.5
+        antsAtroposN4.sh -u 0 -d 3 -a $t1_image -x $mask -c ${params.segmentation_classes.size()} -p ${segmentation.simpleName}_%02d.nii.gz -o ${sid}_
         mv ${sid}_Segmentation.nii.gz tmp.nii.gz
         mv tmp.nii.gz ${sid}_segmentation.nii.gz
         $after_script
