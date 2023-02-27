@@ -147,6 +147,7 @@ def display_run_info () {
             log.info "     - Custom template directory : ${params.tissue_segmentation_root}"
         }
         
+        log.info "     - Atropos prior weight       : ${params.atropos_prior_weight}"
         log.info "     - Min PVF threshold          : ${params.min_pvf_threshold}"
         log.info "     - Max safe CSF PVF threshold : ${params.max_safe_csf_pvf_threshold}"
         log.info "     - Max safe GM PVF thresfold  : ${params.max_safe_gm_pvf_threshold}"
@@ -227,6 +228,7 @@ def display_usage () {
             "b0_threshold" : "$params.b0_threshold",
             "b0_normalization_strategy" : "$params.b0_normalization_strategy",
             "bet_f" : "$params.bet_f",
+            "atropos_prior_weight" : "$params.atropos_prior_weight",
             "min_pvf_threshold": "$params.min_pvf_threshold",
             "max_safe_csf_pvf_threshold": "$params.max_safe_csf_pvf_threshold",
             "max_safe_gm_pvf_threshold": "$params.max_safe_gm_pvf_threshold",

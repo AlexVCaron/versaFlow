@@ -146,6 +146,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
 
         --bet_f                             Fractional intensity threshold for FSL bet [0 > 1] ($bet_f)
 
+        --atropos_prior_weight              Weight of the prior segmentation for Atropor ($atropos_prior_weight)
         --min_pvf_threshold                 Minimal partial fraction value considered inside the tissue mask ($min_pvf_threshold)
         --max_safe_csf_pvf_threshold        Maximal partial fraction of CSF than can overlap a fraction of safe WM ($max_safe_csf_pvf_threshold)
         --max_safe_gm_pvf_threshold         Maximal partial fraction of GM than can overlap a fraction of safe WM ($max_safe_gm_pvf_threshold)
