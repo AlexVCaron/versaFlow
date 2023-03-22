@@ -153,6 +153,10 @@ def display_run_info () {
         log.info "     - Max safe GM PVF thresfold  : ${params.max_safe_gm_pvf_threshold}"
         log.info "     - Safe CSF mask dilation     : ${params.safe_csf_mask_dilation}"
         log.info "     - Safe GM mask dilation      : ${params.safe_gm_mask_dilation}"
+        log.info "     - Register D99 altas         : ${params.register_d99 ? "(enabled)" : "(disabled)"}"
+        log.info "     - Register CHARM altas       : ${params.register_charm ? "(enabled)" : "(disabled)"}"
+        log.info "     - Register SARM altas        : ${params.register_sarm ? "(enabled)" : "(disabled)"}"
+        log.info "     - Register INIA19 altas      : ${params.register_inia19 ? "(enabled)" : "(disabled)"}"
     }
     log.info " - Segment WM parcellation ${params.generate_wm_segmentation ? "(enabled)" : "(disabled)"}"
     if (params.generate_wm_segmentation) {
@@ -234,6 +238,10 @@ def display_usage () {
             "max_safe_gm_pvf_threshold": "$params.max_safe_gm_pvf_threshold",
             "safe_csf_mask_dilation": "$params.safe_csf_mask_dilation",
             "safe_gm_mask_dilation": "$params.safe_gm_mask_dilation",
+            "register_d99": "$params.register_d99",
+            "register_charm": "$params.register_charm",
+            "register_sarm": "$params.register_sarm",
+            "register_inia19": "$params.register_inia19",
             "t1_intensity_normalization" : "$params.t1_intensity_normalization",
             "dwi_mask_from_t1_mask" : "$params.dwi_mask_from_t1_mask",
             "register_t1_to_dwi" : "$params.register_t1_to_dwi",
