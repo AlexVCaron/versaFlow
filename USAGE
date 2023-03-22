@@ -152,6 +152,10 @@ OPTIONAL ARGUMENTS [possible values] (default values)
         --max_safe_gm_pvf_threshold         Maximal partial fraction of GM than can overlap a fraction of safe WM ($max_safe_gm_pvf_threshold)
         --safe_csf_mask_dilation            Dilation of thresholded CSF partial fraction map for safe WM exclusion ($safe_csf_mask_dilation)
         --safe_gm_mask_dilation             Dilation of thresholded GM partial fraction map for safe WM exclusion ($safe_gm_mask_dilation)
+        --register_d99                      Register the D99 atlas [true|false] ($register_d99)
+        --register_charm                    Register the CHARM atlas [true|false] ($register_charm)
+        --register_sarm                     Register the SARM atlas [true|false] ($register_sarm)
+        --register_inia19                   Register the INIA19 atlas [true|false] ($register_inia19)
 
         --max_dti_bvalue                    Maximum b-value used to reconstruct the DTI model ($max_dti_bvalue)
 
