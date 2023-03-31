@@ -1,5 +1,6 @@
 [![Release build](https://github.com/AlexVCaron/mrHARDI/actions/workflows/build-release.yml/badge.svg)](https://github.com/AlexVCaron/mrHARDI/actions/workflows/build-release.yml)
 [![Docker containers](https://img.shields.io/badge/Docker%20images-dockerhub-blue?style=plaflat&logo=docker&labelColor=2e343b)](https://hub.docker.com/repository/docker/avcaron/mrhardi)
+[![DOI](https://zenodo.org/badge/430873937.svg)](https://zenodo.org/badge/latestdoi/430873937)
 
 # mrHARDIflow
 
@@ -11,6 +12,16 @@ workflow contains a collection of steps focussed at increasing SNR and CNR of
 noisy diffusion data and improving the alignment of longitudinal acquisitions, 
 using state-of-the-art algorithms such as MP-PCA denoising, Eddy and Topup, and 
 libraries like Scipy, Dipy, Mrtrix, FSL and ANTs.
+
+If you use this tool for your research, **please cite the following**
+
+```
+Valcourt Caron A., Shmuel A., Hao Z., Descoteaux M.,
+“mrHARDIflow : A pipeline tailored for the preprocessing and analysis of 
+Multi-Resolution High Angular diffusion MRI and its application to a 
+variability study of the PRIME-DE database”,
+bioRxiv, 2021.11.22.469616, doi.org/10.1101/2021.11.22.469616.
+```
 
 ## Requirements
 
