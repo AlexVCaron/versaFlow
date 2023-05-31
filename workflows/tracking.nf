@@ -14,6 +14,18 @@ def asArray ( object ) {
             : [ object ]
 }
 
+def isCollectionOrArray ( object ) {    
+    return [Collection, Object[]].any { it.isAssignableFrom(object.getClass()) }
+}
+
+def asArray ( object ) {
+    return isCollectionOrArray(object)
+        ? object
+        : object instanceof String
+            ? object.tokenize(',')
+            : [ object ]
+}
+
 params.pft_tracking = true
 params.local_tracking = true
 params.run_commit = true
