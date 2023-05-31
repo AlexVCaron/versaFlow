@@ -193,7 +193,7 @@ OPTIONAL ARGUMENTS [possible values] (default values)
 
         --pve_threshold                     Minimal volume fraction for GM and WM to be considered part of the interface ($pve_threshold)
         --pft_random_seed                   List of random seeds to use to produce a variety of tractograms ($pft_random_seed)
-        --tracking_algorithm                Type of tracking algorithm to use. Can be one or a list containing both [det|prob] ($tracking_algorithm)
+        --tracking_algorithm                Type of tracking algorithm to use. Can be one or a list containing both [det|prob] ($pft_tracking_algorithm)
         --streamline_compression_factor     Compression factor to use for output tractograms. Zero leads to no compression ($streamline_compression_factor)
         --pft_seeding_strategy              Seeding strategy to initialize tracking [npv|nt] ($pft_seeding_strategy)
         --pft_number_of_seeds               Number of seeds. With "npv", it is the number of seeds per voxels, with "nt" the total number to use ($pft_number_of_seeds)

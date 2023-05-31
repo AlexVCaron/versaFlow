@@ -293,7 +293,7 @@ def display_usage () {
             "free_water_tensor" : "$params.free_water_tensor",
             "strict_parameters": "$params.strict_parameters",
             "pft_random_seed" : "$params.pft_random_seed",
-            "tracking_algorithm" : "$params.tracking_algorithm",
+            "pft_tracking_algorithm" : "$params.pft_tracking_algorithm",
             "streamline_compression_factor" : "$params.streamline_compression_factor",
             "pft_tracking": "$params.pft_tracking",
             "pve_threshold": "$params.pve_threshold",
