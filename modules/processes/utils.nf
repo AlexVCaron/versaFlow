@@ -178,7 +178,7 @@ process apply_epi_field {
         tuple val(sid), path("${sid}_dwi__epi_corrected_metadata.py"), optional: true, emit: metadata
     script:
         def after_script = ""
-        if ( !metadata.empty() )
+        if ( metadata instanceof nextflow.util.BlankSeparatedList ? !metadata.isEmpty() : !metadata.empty() )
             after_script += "cp $metadata ${sid}_dwi__epi_corrected_metadata.py\n"
         """
         animaApplyDistortionCorrection \
