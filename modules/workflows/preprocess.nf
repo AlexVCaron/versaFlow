@@ -281,7 +281,8 @@ workflow epi_correction_wkf {
         fieldmap = fieldmap_output
         movpar = movpar_output
         coeff = coeff_output
-        param = prepare_epi_correction.out.config
+        config = prepare_epi_correction.out.config
+        param = prepare_epi_correction.out.acqp
         prefix = prepare_epi_correction.out.awaited_out_name
         topup = topup_output
         metadata = prepare_epi_correction.out.metadata
