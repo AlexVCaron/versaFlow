@@ -48,9 +48,10 @@ process ants_register {
             ${params.verbose_outputs ? "--verbose" : ""} \
             --config $config
 
-        cp ${file(reference).name} ${moving[0].simpleName}__registration_ref.nii.gz
         cnt1=0
         cnt2=1
+
+        cp ${file(reference).name} ${moving[0].simpleName}__registration_ref.nii.gz
         while true
         do
             found=false

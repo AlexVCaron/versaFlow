@@ -12,6 +12,8 @@ c.AntsRegistration.log_datefmt = "%Y-%m-%d %H:%M:%S"
 
 c.AntsRegistration.log_format = "[%(name)s]%(highlevel)s %(message)s"
 
+c.AntsRegistration.init_with_ants_ai = True
+
 c.AntsRegistration.log_level = 30
 
 c.AntsRegistration.base_config_file = ""

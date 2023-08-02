@@ -115,8 +115,8 @@ include {
 include {
     change_name as rename_ec_input_dwi;
     change_name as rename_ec_input_rev;
-    change_name as rename_ec_input_dwi_meta;
-    change_name as rename_ec_input_rev_meta;
+    enforce_sid_convention as rename_ec_input_dwi_meta;
+    enforce_sid_convention as rename_ec_input_rev_meta;
     change_name as rename_epi_corrected_dwi;
     change_name as rename_epi_corrected_meta;
     change_name as rename_transformed_raw_dwi;
@@ -378,6 +378,7 @@ workflow preprocess_wkf {
                 "ec_input_dwi"
             ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
 
+
             ec_input_rev_channel = rename_ec_input_rev(
                 collect_paths(epi_correction_wkf.out.corrected_indexes.join(rev_channel)),
                 "ec_input_rev"
@@ -385,14 +386,12 @@ workflow preprocess_wkf {
 
             ec_input_dwi_meta_channel = rename_ec_input_dwi_meta(
                 epi_correction_wkf.out.in_metadata_w_epi_correction
-                    .map{ [it[0], it[1][(0..<it[1].size()).step(2)]] },
-                "ec_input_dwi_metadata"
+                    .map{ [it[0], it[1].find{m -> m.simpleName.contains("_dwi")}, "dwi__ec_input_dwi_metadata"] }
             ).map{ it.flatten() }
 
             ec_input_rev_meta_channel = rename_ec_input_rev_meta(
                 epi_correction_wkf.out.in_metadata_w_epi_correction
-                    .map{ [it[0], it[1][(1..<it[1].size()).step(2)]] },
-                "ec_input_rev_metadata"
+                    .map{ [it[0], it[1].find{m -> m.simpleName.contains("_rev")}, "rev__ec_input_rev_metadata"] }
             ).map{ it.flatten() }
 
             ec2eddy_channel = Channel.empty()
@@ -1307,7 +1306,7 @@ workflow t1_preprocess_wkf {
             n4_denoise_wkf(
                 t1_channel,
                 t1_channel.map{ [it[0], ""] },
-                Channel.empty(),
+                mask_channel,
                 t1_channel.map{ [it[0], ""] },
                 params.t1_n4_normalization_config,
                 true
