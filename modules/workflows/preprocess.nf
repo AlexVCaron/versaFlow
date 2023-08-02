@@ -281,7 +281,8 @@ workflow epi_correction_wkf {
         fieldmap = fieldmap_output
         movpar = movpar_output
         coeff = coeff_output
-        param = prepare_epi_correction.out.config
+        config = prepare_epi_correction.out.config
+        param = prepare_epi_correction.out.acqp
         prefix = prepare_epi_correction.out.awaited_out_name
         topup = topup_output
         metadata = prepare_epi_correction.out.metadata
@@ -401,8 +402,8 @@ workflow ec_align_b0_wkf {
                 reverse: [it[0], it[2] instanceof Path ? [it[1][1]] : it[1][it[2].size()..it[1].size() - 1]] 
             }
 
-        concatenate_b0(b0_map.forward.map{ it + [[], []] }.join(b0_align_to_average.out.metadata), 3, "b0__aligned", "preprocess", params.concatenate_base_config)
-        concatenate_rev_b0(b0_map.reverse.map{ it + [[], []] }.join(b0_align_to_average.out.metadata), 3, "b0_rev__aligned", "preprocess", params.concatenate_base_config)
+        concatenate_b0(b0_map.forward.map{ it + [[], []] }.join(b0_align_to_average.out.metadata), 3, "dwi__b0_aligned", "preprocess", params.concatenate_base_config)
+        concatenate_rev_b0(b0_map.reverse.map{ it + [[], []] }.join(b0_align_to_average.out.metadata), 3, "rev__b0_aligned", "preprocess", params.concatenate_base_config)
     emit:
         b0 = concatenate_b0.out.image
         rev_b0 = concatenate_rev_b0.out.image

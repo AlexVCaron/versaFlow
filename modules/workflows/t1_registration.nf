@@ -43,6 +43,7 @@ include {
     prepend_sid as prepend_sid_template;
     prepend_sid as prepend_sid_template_mask;
     prepend_sid as prepend_sid_template_dilated_mask;
+    prepend_sid as prepend_sid_template_whole_mask;
     clean_mask_borders;
     dilate_mask as dilate_t1_mask;
     dilate_mask as dilate_dwi_mask;
@@ -69,7 +70,8 @@ include {
 include {
     resampling_reference;
     scilpy_resample_to_reference as resample_template;
-    scilpy_resample_to_reference as resample_dilated_mask
+    scilpy_resample_to_reference as resample_dilated_mask;
+    scilpy_resample_to_reference as resample_whole_mask
 } from '../processes/upsample.nf'
 include {
     get_data_path;
@@ -122,6 +124,9 @@ workflow t12b0_registration {
             t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_no_bv.nii.gz")] }
         )
         template_dilated_mask_channel = prepend_sid_template_dilated_mask(
+            t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_no_bv_dilated.nii.gz")] }
+        )
+        template_whole_mask_channel = prepend_sid_template_whole_mask(
             t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_whole_no_bv.nii.gz")] }
         )
 
@@ -164,9 +169,19 @@ workflow t12b0_registration {
             false,
             "", ""
         )
+        resample_whole_mask(
+            template_whole_mask_channel
+                .join(registration_reference)
+                .map{ it + ["", ""] },
+            "preprocess",
+            "nn",
+            false,
+            false,
+            "", ""
+        )
         mask_template(
             resample_template.out.image
-                .join(resample_dilated_mask.out.image)
+                .join(resample_whole_mask.out.image)
                 .map{ it + [""] },
             "preprocess",
             false
@@ -178,7 +193,7 @@ workflow t12b0_registration {
             dwi_mask_channel,
             t1_mask_channel,
             resample_template.out.image,
-            resample_template.out.mask,
+            resample_dilated_mask.out.image,
             dwi_metadata_channel,
             use_quick ? params.t1_to_template_affine_quick_config : params.t1_to_template_affine_config,
             use_quick ? params.b0_to_template_affine_quick_config : params.b0_to_template_affine_config,
