@@ -400,8 +400,8 @@ workflow preprocess_wkf {
                     .join(epi_correction_wkf.out.transform_reference)
                     .join(epi_correction_wkf.out.reverse_transform)
                     .join(epi_correction_wkf.out.forward_transform)
-                    .map{ it[0..-2] + [it[-2], it[-1]] }
-                    .map{ it + [it[-1].collect{ ["false", "true"] }, "", ""] },
+                    .map{ it[0..-2] + [it[-2] + it[-1]] }
+                    .map{ it + [["false", "true"], "", ""] },
                 "preprocess",
                 "",
                 "false",
