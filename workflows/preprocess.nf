@@ -394,6 +394,22 @@ workflow preprocess_wkf {
                     .map{ [it[0], it[1].find{m -> m.simpleName.contains("_rev")}, "rev__ec_input_rev_metadata"] }
             ).map{ it.flatten() }
 
+
+            apply_transform_epi_rev(
+                ec_input_rev_channel.map{ it[0..1] }
+                    .join(epi_correction_wkf.out.transform_reference)
+                    .join(epi_correction_wkf.out.reverse_transform)
+                    .join(epi_correction_wkf.out.forward_transform)
+                    .map{ it[0..-2] + [it[-2], it[-1]] }
+                    .map{ it + [it[-1].collect{ ["false", "true"] }, "", ""] },
+                "preprocess",
+                "",
+                "false",
+                "",
+                params.ants_transform_base_config
+            )
+
+            // Applied estimated susceptibility correction to DWI
             ec2eddy_channel = Channel.empty()
             epi_fieldmap_channel = Channel.empty()
             epi_displacement_field_channel = Channel.empty()
@@ -405,7 +421,7 @@ workflow preprocess_wkf {
                 // Applied estimated susceptibility correction to DWI
                 apply_topup_wkf(
                     ec_input_dwi_channel,
-                    ec_input_rev_channel,
+                    apply_transform_epi_rev.out.image,
                     ec2eddy_channel,
                     ec_input_dwi_meta_channel
                         .join(ec_input_rev_meta_channel)
@@ -426,31 +442,8 @@ workflow preprocess_wkf {
                 epi_displacement_field_channel = epi_correction_wkf.out.field
                 epi_fieldmap_channel = epi_correction_wkf.out.fieldmap
 
-                // Applied estimated susceptibility correction to DWI
-                apply_transform_epi_dwi(
-                    ec_input_dwi_channel.map{ it[0..1] }
-                        .join(epi_correction_wkf.out.transform_reference)
-                        .join(epi_correction_wkf.out.forward_transform)
-                        .map{ it + [it[-1].collect{ "false" }, "", ""] },
-                    "preprocess",
-                    "",
-                    "false",
-                    "",
-                    params.ants_transform_base_config
-                )
-                apply_transform_epi_rev(
-                    ec_input_rev_channel.map{ it[0..1] }
-                        .join(epi_correction_wkf.out.transform_reference)
-                        .join(epi_correction_wkf.out.reverse_transform)
-                        .map{ it + [it[-1].collect{ "false" }, "", ""] },
-                    "preprocess",
-                    "",
-                    "false",
-                    "",
-                    params.ants_transform_base_config
-                )
                 apply_epi_field_wkf(
-                    apply_transform_epi_dwi.out.image,
+                    ec_input_dwi_channel.map{ it[0..1] },
                     apply_transform_epi_rev.out.image,
                     epi_displacement_field_channel,
                     ec_input_dwi_meta_channel,
