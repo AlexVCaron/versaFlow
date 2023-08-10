@@ -39,14 +39,18 @@ and docker images. The `latest` versions come pre-packaged with the CUDA runtime
 and require a Nvidia GPU to execute. For usage on a machine without a Nvidia GPU, 
 use the images tagged `nogpu`.
 
-
-- Singularity :
-  - Nvidia GPU  : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:latest`
-  - Without GPU : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:nogpu`
-
 - Docker : [Docker Hub](https://hub.docker.com/r/avcaron/versa)
   - Nvidia GPU  : `docker pull avcaron/versa:latest`
   - Without GPU : `docker pull avcaron/versa:nogpu`
+- Singularity :
+  - Singularity images are no longer produced in house. To build your singularity, 
+    use a docker tag and the following command : `singularity build <image.sif> docker://avcaron/versa:<tag>`.
+  - Old versions of the singularity images can still be access through the ORAS 
+    container registry :
+    - Nvidia GPU  : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:latest`
+    - Without GPU : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:nogpu`
+
+
 
 # Data input format
 
