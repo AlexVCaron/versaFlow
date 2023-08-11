@@ -14,6 +14,8 @@ c.AntsRegistration.log_format = "[%(name)s]%(highlevel)s %(message)s"
 
 c.AntsRegistration.log_level = 30
 
+c.AntsRegistration.init_with_ants_ai = True
+
 c.AntsRegistration.base_config_file = ""
 
 c.AntsRegistration.init_with_ants_ai = True

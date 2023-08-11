@@ -398,16 +398,17 @@ workflow preprocess_wkf {
             apply_transform_epi_rev(
                 ec_input_rev_channel.map{ it[0..1] }
                     .join(epi_correction_wkf.out.transform_reference)
-                    .join(epi_correction_wkf.out.reverse_transform)
                     .join(epi_correction_wkf.out.forward_transform)
+                    .join(epi_correction_wkf.out.reverse_transform)
                     .map{ it[0..-3] + [it[-2] + it[-1]] }
-                    .map{ it + [["false", "true"], "", ""] },
+                    .map{ it + [["true", "false"], "", ""] },
                 "preprocess",
                 "",
                 "false",
                 "",
                 params.ants_transform_base_config
             )
+            rev_channel = replace_dwi_file(rev_channel, apply_transform_epi_rev.out.image)
 
             // Applied estimated susceptibility correction to DWI
             ec2eddy_channel = Channel.empty()
