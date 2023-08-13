@@ -867,7 +867,7 @@ workflow preprocess_wkf {
 
         // Register T1 to diffusion space (DWI) with masks and segmentations
         template_resampling_reference = null
-        template_to_t1_transform = null
+        template_to_b0_transform = null
         if ( params.register_t1_to_dwi ) {
             t1_registration_wkf(
                 dwi_channel,
@@ -882,7 +882,7 @@ workflow preprocess_wkf {
             )
 
             template_resampling_reference = t1_registration_wkf.out.resampling_reference
-            template_to_t1_transform = t1_registration_wkf.out.template_to_t1_transform
+            template_to_b0_transform = t1_registration_wkf.out.template_to_b0_transform
 
             t1_channel = t1_registration_wkf.out.t1
             t1_mask_channel = t1_registration_wkf.out.mask
@@ -1020,7 +1020,7 @@ workflow preprocess_wkf {
                 absent_pvf_id_channel.join(t1_channel),
                 absent_pvf_id_channel.join(t1_mask_channel),
                 template_resampling_reference,
-                template_to_t1_transform
+                template_to_b0_transform
             )
 
             pvf_channel = segment_nmt_wkf.out.volume_fractions
