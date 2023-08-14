@@ -49,7 +49,9 @@ use the images tagged `nogpu`.
     - Nvidia GPU  : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:latest`
     - Without GPU : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:nogpu`
 
-
+- Docker : [Docker Hub](https://hub.docker.com/r/avcaron/versa)
+  - Nvidia GPU  : `docker pull avcaron/versa:latest`
+  - Without GPU : `docker pull avcaron/versa:nogpu`
 
 # Data input format
 
