@@ -2,11 +2,9 @@
 [![Docker containers](https://img.shields.io/badge/Docker%20images-dockerhub-blue?style=plaflat&logo=docker&labelColor=2e343b)](https://hub.docker.com/repository/docker/avcaron/versa)
 [![DOI](https://zenodo.org/badge/430873937.svg)](https://zenodo.org/badge/latestdoi/430873937)
 
-**versaFlow and its images are moving here ! This repository is still being deployed, there might be some errors running versaFlow right now, we are actively working on it**
+# versaFlow
 
-# versaflow
-
-versaflow is a diffusion MRI processing pipeline configured to handle high 
+versaFlow is a diffusion MRI processing pipeline configured to handle high 
 angular and spatial resolution data. By default it is configured to process 
 Maccaca Mulatta brain images; profiles to handle other types of primates, as 
 well as the human brain are being developped. The pipeline's pre-processing 
@@ -49,7 +47,9 @@ use the images tagged `nogpu`.
     - Nvidia GPU  : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:latest`
     - Without GPU : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:nogpu`
 
-
+- Docker : [Docker Hub](https://hub.docker.com/r/avcaron/versa)
+  - Nvidia GPU  : `docker pull avcaron/versa:latest`
+  - Without GPU : `docker pull avcaron/versa:nogpu`
 
 # Data input format
 
