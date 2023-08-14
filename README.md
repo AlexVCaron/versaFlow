@@ -2,11 +2,9 @@
 [![Docker containers](https://img.shields.io/badge/Docker%20images-dockerhub-blue?style=plaflat&logo=docker&labelColor=2e343b)](https://hub.docker.com/repository/docker/avcaron/versa)
 [![DOI](https://zenodo.org/badge/430873937.svg)](https://zenodo.org/badge/latestdoi/430873937)
 
-**versaFlow and its images are moving here ! This repository is still being deployed, there might be some errors running versaFlow right now, we are actively working on it**
+# versaFlow
 
-# versaflow
-
-versaflow is a diffusion MRI processing pipeline configured to handle high 
+versaFlow is a diffusion MRI processing pipeline configured to handle high 
 angular and spatial resolution data. By default it is configured to process 
 Maccaca Mulatta brain images; profiles to handle other types of primates, as 
 well as the human brain are being developped. The pipeline's pre-processing 
@@ -19,10 +17,9 @@ If you use this tool for your research, **please cite the following**
 
 ```
 Valcourt Caron A., Shmuel A., Hao Z., Descoteaux M.,
-“versaflow : A pipeline tailored for the preprocessing and analysis of 
-Multi-Resolution High Angular diffusion MRI and its application to a 
-variability study of the PRIME-DE database”,
-bioRxiv, 2021.11.22.469616, doi.org/10.1101/2021.11.22.469616.
+“versaFlow: a versatile pipeline for resolution adapted diffusion MRI processing 
+and its application to studying the variability of the PRIME-DE database”,
+Frontiers in Neuroinformatics, 10.3389/fninf.2023.1191200, doi.org/10.3389/fninf.2023.1191200.
 ```
 
 ## Requirements
@@ -40,8 +37,7 @@ and require a Nvidia GPU to execute. For usage on a machine without a Nvidia GPU
 use the images tagged `nogpu`.
 
 - Docker : [Docker Hub](https://hub.docker.com/r/avcaron/versa)
-  - Nvidia GPU  : `docker pull avcaron/versa:latest`
-  - Without GPU : `docker pull avcaron/versa:nogpu`
+  - `docker pull avcaron/versa:latest`
 - Singularity :
   - Singularity images are no longer produced in house. To build your singularity, 
     use a docker tag and the following command : `singularity build <image.sif> docker://avcaron/versa:<tag>`.
@@ -49,8 +45,6 @@ use the images tagged `nogpu`.
     container registry :
     - Nvidia GPU  : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:latest`
     - Without GPU : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:nogpu`
-
-
 
 # Data input format
 

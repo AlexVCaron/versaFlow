@@ -125,6 +125,7 @@ process n4_denoise {
         tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
         tuple val(sid), path("${image.simpleName}_n4_bias_field.nii.gz"), emit: bias_field
     script:
+        def before_denoise =""
         def after_denoise = ""
         def args = ""
         if ( anat.empty() ) {
@@ -142,14 +143,25 @@ process n4_denoise {
         }
         after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz\n"
 
-        if ( !mask.empty() )
+        if ( !mask.empty() ) {
             args += " --mask $mask"
+            if ( !anat.empty() ) {
+                before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $anat -t identity -i $mask -o $mask\n"
+                before_denoise += "scil_image_math.py convert $mask $mask -f --data_type uint8\n"
+            }
+            else {
+                before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $image -t identity -i $mask -o $mask\n"
+                before_denoise += "scil_image_math.py convert $mask $mask -f --data_type uint8\n"
+            }
+        }
 
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
+
+        $before_denoise
         mrhardi n4 $args \
             --out n4denoise \
             --config $config
@@ -248,6 +260,7 @@ process prepare_epi_correction {
         tuple val(sid), path("${b0s.simpleName}__${algo}_config.cnf"), optional: true, emit: config
         tuple val(sid), val("${sid}__${algo}_results"), emit: awaited_out_name
         tuple val(sid), path("${b0s.simpleName}__${algo}_metadata.*"), emit: metadata
+        tuple val(sid), path("${sid}__${algo}_metadata.*"), emit: metadata_for_corrected_dwi
         tuple val(sid), path("{${dwi_bval.collect{ it.simpleName }.join(",")},${rev_bval.collect{ it.simpleName }.join(",")}}_topup_indexes_metadata.*"), optional: true, emit : in_metadata_w_epi_correction
     script:
         """
@@ -259,6 +272,7 @@ process prepare_epi_correction {
             --b0-thr ${params.b0_threshold ? params.b0_threshold : "0"} \
             --config $config \
             --verbose
+        cp ${b0s.simpleName}__${algo}_metadata.py ${sid}__${algo}_metadata.py
         """
 }
 

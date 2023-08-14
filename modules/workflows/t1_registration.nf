@@ -260,6 +260,7 @@ workflow t12b0_registration {
         reference = extract_b0.out.b0
         resampling_reference = registration_reference
         template_to_t1_transform = template_to_t1_transform
+        template_to_b0_transform = template_to_b0_transform
 }
 
 workflow t1_to_b0_affine {

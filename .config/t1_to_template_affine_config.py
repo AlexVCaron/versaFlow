@@ -14,6 +14,8 @@ c.AntsRegistration.log_format = "[%(name)s]%(highlevel)s %(message)s"
 
 c.AntsRegistration.log_level = 30
 
+c.AntsRegistration.init_with_ants_ai = True
+
 c.AntsRegistration.base_config_file = ""
 
 c.AntsRegistration.init_with_ants_ai = True
@@ -23,6 +25,10 @@ c.AntsRegistration.verbose = True
 # -----------------------------------------------------------------------------
 # AntsConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
+
+c.AntsConfiguration.coarse_angular_split = 3
+
+c.AntsConfiguration.coarse_linear_split = 3
 
 c.AntsConfiguration.accross_modalities = False
 
