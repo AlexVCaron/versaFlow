@@ -23,6 +23,10 @@ c.AntsRegistration.base_config_file = ""
 # AntsConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
 
+c.AntsConfiguration.coarse_angular_split = 3
+
+c.AntsConfiguration.coarse_linear_split = 3
+
 c.AntsConfiguration.accross_modalities = True
 
 c.AntsConfiguration.dimension = 3
