@@ -19,10 +19,9 @@ If you use this tool for your research, **please cite the following**
 
 ```
 Valcourt Caron A., Shmuel A., Hao Z., Descoteaux M.,
-“versaflow : A pipeline tailored for the preprocessing and analysis of 
-Multi-Resolution High Angular diffusion MRI and its application to a 
-variability study of the PRIME-DE database”,
-bioRxiv, 2021.11.22.469616, doi.org/10.1101/2021.11.22.469616.
+“versaFlow: a versatile pipeline for resolution adapted diffusion MRI processing 
+and its application to studying the variability of the PRIME-DE database”,
+Frontiers in Neuroinformatics, 10.3389/fninf.2023.1191200, doi.org/10.3389/fninf.2023.1191200.
 ```
 
 ## Requirements
