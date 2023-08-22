@@ -251,11 +251,9 @@ workflow t12b0_registration {
             params.ants_transform_mask_config
         )
 
-        clean_mask_borders(transform_mask_to_b0.out.image, 2, "preprocess")
-
     emit:
         t1 = transform_t1_to_b0.out.image
-        mask = clean_mask_borders.out.mask
+        mask = transform_mask_to_b0.out.image
         transform = t1_to_b0_transform
         reference = extract_b0.out.b0
         resampling_reference = registration_reference
