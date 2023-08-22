@@ -283,7 +283,7 @@ process pvf_to_mask {
     publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(wm_pvf), path(gm_pvf), path(csf_pvf), path(brain_mask)
+        tuple val(sid), path(dgm_pvf), path(wm_pvf), path(gm_pvf), path(csf_pvf), path(brain_mask)
         val(caller_name)
         val(additional_publish_path)
     output:
@@ -298,12 +298,16 @@ process pvf_to_mask {
         import numpy as np
         wm_pvf = nib.load("$wm_pvf").get_fdata()
         gm_pvf = nib.load("$gm_pvf").get_fdata()
+        dgm_pvf = nib.load("$dgm_pvf").get_fdata()
         csf_pvf = nib.load("$csf_pvf")
         affine = csf_pvf.affine
         csf_pvf = csf_pvf.get_fdata()
 
         wm_background = wm_pvf < $params.min_pvf_threshold
+        wm_pvf[wm_background] = dgm_pvf[wm_background]
+        wm_background = wm_pvf < $params.min_pvf_threshold
         wm_pvf[wm_background] = 0.
+
         gm_background = gm_pvf < $params.min_pvf_threshold
         gm_pvf[gm_background] = 0.
         csf_background = csf_pvf < $params.min_pvf_threshold

@@ -27,9 +27,11 @@ c.N4BiasCorrectionConfiguration.bins = 200
 
 c.N4BiasCorrectionConfiguration.filter_width = 0.075
 
-c.N4BiasCorrectionConfiguration.knot_distance = 4.0
+c.N4BiasCorrectionConfiguration.spline_order = 3
 
-c.N4BiasCorrectionConfiguration.iterations = [200, 200, 100, 100]
+c.N4BiasCorrectionConfiguration.knot_distance = 16.0
+
+c.N4BiasCorrectionConfiguration.iterations = [80, 80, 40, 30]
 
 c.N4BiasCorrectionConfiguration.noise = 0.01
 
