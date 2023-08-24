@@ -447,7 +447,8 @@ workflow preprocess_wkf {
                     ec_input_dwi_channel.map{ it[0..1] },
                     apply_transform_epi_rev.out.image,
                     epi_displacement_field_channel,
-                    ec_input_dwi_meta_channel,
+                    ec_input_dwi_meta_channel
+                        .map{ [it[0], it[1]] },
                     ""
                 )
 

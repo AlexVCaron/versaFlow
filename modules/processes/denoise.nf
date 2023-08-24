@@ -144,14 +144,14 @@ process n4_denoise {
         after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz\n"
 
         if ( !mask.empty() ) {
-            args += " --mask $mask"
+            args += " --mask mask_for_n4.nii.gz"
             if ( !anat.empty() ) {
-                before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $anat -t identity -i $mask -o $mask\n"
-                before_denoise += "scil_image_math.py convert $mask $mask -f --data_type uint8\n"
+                before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $anat -t identity -i $mask -o mask_for_n4.nii.gz\n"
+                before_denoise += "scil_image_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
             }
             else {
-                before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $image -t identity -i $mask -o $mask\n"
-                before_denoise += "scil_image_math.py convert $mask $mask -f --data_type uint8\n"
+                before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $image -t identity -i $mask -o mask_for_n4.nii.gz\n"
+                before_denoise += "scil_image_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
             }
         }
 
