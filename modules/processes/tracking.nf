@@ -149,6 +149,42 @@ process PFT_tracking {
         """
 }
 
+process Local_prob_tracking_opencl {
+    label params.use_cuda ? "res_single_cpu" : params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
+    label params.use_cuda ? "res_gpu" : ""
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(fodf), path(seeding_mask, stageAs: "seeding_mask*.nii.gz"), val(seeding_mask_type), path(tracking_mask, stageAs: "tracking_mask*.nii.gz"), val(tracking_mask_type)
+        val(caller_name)
+        each seed
+        each seeding_strategy
+        each n_seeds
+        each step_length
+        each theta
+    output:
+        tuple val(sid), path("${sid}_local_gpu_prob_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk"), emit: tractogram
+    script:
+        """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
+        scil_compute_local_tracking_gpu.py $fodf $seeding_mask $tracking_mask \
+            tmp.trk \
+            --step $step_length \
+            --theta $theta \
+            --min_length $params.local_min_len \
+            --max_length $params.local_max_len \
+            --${seeding_strategy} $n_seeds $compress \
+            --rng_seed $seed
+        scil_remove_invalid_streamlines.py tmp.trk \
+            ${sid}_local_gpu_prob_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk \
+            --remove_single_point
+        """
+}
+
 process Local_tracking {
     label "res_single_cpu"
 
