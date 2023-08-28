@@ -18,6 +18,8 @@ params.pft_tracking = true
 params.local_tracking = true
 params.run_commit = true
 
+params.use_opencl_tracking = false
+
 params.pft_random_seed = 0
 params.local_random_seed = 0
 
