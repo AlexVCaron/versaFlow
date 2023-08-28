@@ -16,6 +16,7 @@ def asArray ( object ) {
 
 params.pft_tracking = true
 params.local_tracking = true
+params.run_commit = true
 
 params.pft_random_seed = 0
 params.local_random_seed = 0
@@ -241,14 +242,17 @@ workflow ensemble_tracking_wkf {
             )
         }
 
-        Commit(
-            out_tractograms
-                .combine(dwi_channel, by: 0)
-                .map{ it + ["", ""] },
-            "tracking/commit_filtered"
-        )
+        if (params.run_commit) {
+            Commit(
+                out_tractograms
+                    .combine(dwi_channel, by: 0)
+                    .map{ it + ["", ""] },
+                "tracking/commit_filtered"
+            )
 
-        out_tractograms = Commit.out.filtered_tractogram
+            out_tractograms = Commit.out.filtered_tractogram
+        }
+        
         Ensemble_Tractograms(out_tractograms.groupTuple().join(fa_channel), "tracking")
         out_ensemble_tractogram = Ensemble_Tractograms.out.tractogram
 
