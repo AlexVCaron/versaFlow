@@ -224,22 +224,41 @@ workflow ensemble_tracking_wkf {
                 )
             } 
 
-            Local_tracking(
-                fodf_channel
-                    .combine(local_seeding_masks_channel, by: 0)
-                    .combine(local_tracking_masks_channel, by: 0),
-                "tracking/local_tracking",
-                local_random_seed,
-                local_tracking_algorithm,
-                local_seeding_strategy,
-                local_number_of_seeds,
-                local_step_size,
-                local_theta_max
-            )
+            if ( params.use_opencl_tracking ) {
+                Local_prob_tracking_opencl(
+                    fodf_channel
+                        .combine(local_seeding_masks_channel, by: 0)
+                        .combine(local_tracking_masks_channel, by: 0),
+                    "tracking/local_tracking",
+                    local_random_seed,
+                    local_seeding_strategy,
+                    local_number_of_seeds,
+                    local_step_size,
+                    local_theta_max
+                )
 
-            out_tractograms = out_tractograms.mix(
-                Local_tracking.out.tractogram
-            )
+                out_tractograms = out_tractograms.mix(
+                    Local_prob_tracking_opencl.out.tractogram
+                )
+            }
+            else {
+                Local_tracking(
+                    fodf_channel
+                        .combine(local_seeding_masks_channel, by: 0)
+                        .combine(local_tracking_masks_channel, by: 0),
+                    "tracking/local_tracking",
+                    local_random_seed,
+                    local_tracking_algorithm,
+                    local_seeding_strategy,
+                    local_number_of_seeds,
+                    local_step_size,
+                    local_theta_max
+                )
+
+                out_tractograms = out_tractograms.mix(
+                    Local_tracking.out.tractogram
+                )
+            }
         }
 
         if (params.run_commit) {
