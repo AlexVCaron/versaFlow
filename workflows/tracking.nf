@@ -71,6 +71,7 @@ include {
     PFT_maps;
     PFT_tracking;
     Local_tracking;
+    Local_prob_tracking_opencl;
     Ensemble_Tractograms;
     Commit
 } from "../modules/processes/tracking.nf"
