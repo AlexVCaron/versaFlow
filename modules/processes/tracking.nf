@@ -124,6 +124,7 @@ process Local_prob_tracking_opencl {
     output:
         tuple val(sid), path("${sid}_local_gpu_prob_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk"), emit: tractogram
     script:
+        def compress = params.streamline_compression_factor ? '--compress ' + params.streamline_compression_factor : ''
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
