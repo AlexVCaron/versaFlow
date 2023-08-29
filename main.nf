@@ -65,7 +65,7 @@ def validate_required_parameters () {
 }
 
 def display_run_info () {
-    log.info "mrHARDIflow pipeline"
+    log.info "versaFlow pipeline"
     log.info "==================="
     log.info ""
     log.info "Start time : $workflow.start"

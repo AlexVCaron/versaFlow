@@ -378,6 +378,7 @@ workflow preprocess_wkf {
                 "ec_input_dwi"
             ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
 
+
             ec_input_rev_channel = rename_ec_input_rev(
                 collect_paths(epi_correction_wkf.out.corrected_indexes.join(rev_channel)),
                 "ec_input_rev"
@@ -397,20 +398,17 @@ workflow preprocess_wkf {
             apply_transform_epi_rev(
                 ec_input_rev_channel.map{ it[0..1] }
                     .join(epi_correction_wkf.out.transform_reference)
-                    .join(epi_correction_wkf.out.reverse_transform)
                     .join(epi_correction_wkf.out.forward_transform)
+                    .join(epi_correction_wkf.out.reverse_transform)
                     .map{ it[0..-3] + [it[-2] + it[-1]] }
-                    .map{ it + [["false", "true"], "", ""] },
+                    .map{ it + [["true", "false"], "", ""] },
                 "preprocess",
                 "",
                 "false",
                 "",
                 params.ants_transform_base_config
             )
-            rev_channel = replace_dwi_file(
-                rev_channel,
-                fill_missing_datapoints(apply_transform_epi_rev.out.image, ref_id_channel, 1, [""])
-            )
+            rev_channel = replace_dwi_file(rev_channel, apply_transform_epi_rev.out.image)
 
             // Applied estimated susceptibility correction to DWI
             ec2eddy_channel = Channel.empty()
@@ -869,7 +867,7 @@ workflow preprocess_wkf {
 
         // Register T1 to diffusion space (DWI) with masks and segmentations
         template_resampling_reference = null
-        template_to_t1_transform = null
+        template_to_b0_transform = null
         if ( params.register_t1_to_dwi ) {
             t1_registration_wkf(
                 dwi_channel,
@@ -884,7 +882,7 @@ workflow preprocess_wkf {
             )
 
             template_resampling_reference = t1_registration_wkf.out.resampling_reference
-            template_to_t1_transform = t1_registration_wkf.out.template_to_t1_transform
+            template_to_b0_transform = t1_registration_wkf.out.template_to_b0_transform
 
             t1_channel = t1_registration_wkf.out.t1
             t1_mask_channel = t1_registration_wkf.out.mask
@@ -1022,7 +1020,7 @@ workflow preprocess_wkf {
                 absent_pvf_id_channel.join(t1_channel),
                 absent_pvf_id_channel.join(t1_mask_channel),
                 template_resampling_reference,
-                template_to_t1_transform
+                template_to_b0_transform
             )
 
             pvf_channel = segment_nmt_wkf.out.volume_fractions
@@ -1302,7 +1300,7 @@ workflow t1_preprocess_wkf {
             n4_denoise_wkf(
                 t1_channel,
                 t1_channel.map{ [it[0], ""] },
-                Channel.empty(),
+                mask_channel,
                 t1_channel.map{ [it[0], ""] },
                 params.t1_n4_normalization_config,
                 true

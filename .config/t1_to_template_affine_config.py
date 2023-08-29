@@ -14,13 +14,21 @@ c.AntsRegistration.log_format = "[%(name)s]%(highlevel)s %(message)s"
 
 c.AntsRegistration.log_level = 30
 
+c.AntsRegistration.init_with_ants_ai = True
+
 c.AntsRegistration.base_config_file = ""
+
+c.AntsRegistration.init_with_ants_ai = True
 
 c.AntsRegistration.verbose = True
 
 # -----------------------------------------------------------------------------
 # AntsConfiguration(mrHARDIConfigurable) configuration
 # -----------------------------------------------------------------------------
+
+c.AntsConfiguration.coarse_angular_split = 3
+
+c.AntsConfiguration.coarse_linear_split = 3
 
 c.AntsConfiguration.accross_modalities = False
 
@@ -40,7 +48,7 @@ c.AntsConfiguration.passes = [{
     "conv_eps": 1e-6,
     "conv_max_iter": [400, 200, 100, 50],
     "conv_win": 10,
-    "grad_step": 0.2,
+    "grad_step": 0.1,
     "klass": "mrHARDI.traits.ants.AntsRigid",
     "metrics": [
         {
@@ -50,7 +58,8 @@ c.AntsConfiguration.passes = [{
                 1.0,
                 64,
                 "Regular",
-                0.6
+                0.8,
+                True
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
         }
@@ -81,7 +90,8 @@ c.AntsConfiguration.passes = [{
                 1.0,
                 64,
                 "Regular",
-                0.5
+                0.8,
+                True
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
         }

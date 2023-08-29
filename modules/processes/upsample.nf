@@ -107,7 +107,7 @@ process resampling_reference {
     script:
         def args = ""
         if ( force_voxel_size )
-            args += " --force-resolution $force_voxel_size"
+            args += " --force_resolution $force_voxel_size"
         if ( min_voxel_size )
             args += " --min_voxel_size $min_voxel_size"
         """
