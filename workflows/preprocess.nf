@@ -407,6 +407,10 @@ workflow preprocess_wkf {
                 "",
                 params.ants_transform_base_config
             )
+            rev_channel = replace_dwi_file(
+                rev_channel,
+                fill_missing_datapoints(apply_transform_epi_rev.out.image, ref_id_channel, 1, [""])
+            )
 
             // Applied estimated susceptibility correction to DWI
             ec2eddy_channel = Channel.empty()
