@@ -8,6 +8,7 @@ params.use_cuda = false
 params.eddy_force_shelled = true
 params.b0_threshold = false
 params.b0_normalization_strategy = "linear"
+params.epi_algorithm = "topup"
 params.random_seed = 1234
 params.verbose_outputs = false
 
@@ -341,7 +342,7 @@ process prepare_eddy {
         }
         if ( rev_prefix ) {
             args += " --rev $rev_prefix"
-            if ( params.eddy_with_reverse )
+            if ( params.eddy_with_reverse && params.epi_algorithm == "topup" )
                 args += " --rev_eddy"
         }
 

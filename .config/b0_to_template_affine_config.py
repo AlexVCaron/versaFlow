@@ -52,7 +52,7 @@ c.AntsConfiguration.passes = [{
                 1.,
                 64,
                 "Regular",
-                1.,
+                0.7,
                 True
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
@@ -84,7 +84,7 @@ c.AntsConfiguration.passes = [{
                 1.,
                 64,
                 "Regular",
-                1.,
+                0.8,
                 True
             ],
             "klass": "mrHARDI.traits.ants.MetricMI"
