@@ -2,7 +2,7 @@
 
 nextflow.enable.dsl=2
 
-params.segmentation_classes = ["csf", "gm", "wm", "dgm"]
+params.segmentation_classes = ["csf", "gm", "dgm", "wm"]
 params.atropos_prior_weight = 0.0
 params.atropos_n4_bspline_spacing = 100.0
 params.random_seed = 1234

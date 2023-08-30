@@ -283,7 +283,7 @@ process pvf_to_mask {
     publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(dgm_pvf), path(wm_pvf), path(gm_pvf), path(csf_pvf), path(brain_mask)
+        tuple val(sid), path(wm_pvf), path(gm_pvf), path(dgm_pvf), path(csf_pvf), path(brain_mask)
         val(caller_name)
         val(additional_publish_path)
     output:
@@ -291,8 +291,12 @@ process pvf_to_mask {
         tuple val(sid), path("${sid}_gm_mask.nii.gz"), emit: gm_mask
         tuple val(sid), path("${sid}_csf_mask.nii.gz"), emit: csf_mask
         tuple val(sid), path("${sid}_safe_wm_mask.nii.gz"), emit: safe_wm_mask
+        tuple val(sid), path("${sid}_pvf_3t_wm.nii.gz"), path("${sid}_pvf_3t_gm.nii.gz"), path("${sid}_pvf_3t_csf.nii.gz"), emit: pvf_3t
     script:
         """
+        cp $gm_pvf ${sid}_pvf_3t_gm.nii.gz
+        cp $csf_pvf ${sid}_pvf_3t_csf.nii.gz
+        scil_image_math.py addition $wm_pvf $dgm_pvf ${sid}_pvf_3t_wm.nii.gz -f
         python3 - <<'END_SCRIPT'
         import nibabel as nib
         import numpy as np
