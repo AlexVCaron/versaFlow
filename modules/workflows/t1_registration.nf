@@ -65,7 +65,10 @@ include {
     bet_mask;
     difference_masks;
     intersect_masks;
-    invert_mask
+    invert_mask;
+    compose_transformations as compose_between_template_and_t1;
+    compose_transformations as compose_between_template_and_b0;
+    compose_transformations as compose_between_t1_and_b0
 } from '../processes/utils.nf'
 include {
     resampling_reference;
@@ -239,6 +242,12 @@ workflow t12b0_registration {
             .join(t1_to_b0_affine.out.t1_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
+        b0_to_t1_transform = template_to_t1_transform
+            .join(t1_to_b0_syn.out.b0_transform)
+            .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
+            .join(t1_to_b0_affine.out.b0_transform)
+            .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
+
         transform_t1_to_b0(
             t1_channel
                 .join(extract_b0.out.b0)
@@ -265,6 +274,7 @@ workflow t12b0_registration {
             template_to_b0_transform,
             b0_to_template_transform,
             t1_to_b0_transform,
+            b0_to_t1_transform,
             t1_channel,
             extract_b0.out.b0,
             template_channel
