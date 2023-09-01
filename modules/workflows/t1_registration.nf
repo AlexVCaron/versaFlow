@@ -221,8 +221,16 @@ workflow t12b0_registration {
             .join(t1_to_b0_syn.out.b0_inverse_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
+        b0_to_template_transform = t1_to_b0_affine.out.b0_transform
+            .join(t1_to_b0_syn.out.b0_transform)
+            .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
+
         template_to_t1_transform = t1_to_b0_affine.out.t1_inverse_transform
             .join(t1_to_b0_syn.out.t1_inverse_transform)
+            .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
+
+        t1_to_template_transform = t1_to_b0_affine.out.t1_transform
+            .join(t1_to_b0_syn.out.t1_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
         t1_to_b0_transform = template_to_b0_transform
@@ -251,6 +259,17 @@ workflow t12b0_registration {
             params.ants_transform_mask_config
         )
 
+        create_composite_transforms_wkf(
+            template_to_t1_transform,
+            t1_to_template_transform,
+            template_to_b0_transform,
+            b0_to_template_transform,
+            t1_to_b0_transform,
+            t1_channel,
+            extract_b0.out.b0,
+            template_channel
+        )
+
     emit:
         t1 = transform_t1_to_b0.out.image
         mask = transform_mask_to_b0.out.image
@@ -259,6 +278,58 @@ workflow t12b0_registration {
         resampling_reference = registration_reference
         template_to_t1_transform = template_to_t1_transform
         template_to_b0_transform = template_to_b0_transform
+}
+
+workflow create_composite_transforms_wkf {
+    take:
+        template_to_t1_transform_w_inverts
+        t1_to_template_transform_w_inverts
+        template_to_b0_transform_w_inverts
+        b0_to_template_transform_w_inverts
+        t1_to_b0_transform_w_inverts
+        b0_to_t1_transform_w_inverts
+        t1_channel
+        b0_channel
+        template_channel
+    main:
+        compose_between_template_and_t1(
+            template_to_t1_transform_w_inverts
+                .join(t1_to_template_transform_w_inverts)
+                .join(template_channel)
+                .join(t1_channel),
+            "true",
+            ["template_to_t1", "t1_to_template"],
+            "transforms/t1_space"
+        )
+        compose_between_template_and_b0(
+            template_to_b0_transform_w_inverts
+                .join(b0_to_template_transform_w_inverts)
+                .join(template_channel)
+                .join(b0_channel),
+            "true",
+            ["template_to_b0", "b0_to_template"],
+            "transforms/b0_space"
+        )
+
+        t1_to_b0 = t1_to_template_transform_w_inverts
+            .join(t1_to_b0_transform_w_inverts)
+            .join(template_to_b0_transform_w_inverts)
+            .map{ [it[0], it[1] + it[3] + it[5], it[2] + it[4] + it[6]] }
+
+        b0_to_t1 = b0_to_template_transform_w_inverts
+            .join(b0_to_t1_transform_w_inverts)
+            .join(template_to_t1_transform_w_inverts)
+            .map{ [it[0], it[1] + it[3] + it[5], it[2] + it[4] + it[6]] }
+
+        compose_between_t1_and_b0(
+            t1_to_b0
+                .join(b0_to_t1)
+                .join(t1_channel)
+                .join(b0_channel),
+            "true",
+            ["t1_to_b0", "b0_to_t1"],
+            "transforms/t1_to_b0_space"
+        )
 }
 
 workflow t1_to_b0_affine {

@@ -773,3 +773,44 @@ process patch_in_mask {
             --out ${masked_image.simpleName}__patched.nii.gz
         """
 }
+
+process compose_transformations {
+    label "FAST"
+    label "res_single_cpu"
+
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(transformations), val(inverts) path(inverse_transformations), val(inverse_invert), path(target_reference), path(source_reference)
+        val(publish)
+        tuple val(publish_suffix_fwd), val(publish_suffix_inv)
+        val(additional_publish_path)
+    output:
+        tuple val(sid), path("${sid}_image_transform_${publish_suffix_fwd}.nii.gz"), emit: fwd_image_transform
+        tuple val(sid), path("${sid}_image_transform_${publish_suffix_inv}.nii.gz"), emit: inv_image_transform
+        tuple val(sid), path("${sid}_tractogram_transform_${publish_suffix_fwd}.nii.gz"), emit: fwd_tractogram_transform
+        tuple val(sid), path("${sid}_tractogram_transform_${publish_suffix_inv}.nii.gz"), emit: inv_tractogram_transform
+        tuple val(sid), path("${sid}_fwd_image_transform.sh"), emit: fwd_image_transform_script
+        tuple val(sid), path("${sid}_inv_image_transform.sh"), emit: inv_image_transform_script
+        tuple val(sid), path("${sid}_fwd_tractogram_transform.sh"), emit: fwd_tractogram_transform_script
+        tuple val(sid), path("${sid}_inv_tractogram_transform.sh"), emit: inv_tractogram_transform_script
+        tuple val(sid), path("scripts_transforms/"), emit: scripts_tranforms_directory
+    script:
+        """
+        mkdir -p scripts_transforms/
+        mrhardi compose_transformations \
+            --in $transformations \
+            --inv $inverse_transformations \
+            --fwd-inv $inverts \
+            --inv-inv $inverse_invert \
+            --ref $target_reference \
+            --src $source_reference \
+            --fwd_suffix $publish_suffix_fwd \
+            --inv_suffix $publish_suffix_inv \
+            --out ${sid}_ \
+            --image_transformations \
+            --tractogram_transformations \
+            --generate_scripts \
+            --save_script_transforms scripts_transforms/
+        """
+}
