@@ -80,7 +80,14 @@ include {
     get_data_path;
     get_config_path
 } from "../functions.nf"
-
+include {
+    rename_sequentially as reorder_template_to_t1;
+    rename_sequentially as reorder_t1_to_template;
+    rename_sequentially as reorder_template_to_b0;
+    rename_sequentially as reorder_bo_to_template;
+    rename_sequentially as reorder_t1_to_b0;
+    rename_sequentially as reorder_b0_to_t1
+} from "../processes/io.nf"
 
 params.use_quick = false
 params.resampling_subdivision = 2
@@ -269,12 +276,12 @@ workflow t12b0_registration {
         )
 
         create_composite_transforms_wkf(
-            template_to_t1_transform,
-            t1_to_template_transform,
-            template_to_b0_transform,
-            b0_to_template_transform,
-            t1_to_b0_transform,
-            b0_to_t1_transform,
+            reorder_template_to_t1(template_to_t1_transform, "template_to_t1_transform", "A"),
+            reorder_t1_to_template(t1_to_template_transform, "t1_to_template_transform", "A"),
+            reorder_template_to_b0(template_to_b0_transform, "template_to_b0_transform", "A"),
+            reorder_bo_to_template(b0_to_template_transform, "b0_to_template_transform", "A"),
+            reorder_t1_to_b0(t1_to_b0_transform, "t1_to_b0_transform", "A"),
+            reorder_b0_to_t1(b0_to_t1_transform, "b0_to_t1_transform", "A"),
             t1_channel,
             extract_b0.out.b0,
             template_channel
