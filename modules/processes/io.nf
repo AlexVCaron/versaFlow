@@ -141,8 +141,9 @@ process rename_sequentially {
         tuple val(sid), path("*__${suffix}*", includeInputs: true)
     script:
         def commands = ""
+        def name = ""
         if ( (files instanceof Path ? files.getNameCount() : files.size()) == 1 ) {
-            def name = "${sid}_${start_character}.${extract_extension(files)}"
+            name = "${sid}_${start_character}.${extract_extension(files)}"
             if ( name != "${files.simpleName}.${extract_extension(files)}" ) {
                 commands += "ln -sf $files $name\n"
             }
@@ -150,7 +151,7 @@ process rename_sequentially {
         else {
             for (f in files) {
                 if ( !f.empty() ) {
-                    def name = "${sid}_${start_character}.${extract_extension(f)}"
+                    name = "${sid}_${start_character}.${extract_extension(f)}"
                     if ( name != "${f.simpleName}.${extract_extension(f)}" ) {
                         commands += "ln -sf $f $name\n"
                     }
