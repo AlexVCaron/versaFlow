@@ -151,7 +151,7 @@ process rename_sequentially {
             for (f in files) {
                 if ( !f.empty() ) {
                     def name = "${sid}_${start_character}.${extract_extension(f)}"
-                    if ( name != "${files.simpleName}.${extract_extension(files)}" ) {
+                    if ( name != "${f.simpleName}.${extract_extension(f)}" ) {
                         commands += "ln -sf $f $name\n"
                     }
                     start_character = start_character.next()
