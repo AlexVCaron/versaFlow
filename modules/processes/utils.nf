@@ -781,7 +781,7 @@ process compose_transformations {
     publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(transformations), val(inverts), path(inverse_transformations), val(inverse_invert), path(target_reference), path(source_reference)
+        tuple val(sid), path(transformations, stageAs: "transformations/*"), val(inverts), path(inverse_transformations, stageAs: "inverse_transformations/*"), val(inverse_invert), path(target_reference), path(source_reference)
         val(publish)
         tuple val(publish_suffix_fwd), val(publish_suffix_inv)
         val(additional_publish_path)

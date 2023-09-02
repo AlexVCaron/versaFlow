@@ -128,3 +128,37 @@ process change_name {
             """
         }
 }
+
+process rename_sequentially {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+    cache 'lenient'
+
+    input:
+        tuple val(sid), path(files)
+        val(suffix), val(start_character)
+    output:
+        tuple val(sid), path("*__${suffix}*", includeInputs: true)
+    script:
+        def commands = ""
+        if ( (files instanceof Path ? files.getNameCount() : files.size()) == 1 ) {
+            def name = "${sid}_${start_character}.${extract_extension(files)}"
+            if ( name != "${files.simpleName}.${extract_extension(files)}" ) {
+                commands += "ln -sf $files $name\n"
+            }
+        }
+        else {
+            for (f in files) {
+                if ( !f.empty() ) {
+                    def name = "${sid}_${start_character}.${extract_extension(f)}"
+                    if ( name != "${files.simpleName}.${extract_extension(files)}" ) {
+                        commands += "ln -sf $f $name\n"
+                    }
+                    start_character = start_character.next()
+                }
+            }
+        }
+        """
+        $commands
+        """
+}
