@@ -136,7 +136,8 @@ process rename_sequentially {
 
     input:
         tuple val(sid), path(files)
-        val(suffix), val(start_character)
+        val(suffix)
+        val(start_character)
     output:
         tuple val(sid), path("*_${suffix}*", includeInputs: true)
     script:
