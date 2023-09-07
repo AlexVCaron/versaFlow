@@ -84,7 +84,7 @@ include {
     rename_sequentially as reorder_template_to_t1;
     rename_sequentially as reorder_t1_to_template;
     rename_sequentially as reorder_template_to_b0;
-    rename_sequentially as reorder_bo_to_template;
+    rename_sequentially as reorder_b0_to_template;
     rename_sequentially as reorder_t1_to_b0;
     rename_sequentially as reorder_b0_to_t1
 } from "../processes/io.nf"
@@ -231,16 +231,16 @@ workflow t12b0_registration {
             .join(t1_to_b0_syn.out.b0_inverse_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
-        b0_to_template_transform = t1_to_b0_affine.out.b0_transform
-            .join(t1_to_b0_syn.out.b0_transform)
+        b0_to_template_transform = t1_to_b0_syn.out.b0_transform
+            .join(t1_to_b0_affine.out.b0_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
         template_to_t1_transform = t1_to_b0_affine.out.t1_inverse_transform
-            .join(t1_to_b0_syn.out.t1_inverse_transform)
+            .join(t1_to_b0_syn.out.t1_to_reference_inverse_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
-        t1_to_template_transform = t1_to_b0_affine.out.t1_transform
-            .join(t1_to_b0_syn.out.t1_transform)
+        t1_to_template_transform = t1_to_b0_syn.out.t1_to_reference_transform
+            .join(t1_to_b0_affine.out.t1_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
         t1_to_b0_transform = template_to_b0_transform
@@ -249,7 +249,9 @@ workflow t12b0_registration {
             .join(t1_to_b0_affine.out.t1_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
 
-        b0_to_t1_transform = template_to_t1_transform
+        b0_to_t1_transform = t1_to_b0_affine.out.t1_inverse_transform
+            .join(t1_to_b0_syn.out.t1_inverse_transform)
+            .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
             .join(t1_to_b0_syn.out.b0_transform)
             .map{ [it[0], it[1] + it[3], it[2] + it[4]] }
             .join(t1_to_b0_affine.out.b0_transform)
@@ -282,7 +284,7 @@ workflow t12b0_registration {
                 .join(t1_to_template_transform.map{ [it[0], it[2]] }),
             reorder_template_to_b0(template_to_b0_transform.map{ it[0..1] }, "template_to_b0_transform", "A")
                 .join(template_to_b0_transform.map{ [it[0], it[2]] }),
-            reorder_bo_to_template(b0_to_template_transform.map{ it[0..1] }, "b0_to_template_transform", "A")
+            reorder_b0_to_template(b0_to_template_transform.map{ it[0..1] }, "b0_to_template_transform", "A")
                 .join(b0_to_template_transform.map{ [it[0], it[2]] }),
             reorder_t1_to_b0(t1_to_b0_transform.map{ it[0..1] }, "t1_to_b0_transform", "A")
                 .join(t1_to_b0_transform.map{ [it[0], it[2]] }),
@@ -316,39 +318,29 @@ workflow create_composite_transforms_wkf {
         template_channel
     main:
         compose_between_template_and_t1(
-            template_to_t1_transform_w_inverts
-                .join(t1_to_template_transform_w_inverts)
+            t1_to_template_transform_w_inverts
+                .join(template_to_t1_transform_w_inverts)
                 .join(template_channel)
                 .join(t1_channel),
             "true",
-            ["template_to_t1", "t1_to_template"],
-            "transforms/t1_space"
+            ["t1_to_template", "template_to_t1"],
+            "transforms/t1_to_template_space"
         )
         compose_between_template_and_b0(
-            template_to_b0_transform_w_inverts
-                .join(b0_to_template_transform_w_inverts)
+            b0_to_template_transform_w_inverts
+                .join(template_to_b0_transform_w_inverts)
                 .join(template_channel)
                 .join(b0_channel),
             "true",
-            ["template_to_b0", "b0_to_template"],
-            "transforms/b0_space"
+            ["b0_to_template", "template_to_b0"],
+            "transforms/b0_to_template_space"
         )
 
-        t1_to_b0 = t1_to_template_transform_w_inverts
-            .join(t1_to_b0_transform_w_inverts)
-            .join(template_to_b0_transform_w_inverts)
-            .map{ [it[0], it[1] + it[3] + it[5], it[2] + it[4] + it[6]] }
-
-        b0_to_t1 = b0_to_template_transform_w_inverts
-            .join(b0_to_t1_transform_w_inverts)
-            .join(template_to_t1_transform_w_inverts)
-            .map{ [it[0], it[1] + it[3] + it[5], it[2] + it[4] + it[6]] }
-
         compose_between_t1_and_b0(
-            t1_to_b0
-                .join(b0_to_t1)
-                .join(t1_channel)
-                .join(b0_channel),
+            t1_to_b0_transform_w_inverts
+                .join(b0_to_t1_transform_w_inverts)
+                .join(b0_channel)
+                .join(t1_channel),
             "true",
             ["t1_to_b0", "b0_to_t1"],
             "transforms/t1_to_b0_space"
@@ -418,10 +410,10 @@ workflow t1_to_b0_affine {
         )
 
         t1_transform = t1_to_reference_affine.out.transform
-            .map{ [it[0], [it[1]].flatten()] }
+            .map{ [it[0], [it[1..-1]].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ "false" }] }
         b0_transform = b0_to_reference_affine.out.transform
-            .map{ [it[0], [it[1]].flatten()] }
+            .map{ [it[0], [it[1..-1]].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ "false" }] }
 
         transform_t1_to_reference(
@@ -486,11 +478,11 @@ workflow t1_to_b0_affine {
         dwi_metadata = transform_dwi_to_reference.out.metadata
         t1_transform = t1_transform
         t1_inverse_transform = t1_to_reference_affine.out.inverse_transform
-            .map{ [it[0], [it[1]].flatten()] }
+            .map{ [it[0], [it[1..-1]].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ f -> f.name.contains("syn_inverse") ? "false": "true" }] }
         b0_transform = b0_transform
         b0_inverse_transform = b0_to_reference_affine.out.inverse_transform
-            .map{ [it[0], [it[1]].flatten()] }
+            .map{ [it[0], [it[1..-1]].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ f -> f.name.contains("syn_inverse") ? "false": "true" }] }
 }
 
@@ -603,7 +595,7 @@ workflow t1_to_b0_syn {
             .map{ [it[0], [it[1..-1]].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ "false" }] }
         b0_transform = b0_to_reference_syn.out.transform
-            .map{ [it[0], [it[1]].flatten()] }
+            .map{ [it[0], [it[1..-1]].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ "false" }] }
 
         transform_t1_syn(
@@ -668,11 +660,17 @@ workflow t1_to_b0_syn {
         t1_transform = t1_transform
         t1_inverse_transform = t1_to_reference_syn.out.inverse_transform
             .join(t1_to_b0_final_syn.out.inverse_transform)
-            .map{ [it[0], it[1..-1].flatten()] }
+            .map{ [it[0], [it[1..-1]].flatten()] }
+            .map{ [it[0], it[1], it[1].collect{ f -> f.name.contains("syn_inverse") ? "false": "true" }] }
+        t1_to_reference_transform = t1_to_reference_syn.out.transform
+            .map{ [it[0], [it[1..-1]].flatten()] }
+            .map{ [it[0], it[1], it[1].collect{ "false" }] }
+        t1_to_reference_inverse_transform = t1_to_reference_syn.out.inverse_transform
+            .map{ [it[0], [it[1..-1]].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ f -> f.name.contains("syn_inverse") ? "false": "true" }] }
         b0_transform = b0_transform
         b0_inverse_transform = b0_to_reference_syn.out.inverse_transform
-            .map{ [it[0], [it[1]].flatten()] }
+            .map{ [it[0], [it[1..-1]].flatten()] }
             .map{ [it[0], it[1], it[1].collect{ f -> f.name.contains("syn_inverse") ? "false": "true" }] }
 }
 
