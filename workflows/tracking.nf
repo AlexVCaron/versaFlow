@@ -41,6 +41,7 @@ params.local_seeding_strategy = "npv"
 params.local_number_of_seeds = 20
 params.local_step_size = 0.25
 params.local_theta_max = 20
+params.local_sub_sphere = 0
 
 params.pft_seeding_mask_fa_threshold = 0.1
 params.local_tracking_mask_fa_threshold = 0.1
@@ -61,6 +62,7 @@ local_seeding_strategy = asArray(params.local_seeding_strategy)
 local_number_of_seeds = asArray(params.local_number_of_seeds)
 local_step_size = asArray(params.local_step_size)
 local_theta_max = asArray(params.local_theta_max)
+local_sub_sphere = asArray(params.local_sub_sphere)
 
 local_tracking_mask = asArray(params.local_tracking_mask)
 pft_seeding_mask = asArray(params.pft_seeding_mask)
@@ -237,7 +239,8 @@ workflow ensemble_tracking_wkf {
                     local_seeding_strategy,
                     local_number_of_seeds,
                     local_step_size,
-                    local_theta_max
+                    local_theta_max,
+                    local_sub_sphere
                 )
 
                 out_tractograms = out_tractograms.mix(
@@ -255,7 +258,8 @@ workflow ensemble_tracking_wkf {
                     local_seeding_strategy,
                     local_number_of_seeds,
                     local_step_size,
-                    local_theta_max
+                    local_theta_max,
+                    local_sub_sphere
                 )
 
                 out_tractograms = out_tractograms.mix(

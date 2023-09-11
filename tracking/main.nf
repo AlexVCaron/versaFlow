@@ -86,22 +86,25 @@ workflow load_tracking_data {
         dt_fa_channel = Channel.fromFilePairs("$root/**/dti/*dti_fa.nii.gz", size: 1, flat: true)
             { get_id(it.parent.parent, root) }
 
-        wm_mask_channel = Channel.fromFilePairs("$root/**/segmentation/*wm_mask.nii.gz", size: 1, flat: true)
+        wm_mask_channel = Channel.fromFilePairs("$root/**/segmentation/*_wm_mask.nii.gz", size: 1, flat: true)
             { get_id(it.parent.parent, root) }
-
-        tissue_pvf_channel = Channel.fromFilePairs("$root/**/segmentation/*{csf,gm,wm}_pvf.nii.gz", size: 3, flat: true)
+        tissue_pvf_channel = Channel.fromFilePairs("$root/**/segmentation/*pvf_3t_{csf,gm,wm}.nii.gz", size: 3, flat: true)
             { get_id(it.parent.parent, root) }
 
         enforce_sid_convention_dwi(dwi_channel.map{ [it[0], it[1..-1], ["dwi"] * (it.size() - 1)] })
         enforce_sid_convention_fodf(fodf_channel.map{ it + ["fodf"] })
         enforce_sid_convention_dt_tensor(dt_tensor_channel.map{ it + ["dti_dti"] })
         enforce_sid_convention_dt_fa(dt_fa_channel.map{ it + ["dti_fa"] })
-        enforce_sid_convention_wm_mask(wm_mask_channel.map{ it + ["wm_mask"] })
+        enforce_sid_convention_wm_mask(
+            wm_mask_channel
+                .filter{ !it[1].simpleName.contains("safe_wm_mask") }
+                .map{ it + ["wm_mask"] }
+        )
         enforce_sid_convention_pvf(
             tissue_pvf_channel.map{[
                 it[0],
                 it[1..-1],
-                it[1..-1].collect{ i -> i.simpleName.tokenize("_")[-2] + "_pvf"}
+                it[1..-1].collect{ i -> i.simpleName.tokenize("_")[-1] + "_pvf"}
             ]}
         )
 
