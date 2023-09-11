@@ -164,6 +164,7 @@ process Local_prob_tracking_opencl {
         each n_seeds
         each step_length
         each theta
+        each sphere_sub
     output:
         tuple val(sid), path("${sid}_local_gpu_prob_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk"), emit: tractogram
     script:
@@ -178,6 +179,7 @@ process Local_prob_tracking_opencl {
             --theta $theta \
             --min_length $params.local_min_len \
             --max_length $params.local_max_len \
+            --sub_sphere $sphere_sub \
             --${seeding_strategy} $n_seeds $compress \
             --rng_seed $seed
         scil_remove_invalid_streamlines.py tmp.trk \
@@ -201,6 +203,7 @@ process Local_tracking {
         each n_seeds
         each step_length
         each theta
+        each sphere_sub
     output:
         tuple val(sid), path("${sid}_local_${algo}_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk"), emit: tractogram
     script:
@@ -221,7 +224,7 @@ process Local_tracking {
             --max_length $params.local_max_len $compress \
             --sh_basis descoteaux07 \
             --sphere symmetric724 \
-            --subdivide_sphere 2
+            --subdivide_sphere $sphere_sub
         scil_remove_invalid_streamlines.py tmp.trk \
             ${sid}_local_${algo}_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk \
             --remove_single_point
