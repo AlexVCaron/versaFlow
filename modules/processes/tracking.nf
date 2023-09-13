@@ -78,8 +78,14 @@ process PFT_tracking {
     output:
         tuple val(sid), path("${sid}_pft_${algo}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${mask_type}_step_${step_length}_theta_${theta}_np_${n_particles}_back_${back_length}_tracking.trk"), emit: tractogram
     script:
-        def compress = params.streamline_compression_factor ? '--compress ' + params.streamline_compression_factor : ''
         """
+        compress=""
+        if [ $params.streamline_compression_factor ]
+        then
+            spacing=\$(mrinfo -spacing $fodf | cut -d ' ' -f 1)
+            compress="--compress \$(echo "\$spacing*$params.streamline_compression_factor" | bc -l)"
+        fi
+
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
@@ -96,7 +102,7 @@ process PFT_tracking {
             --max_length $params.pft_max_tract_length \
             --particles $n_particles \
             --back $back_length \
-            --forward $params.pft_forward_tracking_length $compress \
+            --forward $params.pft_forward_tracking_length \$compress \
             --sh_basis descoteaux07 \
             --sphere symmetric724 \
             --subdivide_sphere 2
@@ -125,8 +131,14 @@ process Local_prob_tracking_opencl {
     output:
         tuple val(sid), path("${sid}_local_gpu_prob_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk"), emit: tractogram
     script:
-        def compress = params.streamline_compression_factor ? '--compress ' + params.streamline_compression_factor : ''
         """
+        compress=""
+        if [ $params.streamline_compression_factor ]
+        then
+            spacing=\$(mrinfo -spacing $fodf | cut -d ' ' -f 1)
+            compress="--compress \$(echo "\$spacing*$params.streamline_compression_factor" | bc -l)"
+        fi
+
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
@@ -137,7 +149,7 @@ process Local_prob_tracking_opencl {
             --min_length $params.local_min_len \
             --max_length $params.local_max_len \
             --sub_sphere $sphere_sub \
-            --${seeding_strategy} $n_seeds $compress \
+            --${seeding_strategy} $n_seeds \$compress \
             --rng_seed $seed
         scil_remove_invalid_streamlines.py tmp.trk \
             ${sid}_local_gpu_prob_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk \
@@ -164,8 +176,14 @@ process Local_tracking {
     output:
         tuple val(sid), path("${sid}_local_${algo}_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk"), emit: tractogram
     script:
-        def compress = params.streamline_compression_factor ? '--compress ' + params.streamline_compression_factor : ''
         """
+        compress=""
+        if [ $params.streamline_compression_factor ]
+        then
+            spacing=\$(mrinfo -spacing $fodf | cut -d ' ' -f 1)
+            compress="--compress \$(echo "\$spacing*$params.streamline_compression_factor" | bc -l)"
+        fi
+
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
@@ -178,7 +196,7 @@ process Local_tracking {
             --theta $theta \
             --sfthres $params.local_sfthres \
             --min_length $params.local_min_len \
-            --max_length $params.local_max_len $compress \
+            --max_length $params.local_max_len \$compress \
             --sh_basis descoteaux07 \
             --sphere symmetric724 \
             --subdivide_sphere $sphere_sub
@@ -195,7 +213,7 @@ process Ensemble_Tractograms {
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(tractograms), path(reference)
+        tuple val(sid), path(tractograms, stageAs: "tractogram*.trk"), path(reference)
         val(caller_name)
     output:
         tuple val(sid), path("${sid}_ensemble_tractogram.trk"), emit: tractogram
