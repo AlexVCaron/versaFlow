@@ -50,4 +50,3 @@ Thumbs.db
 
 # Nextflow related files
 .nextflow/
-.base/tower.config
