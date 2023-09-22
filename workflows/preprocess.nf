@@ -1073,7 +1073,7 @@ workflow preprocess_wkf {
 
         crop_wm(
             pvf_to_crop_channel
-                .map{ [it[0], it[1][0]] }
+                .map{ [it[0], it[1][2]] }
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
@@ -1089,7 +1089,7 @@ workflow preprocess_wkf {
         )
         crop_csf(
             pvf_to_crop_channel
-                .map{ [it[0], it[1][2]] }
+                .map{ [it[0], it[1][0]] }
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },

@@ -278,18 +278,18 @@ workflow t12b0_registration {
         )
 
         create_composite_transforms_wkf(
-            reorder_template_to_t1(template_to_t1_transform.map{ it[0..1] }, "template_to_t1_transform", "A")
-                .join(template_to_t1_transform.map{ [it[0], it[2]] }),
-            reorder_t1_to_template(t1_to_template_transform.map{ it[0..1] }, "t1_to_template_transform", "A")
-                .join(t1_to_template_transform.map{ [it[0], it[2]] }),
-            reorder_template_to_b0(template_to_b0_transform.map{ it[0..1] }, "template_to_b0_transform", "A")
-                .join(template_to_b0_transform.map{ [it[0], it[2]] }),
-            reorder_b0_to_template(b0_to_template_transform.map{ it[0..1] }, "b0_to_template_transform", "A")
-                .join(b0_to_template_transform.map{ [it[0], it[2]] }),
-            reorder_t1_to_b0(t1_to_b0_transform.map{ it[0..1] }, "t1_to_b0_transform", "A")
+            reorder_template_to_t1(template_to_t1_transform.map{ [it[0], it[1].reverse()] }, "template_to_t1_transform", "A")
+                .join(template_to_t1_transform.map{ [it[0], it[2].reverse()] }),
+            reorder_t1_to_template(t1_to_template_transform.map{ [it[0], it[1].reverse()] }, "t1_to_template_transform", "A")
+                .join(t1_to_template_transform.map{ [it[0], it[2].reverse()] }),
+            reorder_template_to_b0(template_to_b0_transform.map{ [it[0], it[1].reverse()] }, "template_to_b0_transform", "A")
+                .join(template_to_b0_transform.map{ [it[0], it[2].reverse()] }),
+            reorder_b0_to_template(b0_to_template_transform.map{ [it[0], it[1].reverse()] }, "b0_to_template_transform", "A")
+                .join(b0_to_template_transform.map{ [it[0], it[2].reverse()] }),
+            reorder_t1_to_b0(t1_to_b0_transform.map{ [it[0], it[1].reverse()] }, "t1_to_b0_transform", "A")
                 .join(t1_to_b0_transform.map{ [it[0], it[2]] }),
-            reorder_b0_to_t1(b0_to_t1_transform.map{ it[0..1] }, "b0_to_t1_transform", "A")
-                .join(b0_to_t1_transform.map{ [it[0], it[2]] }),
+            reorder_b0_to_t1(b0_to_t1_transform.map{ [it[0], it[1].reverse()] }, "b0_to_t1_transform", "A")
+                .join(b0_to_t1_transform.map{ [it[0], it[2].reverse()] }),
             t1_channel,
             extract_b0.out.b0,
             template_channel
