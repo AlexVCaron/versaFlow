@@ -799,10 +799,10 @@ process compose_transformations {
         """
         mkdir -p scripts_transforms/
         mrhardi compose_transformations \
-            --in ${transformations.join(",")} \
-            --inv ${inverse_transformations.join(",")} \
-            --fwd-inv ${inverts.join(",")} \
-            --inv-inv ${inverse_invert.join(",")} \
+            --in ${transformations.reverse().join(",")} \
+            --inv ${inverse_transformations.reverse().join(",")} \
+            --fwd-inv ${inverts.reverse().join(",")} \
+            --inv-inv ${inverse_invert.reverse().join(",")} \
             --ref $target_reference \
             --src $source_reference \
             --fwd_suffix $publish_suffix_fwd \
