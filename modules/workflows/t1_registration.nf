@@ -287,7 +287,7 @@ workflow t12b0_registration {
             reorder_b0_to_template(b0_to_template_transform.map{ [it[0], it[1].reverse()] }, "b0_to_template_transform", "A")
                 .join(b0_to_template_transform.map{ [it[0], it[2].reverse()] }),
             reorder_t1_to_b0(t1_to_b0_transform.map{ [it[0], it[1].reverse()] }, "t1_to_b0_transform", "A")
-                .join(t1_to_b0_transform.map{ [it[0], it[2]] }),
+                .join(t1_to_b0_transform.map{ [it[0], it[2].reverse()] }),
             reorder_b0_to_t1(b0_to_t1_transform.map{ [it[0], it[1].reverse()] }, "b0_to_t1_transform", "A")
                 .join(b0_to_t1_transform.map{ [it[0], it[2].reverse()] }),
             t1_channel,
