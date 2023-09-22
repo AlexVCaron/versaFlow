@@ -2,9 +2,8 @@
 [![Docker containers](https://img.shields.io/badge/Docker%20images-dockerhub-blue?style=plaflat&logo=docker&labelColor=2e343b)](https://hub.docker.com/repository/docker/avcaron/versa)
 [![DOI](https://zenodo.org/badge/430873937.svg)](https://zenodo.org/badge/latestdoi/430873937)
 
-**\*\*DEVELOPMENT REPOSITORY ONLY, GO TO [VERSAFLOW](https://github.com/AlexVCaron/versaFlow) FOR UP-TO-DATE PIPELINES\*\***
 
-# mrHARDIflow
+# versaflow
 
 versaflow is a diffusion MRI processing pipeline configured to handle high 
 angular and spatial resolution data. By default it is configured to process 
