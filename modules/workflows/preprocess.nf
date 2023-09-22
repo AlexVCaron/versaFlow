@@ -543,7 +543,7 @@ workflow eddy_wkf {
         dwi_metadata_channel = collect_paths(metadata_channel)
             .map{ [it[0], it[1].find{ f -> !f.simpleName.contains("_rev") }] }
 
-        if ( params.eddy_with_reverse ) {
+        if ( params.eddy_with_reverse && params.epi_algorithm == "topup" ) {
             cat_eddy_on_rev(
                 reverse_ids
                     .join(collect_paths(dwi_channel))

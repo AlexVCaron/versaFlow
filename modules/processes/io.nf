@@ -57,6 +57,8 @@ process prepare_metadata {
 process enforce_sid_convention {
     label "LIGHTSPEED"
     label "res_single_cpu"
+    cache 'lenient'
+
     input:
         tuple val(sid), path(images), val(suffix)
     output:
@@ -90,6 +92,8 @@ process enforce_sid_convention {
 process change_name {
     label "LIGHTSPEED"
     label "res_single_cpu"
+    cache 'lenient'
+
     input:
         tuple val(sid), file(files)
         val(suffix)
@@ -102,7 +106,7 @@ process change_name {
             name = "${files.simpleName.split("__")[0]}__${suffix}.${extract_extension(files)}"
             if ( "${files.simpleName}.${extract_extension(files)}" != name ) {
                 """
-                ln -s $files $name
+                ln -sf $files $name
                 """
             }
             else {
@@ -116,11 +120,47 @@ process change_name {
                 if ( !f.empty() ) {
                     name = "${f.simpleName.split("__")[0]}__${suffix}.${extract_extension(f)}"
                     if ( "${f.simpleName}.${extract_extension(f)}" != name )
-                        cmd += "ln -s $f $name\n"
+                        cmd += "ln -sf $f $name\n"
                 }
             }
             """
             $cmd
             """
         }
+}
+
+process rename_sequentially {
+    label "LIGHTSPEED"
+    label "res_single_cpu"
+    cache 'lenient'
+
+    input:
+        tuple val(sid), path(files)
+        val(suffix)
+        val(start_character)
+    output:
+        tuple val(sid), path("*_${suffix}*", includeInputs: true)
+    script:
+        def commands = ""
+        def name = ""
+        if ( (files instanceof Path ? files.getNameCount() : files.size()) == 1 ) {
+            name = "${sid}_${start_character}_${suffix}.${extract_extension(files)}"
+            if ( name != "${files.simpleName}.${extract_extension(files)}" ) {
+                commands += "ln -sf $files $name\n"
+            }
+        }
+        else {
+            for (f in files) {
+                if ( !f.empty() ) {
+                    name = "${sid}_${start_character}_${suffix}.${extract_extension(f)}"
+                    if ( name != "${f.simpleName}.${extract_extension(f)}" ) {
+                        commands += "ln -sf $f $name\n"
+                    }
+                    start_character = start_character.next()
+                }
+            }
+        }
+        """
+        $commands
+        """
 }

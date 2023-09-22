@@ -2,9 +2,10 @@
 [![Docker containers](https://img.shields.io/badge/Docker%20images-dockerhub-blue?style=plaflat&logo=docker&labelColor=2e343b)](https://hub.docker.com/repository/docker/avcaron/versa)
 [![DOI](https://zenodo.org/badge/430873937.svg)](https://zenodo.org/badge/latestdoi/430873937)
 
-# versaFlow
 
-versaFlow is a diffusion MRI processing pipeline configured to handle high 
+# versaflow
+
+versaflow is a diffusion MRI processing pipeline configured to handle high 
 angular and spatial resolution data. By default it is configured to process 
 Maccaca Mulatta brain images; profiles to handle other types of primates, as 
 well as the human brain are being developped. The pipeline's pre-processing 
@@ -141,7 +142,14 @@ automatically handled in a future version of the pipeline.
 To run the pipeline, we recommend creating a directory per run that contains log and 
 cache of execution from Nextflow. In that directory, then run the following command
 
-`nextflow run -resume -w cache -dsl2 <root of versaFlow>/main.nf --data_root <data root>
+```
+nextflow run \
+    -resume \
+    -w cache \
+    -dsl2 \
+    <root of versaFlow>/main.nf \
+    --data_root <data root>
+```
 
 Additional parameters to this command can be supplied, such as :
 

@@ -79,6 +79,7 @@ def display_run_info () {
     log.info " - Output root     : $params.output_root"
     log.info " - Publish mode    : $params.publish_mode"
     log.info " - Publish all outputs ${params.publish_all ? "(enabled)" : "(disabled)"}"
+    log.info " - Publish all mode : $params.publish_all_mode"
     log.info " - Verbose ${params.verbose_outputs ? "(enabled)" : "(disabled)"}"
     log.info " - Random seed     : $params.random_seed"
     log.info " - Check memory    : $params.check_memory_requirements"
@@ -221,6 +222,7 @@ def display_usage () {
             "output_root" : "$params.output_root",
             "publish_all" : "$params.publish_all",
             "publish_mode" : "$params.publish_mode",
+            "publish_all_mode" : "$params.publish_all_mode",
             "verbose_outputs" : "$params.verbose_outputs",
             "resample_data" : "$params.resample_data",
             "check_memory_requirements": "$params.check_memory_requirements",

@@ -105,7 +105,7 @@ c.TopupConfiguration.precision = "double"
 
 c.TopupConfiguration.reg_model = "bending_energy"
 
-c.TopupConfiguration.scale_intensities = True
+c.TopupConfiguration.scale_intensities = False
 
 c.TopupConfiguration.spl_order = "cubic"
 
