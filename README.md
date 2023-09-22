@@ -1,12 +1,12 @@
 [![Release build](https://github.com/AlexVCaron/mrHARDI/actions/workflows/build-release.yml/badge.svg)](https://github.com/AlexVCaron/mrHARDI/actions/workflows/build-release.yml)
-[![Docker containers](https://img.shields.io/badge/Docker%20images-dockerhub-blue?style=plaflat&logo=docker&labelColor=2e343b)](https://hub.docker.com/repository/docker/avcaron/mrhardi)
+[![Docker containers](https://img.shields.io/badge/Docker%20images-dockerhub-blue?style=plaflat&logo=docker&labelColor=2e343b)](https://hub.docker.com/repository/docker/avcaron/versa)
 [![DOI](https://zenodo.org/badge/430873937.svg)](https://zenodo.org/badge/latestdoi/430873937)
 
 **\*\*DEVELOPMENT REPOSITORY ONLY, GO TO [VERSAFLOW](https://github.com/AlexVCaron/versaFlow) FOR UP-TO-DATE PIPELINES\*\***
 
 # mrHARDIflow
 
-mrHARDIflow is a diffusion MRI processing pipeline configured to handle high 
+versaflow is a diffusion MRI processing pipeline configured to handle high 
 angular and spatial resolution data. By default it is configured to process 
 Maccaca Mulatta brain images; profiles to handle other types of primates, as 
 well as the human brain are being developped. The pipeline's pre-processing 
@@ -19,10 +19,9 @@ If you use this tool for your research, **please cite the following**
 
 ```
 Valcourt Caron A., Shmuel A., Hao Z., Descoteaux M.,
-“mrHARDIflow : A pipeline tailored for the preprocessing and analysis of 
-Multi-Resolution High Angular diffusion MRI and its application to a 
-variability study of the PRIME-DE database”,
-bioRxiv, 2021.11.22.469616, doi.org/10.1101/2021.11.22.469616.
+“versaFlow: a versatile pipeline for resolution adapted diffusion MRI processing 
+and its application to studying the variability of the PRIME-DE database”,
+Frontiers in Neuroinformatics, 10.3389/fninf.2023.1191200, doi.org/10.3389/fninf.2023.1191200.
 ```
 
 ## Requirements
@@ -39,14 +38,15 @@ and docker images. The `latest` versions come pre-packaged with the CUDA runtime
 and require a Nvidia GPU to execute. For usage on a machine without a Nvidia GPU, 
 use the images tagged `nogpu`.
 
-
+- Docker : [Docker Hub](https://hub.docker.com/r/avcaron/versa)
+  - `docker pull avcaron/versa:latest`
 - Singularity :
-  - Nvidia GPU  : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:latest`
-  - Without GPU : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:nogpu`
-
-- Docker : [Docker Hub](https://hub.docker.com/r/avcaron/mrhardi)
-  - Nvidia GPU  : `docker pull avcaron/mrhardi:latest`
-  - Without GPU : `docker pull avcaron/mrhardi:nogpu`
+  - Singularity images are no longer produced in house. To build your singularity, 
+    use a docker tag and the following command : `singularity build <image.sif> docker://avcaron/versa:<tag>`.
+  - Old versions of the singularity images can still be access through the ORAS 
+    container registry :
+    - Nvidia GPU  : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:latest`
+    - Without GPU : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:nogpu`
 
 # Data input format
 
@@ -143,7 +143,14 @@ automatically handled in a future version of the pipeline.
 To run the pipeline, we recommend creating a directory per run that contains log and 
 cache of execution from Nextflow. In that directory, then run the following command
 
-`nextflow run -resume -w cache -dsl2 <root of mrhardiflow>/main.nf --data_root <data root>
+```
+nextflow run \
+    -resume \
+    -w cache \
+    -dsl2 \
+    <root of versaFlow>/main.nf \
+    --data_root <data root>
+```
 
 Additional parameters to this command can be supplied, such as :
 
