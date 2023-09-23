@@ -774,6 +774,32 @@ process patch_in_mask {
         """
 }
 
+process upper_threshold_image {
+    label "FAST"
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("${publish}" == "true") ? f.contains("metadata") ? null : remove_alg_suffixes(f) : null }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(image)
+        val(threshold)
+        val(caller_name)
+        val(publish)
+    output:
+        tuple val(sid), path("${image.simpleName}__thr_${threshold}.nii.gz"), emit: mask
+    script:
+        """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
+        scil_image_math.py lower_threshold_eq \
+            $image $threshold \
+            ${image.simpleName}__thr_${threshold}.nii.gz \
+            --data_type uint8
+        """
+}
+
 process compose_transformations {
     label "FAST"
     label "res_single_cpu"
