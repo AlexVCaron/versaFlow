@@ -168,7 +168,7 @@ def display_run_info () {
         log.info "     - Segmentation labels                : ${params.segmentation_classes.join(',')}"
         log.info "     - MRF weight                         : ${params.atropos_mrf_weight}"
         log.info "     - MRF neighbourhood size             : ${params.atropos_mrf_neighborhood}"
-        log.info "     - Labels used to mask N4             : ${params.atropos_n4_tissues.join(','))}"
+        log.info "     - Labels used to mask N4             : ${params.atropos_n4_tissues.join(',')}"
         log.info "     - N4 iterations                      : ${params.atropos_n4_iterations}"
         log.info "     - N4 convergence epsilon             : ${params.atropos_n4_convergence_eps}"
         log.info "     - N4 shrink factor                   : ${params.atropos_n4_shrink_factor}"
