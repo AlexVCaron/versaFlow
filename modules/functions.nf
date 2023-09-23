@@ -181,7 +181,7 @@ def separate_b0_from_dwi( data_channel ) {
     return [exclude_missing_datapoints(data_channel, 2, ""), filter_datapoints(data_channel, { it[2] == "" })]
 }
 
-LIBRARY_ROOT_NAME = "mrHARDIflow"
+LIBRARY_ROOT_NAME = "versaFlow"
 
 def get_data_path () {
     def current_dir = file("$projectDir")
