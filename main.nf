@@ -83,42 +83,53 @@ def display_run_info () {
     log.info " - Verbose ${params.verbose_outputs ? "(enabled)" : "(disabled)"}"
     log.info " - Random seed     : $params.random_seed"
     log.info " - Check memory    : $params.check_memory_requirements"
+    log.info ""
     log.info "Resources allocation :"
     log.info " - Use GPU ${params.use_cuda ? "(enabled)" : "(disabled)"}"
     if (params.use_cuda) {
         log.info "    - Auto-select GPU ${params.eddy_select_gpu ? "(enabled)" : "(disabled)"}"
         log.info "    - Max parallel GPU : $params.cuda_max_parallel"
     }
+    log.info ""
     log.info " - Conserve resources for short tasks ${params.conservative_resources ? "(enabled)" : "(disabled)"}"
        if (params.conservative_resources) {
         log.info "    - Conserved CPU count  : ${params.free_processes ? params.free_processes : 0}"
         log.info "    - Conserved RAM buffer : ${params.memory_buffer_gb ? params.memory_buffer_gb : 0}"
     }
+    log.info ""
     log.info " - Max CPU per process : ${params.max_cpu_per_process ? params.max_cpu_per_process : params.processes}"
     log.info ""
     log.info "DWI preprocessing :"
     log.info " - Background denoising ${params.gaussian_noise_correction ? "(enabled)" : "(disabled)"}"
+    log.info ""
     log.info " - Gibbs ringing ${params.gibbs_ringing_correction ? "(enabled)" : "(disabled)"}"
+    log.info ""
     log.info " - B0 normalization ${params.normalize_inter_b0 ? "(enabled)" : "(disabled)"}"
     if (params.normalize_inter_b0) {
         log.info "    - Normalization strategy : $params.b0_normalization_strategy"
     }
+    log.info ""
     log.info " - EPI correction ${params.epi_correction ? "(enabled)" : "(disabled)"}"
     if (params.epi_correction) {
         log.info "    - EPI correction algorithm : ${params.epi_algorithm}"
     }
+    log.info ""
     log.info " - Eddy correction ${params.eddy_correction ? "(enabled)" : "(disabled)"}"
     if (params.eddy_correction) {
         log.info "    - DWI shells check ${params.eddy_force_shelled ? "(disabled)" : "(enabled)"}"
         log.info "    - Use reverse phase ${params.eddy_with_reverse ? "(enabled)" : "(disabled)"}"
     }
+    log.info ""
     log.info " - N4 normalization ${params.dwi_intensity_normalization ? "(enabled)" : "(disabled)"}"
+    log.info ""
     log.info "T1 preprocessing :"
     log.info " - Background denoising ${params.denoise_t1 ? "(enabled)" : "(disabled)"}"
     if (params.denoise_t1) {
         log.info "    - Use nlmeans ${params.nlmeans_t1 ? "(enabled)" : "(disabled)"}"
     }
+    log.info ""
     log.info " - N4 normalization ${params.t1_intensity_normalization ? "(enabled)" : "(disabled)"}"
+    log.info ""
     log.info "T1 to DWI registration :"
     log.info " - Register T1 mask to DWI ${params.dwi_mask_from_t1_mask ? "(enabled)" : "(disabled)"}"
     if (params.dwi_mask_from_t1_mask) {
@@ -129,6 +140,7 @@ def display_run_info () {
         log.info " - Use Quick T1 to DWI ${params.quick_denoised_t1_registration ? "(enabled)" : "(disabled)"}"
         log.info " - Register to template native resolution ${params.t1_registration_in_subject_space ? "(disabled)" : "(enabled)"}"
     }
+    log.info ""
     log.info "Upscaling :"
     log.info " - Resample T1 and DWI ${params.resample_data ? "(enabled)" : "(disabled)"}"
     if (params.resample_data) {
@@ -140,24 +152,42 @@ def display_run_info () {
             log.info "    - Minimum resampling resolution : ${params.resampling_min_resolution ? params.resampling_min_resolution : "(disabled)"}"
             log.info "    - Resampling subdivisions       : ${params.resampling_subdivision}"
         }
+        log.info ""
     }
     log.info "Segmentation :"
     log.info " - Segment WM/GM/CSF from T1 ${params.generate_tissue_segmentation ? "(enabled)" : "(disabled)"}"
+    log.info ""
     if (params.generate_tissue_segmentation) {
         if (params.tissue_segmentation_root) {
             log.info "     - Custom template directory : ${params.tissue_segmentation_root}"
         }
         
-        log.info "     - Atropos prior weight       : ${params.atropos_prior_weight}"
-        log.info "     - Min PVF threshold          : ${params.min_pvf_threshold}"
-        log.info "     - Max safe CSF PVF threshold : ${params.max_safe_csf_pvf_threshold}"
-        log.info "     - Max safe GM PVF thresfold  : ${params.max_safe_gm_pvf_threshold}"
-        log.info "     - Safe CSF mask dilation     : ${params.safe_csf_mask_dilation}"
-        log.info "     - Safe GM mask dilation      : ${params.safe_gm_mask_dilation}"
-        log.info "     - Register D99 altas         : ${params.register_d99 ? "(enabled)" : "(disabled)"}"
-        log.info "     - Register CHARM altas       : ${params.register_charm ? "(enabled)" : "(disabled)"}"
-        log.info "     - Register SARM altas        : ${params.register_sarm ? "(enabled)" : "(disabled)"}"
-        log.info "     - Register INIA19 altas      : ${params.register_inia19 ? "(enabled)" : "(disabled)"}"
+        log.info "     - Atropos prior weight               : ${params.atropos_prior_weight}"
+        log.info "     - Default priors blur factor         : ${params.default_blur_factor}"
+        log.info "     - CSF prior blur factor              : ${params.csf_blur_factor}"
+        log.info "     - Segmentation labels                : ${params.segmentation_classes.join(',')}"
+        log.info "     - MRF weight                         : ${params.atropos_mrf_weight}"
+        log.info "     - MRF neighbourhood size             : ${params.atropos_mrf_neighborhood}"
+        log.info "     - Labels used to mask N4             : ${params.atropos_n4_tissues.join(',')}"
+        log.info "     - N4 iterations                      : ${params.atropos_n4_iterations}"
+        log.info "     - N4 convergence epsilon             : ${params.atropos_n4_convergence_eps}"
+        log.info "     - N4 shrink factor                   : ${params.atropos_n4_shrink_factor}"
+        log.info "     - N4 b-spline fitting distance       : ${params.atropos_n4_bspline_fitting}"
+        log.info "     - Default distance prior lambda      : ${params.default_distance_lambda}"
+        log.info "     - Default distance prior probability : ${params.default_distance_probability}"
+        log.info "     - CSF distance prior lambda          : ${params.csf_distance_lambda}"
+        log.info "     - CSF distance prior probability     : ${params.csf_distance_probability}"
+        log.info "     - Min PVF threshold                  : ${params.min_pvf_threshold}"
+        log.info "     - Max safe CSF PVF threshold         : ${params.max_safe_csf_pvf_threshold}"
+        log.info "     - Max safe GM PVF thresfold          : ${params.max_safe_gm_pvf_threshold}"
+        log.info "     - Safe CSF mask dilation             : ${params.safe_csf_mask_dilation}"
+        log.info "     - Safe GM mask dilation              : ${params.safe_gm_mask_dilation}"
+        log.info ""
+
+        log.info " - Register D99 altas                 : ${params.register_d99 ? "(enabled)" : "(disabled)"}"
+        log.info " - Register CHARM altas               : ${params.register_charm ? "(enabled)" : "(disabled)"}"
+        log.info " - Register SARM altas                : ${params.register_sarm ? "(enabled)" : "(disabled)"}"
+        log.info " - Register INIA19 altas              : ${params.register_inia19 ? "(enabled)" : "(disabled)"}"
     }
     log.info " - Segment WM parcellation ${params.generate_wm_segmentation ? "(enabled)" : "(disabled)"}"
     if (params.generate_wm_segmentation) {
@@ -235,6 +265,20 @@ def display_usage () {
             "b0_normalization_strategy" : "$params.b0_normalization_strategy",
             "bet_f" : "$params.bet_f",
             "atropos_prior_weight" : "$params.atropos_prior_weight",
+            "default_blur_factor" : "$params.default_blur_factor",
+            "csf_blur_factor" : "$params.csf_blur_factor",
+            "segmentation_classes" : "$params.segmentation_classes",
+            "atropos_mrf_weight" : "$params.atropos_mrf_weight",
+            "atropos_mrf_neighborhood" : "$params.atropos_mrf_neighborhood",
+            "atropos_n4_tissues" : "$params.atropos_n4_tissues",
+            "atropos_n4_iterations" : "$params.atropos_n4_iterations",
+            "atropos_n4_convergence_eps" : "$params.atropos_n4_convergence_eps",
+            "atropos_n4_shrink_factor" : "$params.atropos_n4_shrink_factor",
+            "atropos_n4_bspline_fitting" : "$params.atropos_n4_bspline_fitting",
+            "default_distance_lambda" : "$params.default_distance_lambda",
+            "default_distance_probability" : "$params.default_distance_probability",
+            "csf_distance_lambda" : "$params.csf_distance_lambda",
+            "csf_distance_probability" : "$params.csf_distance_probability",
             "min_pvf_threshold": "$params.min_pvf_threshold",
             "max_safe_csf_pvf_threshold": "$params.max_safe_csf_pvf_threshold",
             "max_safe_gm_pvf_threshold": "$params.max_safe_gm_pvf_threshold",
@@ -293,7 +337,7 @@ def display_usage () {
             "free_water_tensor" : "$params.free_water_tensor",
             "strict_parameters": "$params.strict_parameters",
             "pft_random_seed" : "$params.pft_random_seed",
-            "tracking_algorithm" : "$params.tracking_algorithm",
+            "pft_tracking_algorithm" : "$params.pft_tracking_algorithm",
             "streamline_compression_factor" : "$params.streamline_compression_factor",
             "pft_tracking": "$params.pft_tracking",
             "pve_threshold": "$params.pve_threshold",

@@ -1,0 +1,50 @@
+// For format details, see https://aka.ms/devcontainer.json
+{
+	"name": "versaFlow container",
+	"image": "avcaron/mrhardi:dev",
+
+	"features": {
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		"ghcr.io/devcontainers/features/git:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers-contrib/features/apt-get-packages:1": {},
+		"ghcr.io/robsyme/features/nextflow:1": {},
+		"ghcr.io/devcontainers-contrib/features/curl-apt-get:1": {},
+		"ghcr.io/devcontainers-contrib/features/tmux-apt-get:1": {},
+		"ghcr.io/devcontainers-contrib/features/wget-apt-get:1": {}
+	},
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "eamodio.gitlens",
+                "GitHub.vscode-pull-request-github",
+                "ms-azuretools.vscode-docker",
+                "ms-python.isort",
+                "ms-python.vscode-pylance",
+                "ms-vscode.cmake-tools",
+                "ms-vscode.cpptools",
+                "ms-vscode.cpptools-extension-pack",
+                "ms-vscode.cpptools-themes",
+                "ms-vscode.makefile-tools",
+                "ms-vscode.powershell",
+                "twxs.cmake",
+                "yzhang.markdown-all-in-one"
+            ]
+        }
+    },
+
+	// Use this environment variable if you need to bind mount your local source code into a new container.
+	"remoteEnv": {
+		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
+        "TOWER_ACCESS_TOKEN": "${localEnv:TOWER_ACCESS_TOKEN:eyJ0aWQiOiA4MTA1fS5jMWY4OGJjNGNlYTFjYzJmMDZiOGVlOTk5MDhiNGZkMjAyYTJlMDhh}",
+        "TOWER_WORKSPACE_ID": "${localEnv:TOWER_WORKSPACE_ID:61263590865620}"
+	},
+
+	"forwardPorts": [3000],
+    "workspaceMount": "source=${localWorkspaceFolder},target=/versaFlow,type=bind,consistency=cached",
+    "workspaceFolder": "/versaFlow",
+    "updateContentCommand": "bash .devcontainer/update_container.sh"
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}

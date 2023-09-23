@@ -4,6 +4,8 @@ package groovyx.gpars.dataflow
 
 nextflow.enable.dsl=2
 
+Random random = new Random()
+
 def group_channel_rep ( chan ) {
     return chan.groupTuple().map{
         [it[0]] + it[1..-1].inject((1..it.size()).collect{ [] }) { sub, rep ->
@@ -52,6 +54,10 @@ def prevent_sci_notation ( float_number ) {
 
 def extract_extension ( f ) {
     return "$f".tokenize(".")[1..-1].join(".")
+}
+
+def remove_extension ( f, n_parts ) {
+    return "$f".tokenize(".")[0..-(1 + n_parts)].join(".") 
 }
 
 def copy_and_rename ( fl, prefix, overwrite, copy ) {
@@ -201,4 +207,20 @@ def collect_paths ( data_channel ) {
     return data_channel.map{
         [it[0], (it.size() > 2 ? it[1..-1] : [it[1]] ).findAll{ it }]
     }
+}
+
+def isCollectionOrArray ( object ) {    
+    return [Collection, Object[]].any { it.isAssignableFrom(object.getClass()) }
+}
+
+def asArray ( object ) {
+    return isCollectionOrArray(object)
+        ? object
+        : object instanceof String
+            ? object.tokenize(',')
+            : [ object ]
+}
+
+def rng_sampler ( seeds, n_seeds ) {
+    return seeds ? asArray(seeds) : (1..n_seeds).collect{ random.nextInt() & Integer.MAX_VALUE }
 }
