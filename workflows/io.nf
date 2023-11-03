@@ -5,6 +5,8 @@ nextflow.enable.dsl=2
 params.data_root = false
 params.include_sid = false
 params.exclude_sid = false
+params.include_sid = false
+params.exclude_sid = false
 
 include {
     prepare_metadata as pmeta_dwi;
