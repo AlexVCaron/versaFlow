@@ -76,6 +76,12 @@ def display_run_info () {
     log.info "I/O :"
     log.info " - Input root      : $params.data_root"
     log.info "    - b0 threshold : ${params.b0_threshold ? params.b0_threshold : 0}"
+    if (params.include_sid) {
+        log.info "    - Included SIDs : $params.include_sid"
+    }
+    if (params.exclude_sid) {
+        log.info "    - Excluded SIDs : $params.exclude_sid"
+    }
     log.info " - Output root     : $params.output_root"
     log.info " - Publish mode    : $params.publish_mode"
     log.info " - Publish all outputs ${params.publish_all ? "(enabled)" : "(disabled)"}"
@@ -169,7 +175,7 @@ def display_run_info () {
         log.info "     - MRF weight                         : ${params.atropos_mrf_weight}"
         log.info "     - MRF neighbourhood size             : ${params.atropos_mrf_neighborhood}"
         log.info "     - Labels used to mask N4             : ${params.atropos_n4_tissues.join(',')}"
-        log.info "     - N4 iterations                      : ${params.atropos_n4_iterations}"
+        log.info "     - N4 iterations                      : ${params.atropos_n4_iterations.join('x')}"
         log.info "     - N4 convergence epsilon             : ${params.atropos_n4_convergence_eps}"
         log.info "     - N4 shrink factor                   : ${params.atropos_n4_shrink_factor}"
         log.info "     - N4 b-spline fitting distance       : ${params.atropos_n4_bspline_fitting}"
@@ -195,11 +201,13 @@ def display_run_info () {
             log.info "     - Custom WM atlas directory : ${params.wm_segmentation_root}"
         }
     }
+    log.info ""
     log.info "Diffusion modeling :"
     log.info " - DTI ${params.recons_dti ? "(enabled)" : "(disabled)"}"
     if (params.recons_dti) {
         log.info "    - Maximal b-value : $params.max_dti_bvalue"
     }
+    log.info ""
     if (params.msmt_odf) log.info " - MSMT CSD ${params.recons_csd ? "(enabled)" : "(disabled)"}"
     else log.info " - SSST CSD ${params.recons_csd ? "(enabled)" : "(disabled)"}"
     if (params.recons_csd) {
@@ -226,6 +234,7 @@ def display_run_info () {
         log.info "    - GM peak filtering - Absolute factor    : $params.fodf_gm_max_absolute_factor"
         log.info "    - GM Peak filtering - Relative threshold : $params.fodf_gm_relative_thr"
     }
+    log.info ""
     log.info " - DIAMOND ${params.recons_diamond ? "(enabled)" : "(disabled)"}"
     if (params.recons_diamond) {
         log.info "    - Fit model complexity to gradient sampling ${params.strict_parameters ? "(disabled)" : "(enabled)"}"

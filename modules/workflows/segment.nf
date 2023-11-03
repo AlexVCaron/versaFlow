@@ -50,6 +50,8 @@ params.register_charm = true
 params.register_sarm = true
 params.register_inia19 = true
 
+params.segmentation_classes = ["csf", "gm", "dgm", "wm", "bstem"]
+
 params.tissue_segmentation_root = "${get_data_path()}/maccaca_mulatta/tissue_segmentation"
 params.wm_segmentation_root = "${get_data_path()}/maccaca_mulatta/wm_segmentation"
 
@@ -145,7 +147,7 @@ workflow segment_nmt_wkf {
         atropos(t1_channel.join(mask_channel).join(nmt_in_subject_space), "segmentation")
         pvf_to_mask(
             atropos.out.vol_fractions
-                .map{ [it[0]] + it[1].reverse() }
+                .map{ [it[0], it[1].sort{ a, b -> params.segmentation_classes.findIndexOf{ i -> a.simpleName.contains("_$i") } <=> params.segmentation_classes.findIndexOf{ i -> b.simpleName.contains("_$i") } }] }
                 .join(mask_channel),
             "segmentation",
             "segmentation"
@@ -160,11 +162,8 @@ workflow segment_nmt_wkf {
         segmentation = atropos.out.segmentation
         volume_fractions_full = atropos.out.vol_fractions
         volume_fractions = pvf_to_mask.out.pvf_3t
-            .map{ [ it[0], it[1..-1] ]}
-        tissue_masks = pvf_to_mask.out.wm_mask
-            .join(pvf_to_mask.out.gm_mask)
-            .join(pvf_to_mask.out.csf_mask)
-            .map{ [ it[0], it[1..-1] ]}
+        tissue_masks = pvf_to_mask.out.masks
+            .map{ [ it[0], it[1].sort{ a, b -> ["wm", "gm", "csf"].findIndexOf{ i -> a.simpleName.contains(i) } <=> ["wm", "gm", "csf"].findIndexOf{ i -> b.simpleName.contains(i) } }] }
         safe_wm_mask = pvf_to_mask.out.safe_wm_mask
         d99_atlas = transform_atlases_wkf.out.d99_atlas
         charm_atlas = transform_atlases_wkf.out.charm_atlas
