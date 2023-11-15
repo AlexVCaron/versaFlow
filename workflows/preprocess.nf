@@ -856,9 +856,8 @@ workflow preprocess_wkf {
         )
 
         tissue_mask_channel = collect_paths(
-            pvf_to_mask.out.wm_mask
-                .join(pvf_to_mask.out.gm_mask)
-                .join(pvf_to_mask.out.csf_mask)
+            pvf_to_mask.out.masks
+                .map{ [ it[0], it[1].sort{ a, b -> ["wm", "gm", "csf"].findIndexOf{ i -> a.simpleName.contains(i) } <=> ["wm", "gm", "csf"].findIndexOf{ i -> b.simpleName.contains(i) } }] }
         ).mix(pvf_channel.filter{ it[1].isEmpty() })
 
         safe_wm_mask_channel = pvf_channel

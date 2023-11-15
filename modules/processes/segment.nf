@@ -59,21 +59,21 @@ process atropos {
         tuple val(sid), path("${sid}_segmentation.nii.gz"), emit: segmentation
         tuple val(sid), path("${sid}_{${params.segmentation_classes.join(',')}}_pvf.nii.gz"), emit: vol_fractions
     script:
-        def after_script = ""
-        def tissue_label = params.segmentation_classes.indexOf("csf")
+        def fractions_rename = []
+        def tissue_label = params.segmentation_classes.indexOf("csf") + 1
         def prior_filename = "${segmentation.simpleName}_0${tissue_label}.nii.gz"
         def blurring_lines = ["scil_image_math.py blur $prior_filename $params.csf_blur_factor $prior_filename --data_type float32 -f"]
-        def dist_priors = ["-l ${tissue_label}[$params.csf_distance_lambda,params.csf_distance_probability]"]
+        def dist_priors = ["-l ${tissue_label}[$params.csf_distance_lambda,$params.csf_distance_probability]"]
         def i = 1
         for (cl in params.segmentation_classes) {
             if (cl != "csf") {
-                tissue_label = params.segmentation_classes.indexOf(cl)
+                tissue_label = params.segmentation_classes.indexOf(cl) + 1
                 prior_filename = "${segmentation.simpleName}_0${tissue_label}.nii.gz"
                 dist_priors += ["-l ${tissue_label}[$params.default_distance_lambda,$params.default_distance_probability]"]
                 blurring_lines += ["scil_image_math.py blur $prior_filename $params.default_blur_factor $prior_filename --data_type float32 -f"]
             }
 
-            after_script += "mv ${sid}_SegmentationPosteriors0${i}.nii.gz ${sid}_${cl}_pvf.nii.gz"
+            fractions_rename += ["mv ${sid}_SegmentationPosteriors0${i}.nii.gz ${sid}_${cl}_pvf.nii.gz"]
             i += 1
         }
         """
@@ -84,31 +84,31 @@ process atropos {
 
         mrhardi seg2mask \
             --in $segmentation \
-            --values ${(1..cl.size()).join(',')} \
-            --labels ${(1..cl.size()).collect{ "0$it" }.join(',')} \
+            --values ${(1..params.segmentation_classes.size()).join(',')} \
+            --labels ${(1..params.segmentation_classes.size()).collect{ "0$it" }.join(',')} \
             --out ${segmentation.simpleName}
 
         ${blurring_lines.join('\n')}
 
+        spacing=\$(mrinfo -spacing $t1_image | awk '{print \$1}')
         antsAtroposN4.sh -u 0 -d 3 \
+            -a $t1_image \
+            -x $mask \
             -b Aristotle[1] \
             ${dist_priors.join(' ')} \
             -r [$params.atropos_mrf_weight,$params.atropos_mrf_neighborhood] \
-            -y ${params.atropos_n4_tissues.collect{ params.segmentation_classes.indexOf(it) }.join(' ')} \
+            ${params.atropos_n4_tissues.collect{ "-y ${params.segmentation_classes.indexOf(it)}" }.join(' ')} \
             -e [${params.atropos_n4_iterations.join('x')},$params.atropos_n4_convergence_eps] \
             -f $params.atropos_n4_shrink_factor \
-            -q [$params.atropos_n4_bspline_fitting] \
-            -a $t1_image \
-            -x $mask \
             -c ${params.segmentation_classes.size()} \
             -p ${segmentation.simpleName}_%02d.nii.gz \
-            -q \$(echo "\${spacing[0]}*$params.atropos_n4_bspline_spacing" | bc) \
+            -q [\$(echo "\${spacing[0]}*$params.atropos_n4_bspline_fitting" | bc)] \
             -o ${sid}_ \
             -w $params.atropos_prior_weight
 
         mv ${sid}_Segmentation.nii.gz tmp.nii.gz
         mv tmp.nii.gz ${sid}_segmentation.nii.gz
 
-        ${after_script.join('\n')}
+        ${fractions_rename.join('\n')}
         """
 }

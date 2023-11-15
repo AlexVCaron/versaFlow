@@ -13,6 +13,8 @@ params.safe_csf_mask_dilation = 1
 params.safe_gm_mask_dilation = 1
 params.duplicates_merge_method = "mean"
 params.validate_bvecs_fa_thr = 0.2
+params.segmentation_classes = ["csf", "gm", "dgm", "wm", "bstem"]
+params.tissue_masks_mapping = ["wm": ["wm", "bstem"], "gm": ["gm", "dgm"], "csf": ["csf"]]
 
 include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 
@@ -275,6 +277,47 @@ process check_dwi_conformity {
         """
 }
 
+def get_tissue_file (tissue_class, image_list) {
+    return image_list[params.segmentation_classes.indexOf(tissue_class)]
+}
+
+def pvf_space_to_masks ( sid, brain_mask ) {
+"""
+python3 - <<'END_SCRIPT'
+import nibabel as nib
+import numpy as np
+
+images = ${params.tissue_masks_mapping.collect{ "[\"${it.key}\", \"${sid}_3t_${it.key}_pvf.nii.gz\"]" }}
+brain_mask = nib.load("$brain_mask").get_fdata().astype(np.bool)
+pvf_space = []
+for _, img in images:
+    data = nib.load(img).get_fdata()
+    data[data < $params.min_pvf_threshold] = 0.
+    pvf_space.append(data)
+
+pvf_space = np.array(pvf_space)
+norms = np.apply_along_axis(np.linalg.norm, 0, pvf_space.reshape((pvf_space.shape[0], -1))).reshape(pvf_space.shape[1:])
+pvf_space[:, norms > 0] /= norms[None, norms > 0]
+pvf_classes = np.argmax(pvf_space, axis=0)
+pvf_classes[~brain_mask] = -1
+
+for i, (k, img) in enumerate(images):
+    nib.save(nib.Nifti1Image((pvf_classes == i).astype(np.uint8), nib.load(img).affine), "${sid}_{}_mask.nii.gz".format(k))
+
+END_SCRIPT
+"""
+}
+
+def compute_safe_maps (sid, tissue_class, dilation_factor) {
+    def commands = []
+
+    commands +="scil_image_math.py lower_threshold_eq ${sid}_3t_${tissue_class}_pvf.nii.gz $params.min_pvf_threshold ${tissue_class}_safe_map.nii.gz --data_type uint8 -f"
+    if ( dilation_factor )
+        commands += "scil_image_math.py dilation ${tissue_class}_safe_map.nii.gz $dilation_factor ${tissue_class}_safe_map.nii.gz --data_type uint8 -f"
+
+    return commands.join("\n")
+}
+
 process pvf_to_mask {
     label "FAST"
     label "res_single_cpu"
@@ -283,71 +326,30 @@ process pvf_to_mask {
     publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
 
     input:
-        tuple val(sid), path(wm_pvf), path(gm_pvf), path(dgm_pvf), path(csf_pvf), path(brain_mask)
+        tuple val(sid), path(pvf_images), path(brain_mask)
         val(caller_name)
         val(additional_publish_path)
     output:
-        tuple val(sid), path("${sid}_wm_mask.nii.gz"), emit: wm_mask
-        tuple val(sid), path("${sid}_gm_mask.nii.gz"), emit: gm_mask
-        tuple val(sid), path("${sid}_csf_mask.nii.gz"), emit: csf_mask
+        tuple val(sid), path("${sid}_{${params.tissue_masks_mapping.collect{ it.key }.join(',')}}_mask.nii.gz"), emit: masks
         tuple val(sid), path("${sid}_safe_wm_mask.nii.gz"), emit: safe_wm_mask
-        tuple val(sid), path("${sid}_pvf_3t_wm.nii.gz"), path("${sid}_pvf_3t_gm.nii.gz"), path("${sid}_pvf_3t_csf.nii.gz"), emit: pvf_3t
+        tuple val(sid), path("${sid}_3t_{${params.tissue_masks_mapping.collect{ it.key }.join(',')}}_pvf.nii.gz"), emit: pvf_3t
     script:
+        def map_initializer = params.tissue_masks_mapping.collect{ 
+            it.value.size() == 1 ? "cp ${get_tissue_file(it.value[0], pvf_images)} ${sid}_3t_${it.key}_pvf.nii.gz"
+                                 : "scil_image_math.py addition ${it.value.collect{ i -> get_tissue_file(i, pvf_images) }.join(' ')} ${sid}_3t_${it.key}_pvf.nii.gz --data_type float32 -f"
+        }
+        def safe_wm_initializer = params.tissue_masks_mapping.collect{ 
+            compute_safe_maps(sid, it.key, dilation_factor = it.key == "csf" ? params.safe_csf_mask_dilation : it.key == "gm" ? params.safe_gm_mask_dilation : false)
+        }
         """
-        cp $gm_pvf ${sid}_pvf_3t_gm.nii.gz
-        cp $csf_pvf ${sid}_pvf_3t_csf.nii.gz
-        scil_image_math.py addition $wm_pvf $dgm_pvf ${sid}_pvf_3t_wm.nii.gz -f
-        python3 - <<'END_SCRIPT'
-        import nibabel as nib
-        import numpy as np
-        wm_pvf = nib.load("$wm_pvf").get_fdata()
-        gm_pvf = nib.load("$gm_pvf").get_fdata()
-        dgm_pvf = nib.load("$dgm_pvf").get_fdata()
-        csf_pvf = nib.load("$csf_pvf")
-        affine = csf_pvf.affine
-        csf_pvf = csf_pvf.get_fdata()
+        ${map_initializer.join("\n")}
 
-        wm_background = wm_pvf < $params.min_pvf_threshold
-        wm_pvf[wm_background] = dgm_pvf[wm_background]
-        wm_background = wm_pvf < $params.min_pvf_threshold
-        wm_pvf[wm_background] = 0.
+        ${pvf_space_to_masks(sid, brain_mask)}
 
-        gm_background = gm_pvf < $params.min_pvf_threshold
-        gm_pvf[gm_background] = 0.
-        csf_background = csf_pvf < $params.min_pvf_threshold
-        csf_pvf[csf_background] = 0.
+        ${safe_wm_initializer.join("\n")}
 
-        data = np.concatenate(
-            (wm_pvf[..., None], gm_pvf[..., None], csf_pvf[..., None]),
-            axis=-1
-        )
-        maxes = np.argmax(data, axis=-1)
-
-        wm_mask = maxes == 0
-        wm_mask[wm_background] = False
-        gm_mask = maxes == 1
-        gm_mask[gm_background] = False
-        csf_mask = maxes == 2
-        csf_mask[csf_background] = False
-
-        nib.save(nib.Nifti1Image(csf_mask.astype(np.uint8), affine), "${sid}_csf_mask.nii.gz")
-        nib.save(nib.Nifti1Image(gm_mask.astype(np.uint8), affine), "${sid}_gm_mask.nii.gz")
-        nib.save(nib.Nifti1Image(wm_mask.astype(np.uint8), affine), "${sid}_wm_mask.nii.gz")
-        END_SCRIPT
-
-        scil_image_math.py lower_threshold_eq $csf_pvf $params.max_safe_csf_pvf_threshold csf_map.nii.gz --data_type uint8
-        if [[ $params.safe_csf_mask_dilation > 0 ]]
-        then
-            scil_image_math.py dilation csf_map.nii.gz $params.safe_csf_mask_dilation csf_map.nii.gz -f --data_type uint8
-        fi
-        scil_image_math.py lower_threshold_eq $gm_pvf $params.max_safe_gm_pvf_threshold gm_map.nii.gz --data_type uint8
-        if [[ $params.safe_gm_mask_dilation > 0 ]]
-        then
-            scil_image_math.py dilation gm_map.nii.gz $params.safe_gm_mask_dilation gm_map.nii.gz -f --data_type uint8
-        fi
-
-        scil_image_math.py difference ${sid}_wm_mask.nii.gz csf_map.nii.gz ${sid}_safe_wm_mask.nii.gz
-        scil_image_math.py difference ${sid}_safe_wm_mask.nii.gz gm_map.nii.gz ${sid}_safe_wm_mask.nii.gz -f
+        scil_image_math.py difference ${sid}_wm_mask.nii.gz csf_safe_map.nii.gz ${sid}_safe_wm_mask.nii.gz
+        scil_image_math.py difference ${sid}_safe_wm_mask.nii.gz gm_safe_map.nii.gz ${sid}_safe_wm_mask.nii.gz -f
         scil_image_math.py intersection ${sid}_safe_wm_mask.nii.gz $brain_mask ${sid}_safe_wm_mask.nii.gz -f
         """
 }
@@ -840,6 +842,6 @@ process compose_transformations {
             --save_script_transforms scripts_transforms/
 
         mkdir -p composite_transforms
-        mv ${sid}_*.nii.gz composite_transforms/.
+        cp ${sid}_*.nii.gz composite_transforms/.
         """
 }

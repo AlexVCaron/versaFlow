@@ -3,6 +3,8 @@
 nextflow.enable.dsl=2
 
 params.data_root = false
+params.include_sid = false
+params.exclude_sid = false
 
 include {
     prepare_metadata as pmeta_dwi;
@@ -72,6 +74,13 @@ workflow load_dataset {
             .map{ [it[0], it[1][2], it[1][0], it[1][1]] }
         ref_id_channel = enforce_sid_convention_anat.out.image
             .map{ [it[0]] }
+
+        if (params.include_sid) {
+            ref_id_channel = ref_id_channel.filter{ params.include_sid.contains(it[0]) }
+        }
+        if (params.exclude_sid) {
+            ref_id_channel = ref_id_channel.filter{ !params.exclude_sid.contains(it[0]) }
+        }
 
         // Unpack reverse phase images
         rev_bval_bvec_channel = fill_missing_datapoints(
