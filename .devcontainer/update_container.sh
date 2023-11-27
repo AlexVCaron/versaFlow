@@ -14,3 +14,5 @@ tower {
 EOF
 
 fi
+
+apt-get update && apt-get -y install imagemagick

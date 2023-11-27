@@ -14,9 +14,13 @@ include { tracking_wkf } from "./workflows/tracking.nf"
 workflow {
     if (params.help) display_usage()
     else {
+        if ( !params.data_root )
+            error "You must supply an input data root using --data_root"
+        root = file(params.data_root)
+
         validate_required_parameters()
         display_run_info()
-        dataloader = load_dataset()
+        dataloader = load_dataset(root)
 
         preprocess_wkf(
             dataloader.dwi,

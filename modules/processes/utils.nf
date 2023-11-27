@@ -20,8 +20,8 @@ process apply_mask {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_masked") : null }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), "_masked") : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img), path(mask), file(metadata)
@@ -40,8 +40,8 @@ process bet_mask {
     label "BET"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), publish_suffix ? "_$publish_suffix" : "_bet_mask") : null }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : add_suffix(remove_alg_suffixes(f), publish_suffix ? "_$publish_suffix" : "_bet_mask") : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img)
@@ -61,7 +61,7 @@ process cat_datasets {
     label "MEDIUM"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
 
     input:
         tuple val(sid), path(imgs), file(bval), file(bvec), file(metadatas)
@@ -100,8 +100,8 @@ process split_image {
     label "MEDIUM"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(img), path(metadata)
@@ -126,8 +126,8 @@ process join_images {
     label "MEDIUM"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> f.contains("metadata") ? null : f }, mode: params.publish_mode
 
     input:
         tuple val(sid), val(prefix), path(imgs), path(metadatas)
@@ -146,8 +146,8 @@ process apply_topup {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwis), path(bvals), path(bvecs), path(revs), path(topup_params), val(topup_prefix), path(topup_files), path(metadata)
@@ -166,8 +166,8 @@ process apply_epi_field {
     label "FAST"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(rev_dwi), path(epi_field), file(metadata)
@@ -195,8 +195,8 @@ process tournier2descoteaux_odf {
     label "MEDIUM"
     label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}/fodf", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(odfs)
@@ -216,8 +216,8 @@ process convert_float_to_integer {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image)
@@ -256,8 +256,8 @@ process check_dwi_conformity {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
     
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), file(metadata)
@@ -279,8 +279,8 @@ process pvf_to_mask {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(wm_pvf), path(gm_pvf), path(dgm_pvf), path(csf_pvf), path(brain_mask)
@@ -356,8 +356,8 @@ process crop_image {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), file(mask), file(bounding_box), file(metadata)
@@ -422,8 +422,8 @@ process fit_bounding_box {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("cropped.nii.gz") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(image), path(reference), path(bounding_box)
@@ -440,8 +440,8 @@ process average {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(images), val(base_name)
@@ -486,7 +486,7 @@ process extract_shells {
     label "MEDIUM"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec)
@@ -509,7 +509,7 @@ process dilate_mask {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
 
     input:
         tuple val(sid), path(mask)
@@ -527,7 +527,7 @@ process erode_mask {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
 
     input:
         tuple val(sid), path(mask)
@@ -545,7 +545,7 @@ process invert_mask {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
 
     input:
         tuple val(sid), path(mask)
@@ -562,7 +562,7 @@ process intersect_masks {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
 
     input:
         tuple val(sid), path(mask1), path(mask2)
@@ -579,7 +579,7 @@ process difference_masks {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
 
     input:
         tuple val(sid), path(mask1), path(mask2)
@@ -596,8 +596,8 @@ process clean_mask_borders {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(mask)
@@ -616,8 +616,8 @@ process segmentation_to_binary {
     label "LIGHTSPEED"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(segmentation)
@@ -677,8 +677,8 @@ process check_odd_dimensions {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("${reverse.simpleName}") ? null : f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("${reverse.simpleName}") ? null : f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), file(reverse), file(rval), file(rvec), file(mask), file(metadata)
@@ -710,8 +710,8 @@ process check_for_duplicates {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(dwi), path(bval), path(bvec), file(metadata)
@@ -732,8 +732,8 @@ process validate_gradients {
     label "MEDIUM"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(bvec), path(peaks), path(fa), file(mask), file(peaks_vals)
@@ -756,8 +756,8 @@ process patch_in_mask {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all
+    publishDir "${params.output_root}/${sid}", saveAs: { f -> f.contains("metadata") ? null : remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(masked_image), path(mask), path(background_image)
@@ -804,7 +804,7 @@ process compose_transformations {
     label "FAST"
     label "res_single_cpu"
 
-    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode, overwrite: true
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
 
     input:
         tuple val(sid), path(transformations, stageAs: "transformations/*"), val(inverts), path(inverse_transformations, stageAs: "inverse_transformations/*"), val(inverse_invert), path(target_reference), path(source_reference)
@@ -841,5 +841,196 @@ process compose_transformations {
 
         mkdir -p composite_transforms
         mv ${sid}_*.nii.gz composite_transforms/.
+        """
+}
+
+process extract_labels_from_atlas {
+    label "FAST"
+    label "res_single_cpu"
+
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(atlas)
+        val(labels)
+        val(publish)
+        val(additional_publish_path)
+    output:
+        tuple val(sid), path("${atlas.simpleName}__labels.nii.gz"), emit: labels
+        tuple val(sid), path("${atlas.simpleName}__labels_mask.nii.gz"), emit: mask
+    script:
+        """
+        python3 - <<'END_SCRIPT'
+
+        import nibabel as nib
+        import numpy as np
+
+        atlas = nib.load("$atlas")
+        dtype = atlas.get_data_dtype()
+        affine = atlas.affine
+        atlas = atlas.get_fdata()
+        label_mask = np.isin(atlas, [${labels.join(',')}])
+        atlas[~label_mask] = 0
+
+        nib.save(nib.Nifti1Image(atlas.astype(dtype), affine), "${atlas.simpleName}__labels.nii.gz")
+
+        while len(label_mask.shape) > 3:
+            label_mask = np.any(label_mask, axis=-1)
+
+        nib.save(nib.Nifti1Image(label_mask.astype(np.uint8), affine), "${atlas.simpleName}__labels_mask.nii.gz")
+
+        END_SCRIPT
+        """
+}
+
+process image_bounding_box {
+    label "FAST"
+    label "res_single_cpu"
+
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(image)
+        val(publish)
+        val(additional_publish_path)
+    output:
+        tuple val(sid), path("${image.simpleName}_bounding_box.json"), emit: box
+    script:
+        """
+        python3 - <<'END_SCRIPT'
+
+        import json
+        import nibabel as nib
+        from dipy.segment.mask import bounding_box
+
+        image = nib.load("$image")
+        affine = image.affine
+        mins, maxs = bounding_box(image.get_fdata())
+
+        bbox = {
+            "lower": [int(i) for i in mins],
+            "upper": [int(i) for i in maxs],
+            "space": "voxel"
+        }
+        with open("${image.simpleName}_bounding_box.json", "w") as f:
+            json.dump(bbox, f)
+
+        END_SCRIPT
+        """
+}
+
+process transform_bounding_box {
+    label "FAST"
+    label "res_single_cpu"
+
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(bbox), path(source_image, stageAs: 'source.nii.gz'), path(target_image, stageAs: 'target.nii.gz')
+        val(publish)
+        val(additional_publish_path)
+    output:
+        tuple val(sid), path("${bbox.simpleName}_transformed.json"), emit: box
+    script:
+        """
+        python3 - <<'END_SCRIPT'
+
+        import json
+        import nibabel as nib
+
+        bbox = None
+        with open("$bbox") as f:
+            bbox = json.load(f)
+
+        source_image = nib.load("$source_image")
+        target_image = nib.load("$target_image")
+        source_affine = source_image.affine
+        target_affine = target_image.affine
+        source_ornt = nib.orientations.io_orientation(source_affine)
+        target_ornt = nib.orientations.io_orientation(target_affine)
+        source_to_target = nib.orientations.ornt_transform(source_ornt, target_ornt)
+        trans_affine = nib.orientations.inv_ornt_aff(source_to_target, source_image.shape)
+
+        bbox["lower"] = (trans_affine @ [bbox["lower"][0], bbox["lower"][1], bbox["lower"][2], 1])[:3]
+        bbox["upper"] = (trans_affine @ [bbox["upper"][0], bbox["upper"][1], bbox["upper"][2], 1])[:3]
+
+        zoom_ratios = [a / b for a,b in zip(source_image.header.get_zooms()[:3],target_image.header.get_zooms()[:3])]
+        bbox["lower"] *= zoom_ratios
+        bbox["upper"] *= zoom_ratios
+
+        bbox["lower"] = [int(i) for i in bbox["lower"]]
+        bbox["upper"] = [int(i) for i in bbox["upper"]]
+        bbox["space"] = "voxel"
+
+        with open("${bbox.simpleName}_transformed.json", "w") as f:
+            json.dump(bbox, f)
+
+        END_SCRIPT
+        """
+}
+
+screenshot_axes = [
+    "axial": 2,
+    "coronal": 1,
+    "sagittal": 0
+]
+
+process extract_slice_from_volume {
+    label "FAST"
+    label "res_single_cpu"
+
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? remove_alg_suffixes(f) : null }, mode: params.publish_mode
+
+    input:
+        tuple val(sid), path(volume), val(axis), val(slice)
+        val(publish)
+        val(additional_publish_path)
+    output:
+        tuple val(sid), path("${volume.simpleName}_slice_${slice}_${axis}.nii.gz"), emit: image
+    script:
+        """
+        python3 - <<'END_SCRIPT'
+
+        import nibabel as nib
+        import numpy as np
+
+        volume = nib.load("$volume")
+        affine = volume.affine
+        volume = volume.get_fdata()
+        slice = np.take(volume, $slice, axis=${screenshot_axes[axis]})
+        nib.save(nib.Nifti1Image(slice, affine), "${volume.simpleName}_slice_${slice}_${axis}.nii.gz")
+
+        END_SCRIPT
+        """
+}
+
+process average_to_3d_volume {
+
+    input:
+        tuple val(sid), path(image)
+    output:
+        tuple val(sid), path("${image.simpleName}_3d.nii.gz"), emit: image
+    script:
+        """
+        python3 - <<'END_SCRIPT'
+
+        import nibabel as nib
+
+        image = nib.load("$image")
+
+        if len(image.shape) == 3:
+            print("Image already 3D")
+            nib.save(image, "${image.simpleName}_3d.nii.gz")
+            exit(0)
+
+        affine = image.affine
+        image = image.get_fdata()
+
+        while len(image.shape) > 3:
+            image = image.mean(axis=-1)
+
+        nib.save(nib.Nifti1Image(image, affine), "${image.simpleName}_3d.nii.gz")
+
+        END_SCRIPT
         """
 }

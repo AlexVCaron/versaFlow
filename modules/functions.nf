@@ -224,3 +224,25 @@ def asArray ( object ) {
 def rng_sampler ( seeds, n_seeds ) {
     return seeds ? asArray(seeds) : (1..n_seeds).collect{ random.nextInt() & Integer.MAX_VALUE }
 }
+
+def get_natural_sorter () {
+    return { file_a, file_b ->
+        def splitter = ~/(\D+?)_(\d+)/
+        def a_split = (file_a.simpleName =~ splitter)
+        def b_split = (file_b.simpleName =~ splitter)
+
+        def cmp_result = 0
+        a_split.eachWithIndex{ it, ix ->
+            if ( b_split.size() > ix ) {
+                if (b_split[ix][1] == it[1] && it.size() > 2) {
+                    cmp_result = it[2].toInteger() <=> b_split[ix][2].toInteger()
+                }
+                else {
+                    cmp_result = it[0] <=> b_split[ix][0]
+                }
+            }
+        }
+
+        return cmp_result
+    }
+}

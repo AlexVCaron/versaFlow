@@ -30,11 +30,9 @@ def get_id ( dir, dir_base ) {
 }
 
 workflow load_dataset {
+    take:
+        root
     main:
-        if ( !params.data_root )
-            error "You must supply an input data root using --data_root"
-        root = file(params.data_root)
-
         // Load all images
         dwi_channel = Channel.fromFilePairs("$root/**/*dwi.{nii.gz,bval,bvec}", size: 3, flat: true)
             { get_id(it.parent, root) }
