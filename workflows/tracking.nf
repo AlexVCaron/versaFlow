@@ -99,7 +99,7 @@ workflow tracking_wkf {
 
         PFT_maps(wm_vf.join(gm_vf).join(csf_vf), "tracking")
         PFT_tracking(
-            fodfs.join(PFT_maps.out.maps).join(PFT_maps.out.wm_gm_interface),
+            fodfs.join(PFT_maps.out.maps).join(PFT_maps.out.wm_gm_interface).map{ it + ["interface"] },
             "tracking",
             pft_random_seed,
             pft_tracking_algorithm,

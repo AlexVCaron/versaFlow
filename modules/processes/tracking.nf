@@ -104,7 +104,6 @@ process PFT_tracking {
             --back $back_length \
             --forward $params.pft_forward_tracking_length \$compress \
             --sh_basis descoteaux07 \
-            --sphere symmetric724 \
             --subdivide_sphere 2
         scil_remove_invalid_streamlines.py tmp.trk\
             ${sid}_pft_${algo}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${mask_type}_step_${step_length}_theta_${theta}_np_${n_particles}_back_${back_length}_tracking.trk \
