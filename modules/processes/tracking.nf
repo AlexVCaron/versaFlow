@@ -7,7 +7,6 @@ params.local_tracking_gpu_batch_size = 20000
 params.streamline_compression_factor = 0.2
 params.pve_threshold = 0.05
 
-
 params.pft_seeding_strategy = "npv"
 params.pft_number_of_seeds = 10
 params.pft_step_size = 0.5
@@ -16,26 +15,10 @@ params.pft_sfthres = 0.1
 params.pft_sfthres_init = 0.5
 params.pft_min_tract_length = 5
 params.pft_max_tract_length = 150
-params.pft_min_tract_length = 5
-params.pft_max_tract_length = 150
 params.pft_number_of_particles = 15
 params.pft_back_tracking_length = 2
 params.pft_forward_tracking_length = 1
 
-params.local_sfthres = 0.1
-params.local_min_len = 5
-params.local_max_len = 150
-
-params.commit_frf_n_directions = 500
-params.commit_n_iterations = 1000
-params.commit_run_commit2 = false
-params.commit_lambda_commit2 = 1E-3
-params.commit_use_ball_stick = false
-params.commit_parallel_diffusivity = 1.7E-3
-params.commit_perpendicular_diffusivity = 0.51E-3
-params.commit_isotropic_diffusivity = [1.7E-3, 3.0E-3]
-
-include { remove_alg_suffixes; asArray; remove_extension } from "../functions.nf"
 params.local_sfthres = 0.1
 params.local_min_len = 5
 params.local_max_len = 150
@@ -74,12 +57,6 @@ process PFT_maps {
             --exclude ${sid}_map_exclude.nii.gz \
             --interface ${sid}_wm_gm_interface.nii.gz \
             -t $params.pve_threshold -f
-        scil_compute_maps_for_particle_filter_tracking.py \
-            $wm_vf $gm_vf $csf_vf \
-            --include ${sid}_map_include.nii.gz \
-            --exclude ${sid}_map_exclude.nii.gz \
-            --interface ${sid}_wm_gm_interface.nii.gz \
-            -t $params.pve_threshold -f
         """
 }
 
@@ -88,10 +65,8 @@ process PFT_tracking {
 
     publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "link", enabled: params.publish_all
     publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
-    publishDir "${params.output_root}/${sid}/$caller_name", saveAs: { f -> remove_alg_suffixes(f) }, mode: params.publish_mode
 
     input:
-        tuple val(sid), path(fodf), path(map_include), path(map_exclude), path(seeding_mask), val(mask_type)
         tuple val(sid), path(fodf), path(map_include), path(map_exclude), path(seeding_mask), val(mask_type)
         val(caller_name)
         each seed
@@ -102,14 +77,7 @@ process PFT_tracking {
         each theta
         each n_particles
         each back_length
-        each seeding_strategy
-        each n_seeds
-        each step_length
-        each theta
-        each n_particles
-        each back_length
     output:
-        tuple val(sid), path("${sid}_pft_${algo}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${mask_type}_step_${step_length}_theta_${theta}_np_${n_particles}_back_${back_length}_tracking.trk"), emit: tractogram
         tuple val(sid), path("${sid}_pft_${algo}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${mask_type}_step_${step_length}_theta_${theta}_np_${n_particles}_back_${back_length}_tracking.trk"), emit: tractogram
     script:
         """
@@ -125,20 +93,14 @@ process PFT_tracking {
         export OPENBLAS_NUM_THREADS=1
         scil_compute_pft.py $fodf $seeding_mask $map_include $map_exclude \
             tmp.trk \
-        scil_compute_pft.py $fodf $seeding_mask $map_include $map_exclude \
-            tmp.trk \
             --algo $algo \
             --${seeding_strategy} $n_seeds \
-            --${seeding_strategy} $n_seeds \
             --seed $seed \
-            --step $step_length \
-            --theta $theta \
             --step $step_length \
             --theta $theta \
             --sfthres $params.pft_sfthres \
             --sfthres_init $params.pft_sfthres_init \
             --min_length $params.pft_min_tract_length \
-            --max_length $params.pft_max_tract_length \
             --particles $n_particles \
             --back $back_length \
             --forward $params.pft_forward_tracking_length \$compress \
