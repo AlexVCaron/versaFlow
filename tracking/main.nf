@@ -88,7 +88,7 @@ workflow load_tracking_data {
 
         wm_mask_channel = Channel.fromFilePairs("$root/**/segmentation/*_wm_mask.nii.gz", size: 1, flat: true)
             { get_id(it.parent.parent, root) }
-        tissue_pvf_channel = Channel.fromFilePairs("$root/**/segmentation/*pvf_3t_{csf,gm,wm}.nii.gz", size: 3, flat: true)
+        tissue_pvf_channel = Channel.fromFilePairs("$root/**/segmentation/*_3t_{csf,gm,wm}_pvf.nii.gz", size: 3, flat: true)
             { get_id(it.parent.parent, root) }
 
         enforce_sid_convention_dwi(dwi_channel.map{ [it[0], it[1..-1], ["dwi"] * (it.size() - 1)] })
@@ -104,7 +104,7 @@ workflow load_tracking_data {
             tissue_pvf_channel.map{[
                 it[0],
                 it[1..-1],
-                it[1..-1].collect{ i -> i.simpleName.tokenize("_")[-1] + "_pvf"}
+                it[1..-1].collect{ i -> i.simpleName.tokenize("_")[-2] + "_pvf"}
             ]}
         )
 
