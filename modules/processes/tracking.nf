@@ -2,6 +2,8 @@
 
 nextflow.enable.dsl=2
 
+params.local_tracking_gpu_batch_size = 20000
+
 params.streamline_compression_factor = 0.2
 params.pve_threshold = 0.05
 
@@ -179,7 +181,8 @@ process Local_prob_tracking_opencl {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_compute_local_tracking_gpu.py $fodf $seeding_mask $tracking_mask \
+
+        scil_compute_local_tracking.py $fodf $seeding_mask $tracking_mask \
             tmp.trk \
             --step $step_length \
             --theta $theta \
@@ -187,7 +190,9 @@ process Local_prob_tracking_opencl {
             --max_length $params.local_max_len \
             --sub_sphere $sphere_sub \
             --${seeding_strategy} $n_seeds \$compress \
-            --rng_seed $seed
+            --seed $seed \
+            --use_gpu \
+            --batch_size $params.local_tracking_gpu_batch_size
         scil_remove_invalid_streamlines.py tmp.trk \
             ${sid}_local_gpu_prob_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk \
             --remove_single_point
