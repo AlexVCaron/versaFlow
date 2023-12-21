@@ -68,10 +68,7 @@ workflow load_dataset {
         enforce_sid_convention_metadata(dwi_json_channel.map{ it + ["dwi"] })
         enforce_sid_convention_rev_metadata(rev_json_channel.map{ it + ["rev"] })
 
-        // Unpack base images (T1 + DWI)
-        anat_channel = enforce_sid_convention_anat.out.image
-        dwi_channel = enforce_sid_convention_dwi.out.image
-            .map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+        // Filter subjects to get only those specified by the user
         ref_id_channel = enforce_sid_convention_anat.out.image
             .map{ [it[0]] }
 
@@ -82,27 +79,40 @@ workflow load_dataset {
             ref_id_channel = ref_id_channel.filter{ !params.exclude_sid.contains(it[0]) }
         }
 
+        // Unpack base images (T1 + DWI)
+        anat_channel = ref_id_channel
+            .join(enforce_sid_convention_anat.out.image)
+
+        dwi_channel = ref_id_channel
+            .join(enforce_sid_convention_dwi.out.image)
+            .map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+
         // Unpack reverse phase images
         rev_bval_bvec_channel = fill_missing_datapoints(
-            enforce_sid_convention_rev_bval_bvec.out.image.map{ it.flatten() },
+            ref_id_channel
+                .join(enforce_sid_convention_rev_bval_bvec.out.image)
+                .map{ it.flatten() },
             ref_id_channel,
             1, ["", ""]
         )
 
         rev_channel = fill_missing_datapoints(
-            enforce_sid_convention_rev.out.image,
+            ref_id_channel
+                .join(enforce_sid_convention_rev.out.image),
             ref_id_channel,
             1, [""]
         ).join(rev_bval_bvec_channel)
 
         // Unpack image metadata
         dwi_json_channel = fill_missing_datapoints(
-            enforce_sid_convention_metadata.out.image,
+            ref_id_channel
+                .join(enforce_sid_convention_metadata.out.image),
             ref_id_channel,
             1, [""]
         )
         rev_json_channel = fill_missing_datapoints(
-            enforce_sid_convention_rev_metadata.out.image,
+            ref_id_channel
+                .join(enforce_sid_convention_rev_metadata.out.image),
             ref_id_channel,
             1, [""]
         )
@@ -128,7 +138,8 @@ workflow load_dataset {
 
         // Unpack tissues PVF images
         pvf_channel = fill_missing_datapoints(
-            enforce_sid_convention_pvf.out.image
+            ref_id_channel
+                .join(enforce_sid_convention_pvf.out.image)
                 .map{ [it[0], it[1].reverse()] },
             ref_id_channel,
             1, [[]]
@@ -136,12 +147,14 @@ workflow load_dataset {
 
         // Load available masks (T1 and/or DWI)
         dwi_mask_channel = fill_missing_datapoints(
-            enforce_sid_convention_dwi_mask.out.image,
+            ref_id_channel
+                .join(enforce_sid_convention_dwi_mask.out.image),
             ref_id_channel,
             1, [""]
         )
         anat_mask_channel = fill_missing_datapoints(
-            enforce_sid_convention_anat_mask.out.image,
+            ref_id_channel
+                .join(enforce_sid_convention_anat_mask.out.image),
             ref_id_channel,
             1, [""]
         )

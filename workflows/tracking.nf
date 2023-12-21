@@ -17,6 +17,7 @@ def asArray ( object ) {
 params.pft_tracking = true
 params.local_tracking = true
 params.run_commit = true
+params.concatenate_tractograms = true
 
 params.use_opencl_tracking = false
 
@@ -99,7 +100,7 @@ workflow tracking_wkf {
 
         PFT_maps(wm_vf.join(gm_vf).join(csf_vf), "tracking")
         PFT_tracking(
-            fodfs.join(PFT_maps.out.maps).join(PFT_maps.out.wm_gm_interface),
+            fodfs.join(PFT_maps.out.maps).join(PFT_maps.out.wm_gm_interface).map{ it + ["interface"] },
             "tracking",
             pft_random_seed,
             pft_tracking_algorithm,
@@ -278,9 +279,11 @@ workflow ensemble_tracking_wkf {
 
             out_tractograms = Commit.out.filtered_tractogram
         }
-        
-        Ensemble_Tractograms(out_tractograms.groupTuple().join(fa_channel), "tracking")
-        out_ensemble_tractogram = Ensemble_Tractograms.out.tractogram
+
+        if (params.concatenate_tractograms) {
+            Ensemble_Tractograms(out_tractograms.groupTuple().join(fa_channel), "tracking")
+            out_ensemble_tractogram = Ensemble_Tractograms.out.tractogram
+        }
 
     emit:
         tractograms = out_tractograms

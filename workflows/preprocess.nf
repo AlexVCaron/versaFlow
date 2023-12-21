@@ -15,7 +15,8 @@ include {
 include {
     extract_b0 as dwi_b0;
     extract_b0 as extract_epi_corrected_b0;
-    extract_b0 as extract_b0_preprocessed
+    extract_b0 as extract_b0_preprocessed;
+    extract_b0 as extract_b0_reference
 } from '../modules/processes/preprocess.nf'
 include {
     scil_compute_dti_fa
@@ -39,7 +40,8 @@ include {
     ants_transform as ants_transform_safe_wm_mask;
     ants_transform as ants_transform_raw_t1_mask;
     ants_transform as apply_transform_epi_dwi;
-    ants_transform as apply_transform_epi_rev
+    ants_transform as apply_transform_epi_rev;
+    ants_transform as apply_transform_epi_field
 } from '../modules/processes/register.nf'
 include {
     convert_float_to_integer as convert_wm_segmentation;
@@ -394,10 +396,15 @@ workflow preprocess_wkf {
                     .map{ [it[0], it[1].find{m -> m.simpleName.contains("_rev")}, "rev__ec_input_rev_metadata"] }
             ).map{ it.flatten() }
 
+            extract_b0_reference(
+                ec_input_dwi_channel.map{ it[0..2] + [""] },
+                "preprocess", "false", params.extract_mean_b0_base_config
+            )
 
+            b0_reference_for_registration = extract_b0_reference.out.b0
             apply_transform_epi_rev(
                 ec_input_rev_channel.map{ it[0..1] }
-                    .join(epi_correction_wkf.out.transform_reference)
+                    .join(b0_reference_for_registration)
                     .join(epi_correction_wkf.out.forward_transform)
                     .join(epi_correction_wkf.out.reverse_transform)
                     .map{ it[0..-3] + [it[-2] + it[-1]] }
@@ -408,6 +415,7 @@ workflow preprocess_wkf {
                 "",
                 params.ants_transform_base_config
             )
+
             rev_channel = replace_dwi_file(rev_channel, apply_transform_epi_rev.out.image)
 
             // Applied estimated susceptibility correction to DWI
@@ -443,10 +451,23 @@ workflow preprocess_wkf {
                 epi_displacement_field_channel = epi_correction_wkf.out.field
                 epi_fieldmap_channel = epi_correction_wkf.out.fieldmap
 
+                apply_transform_epi_field(
+                    epi_displacement_field_channel
+                        .join(b0_reference_for_registration)
+                        .join(epi_correction_wkf.out.forward_transform)
+                        .map{ it[0..-2] + [it[-1]] }
+                        .map{ it + [["true"], "", ""] },
+                    "preprocess",
+                    "",
+                    "false",
+                    "",
+                    params.ants_transform_base_config
+                )
+
                 apply_epi_field_wkf(
                     ec_input_dwi_channel.map{ it[0..1] },
                     apply_transform_epi_rev.out.image,
-                    epi_displacement_field_channel,
+                    apply_transform_epi_field.out.image,
                     ec_input_dwi_meta_channel
                         .map{ [it[0], it[1]] },
                     ""

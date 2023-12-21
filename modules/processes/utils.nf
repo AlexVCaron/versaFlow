@@ -13,8 +13,8 @@ params.safe_csf_mask_dilation = 1
 params.safe_gm_mask_dilation = 1
 params.duplicates_merge_method = "mean"
 params.validate_bvecs_fa_thr = 0.2
-params.segmentation_classes = ["csf", "gm", "dgm", "wm", "bstem"]
-params.tissue_masks_mapping = ["wm": ["wm", "bstem"], "gm": ["gm", "dgm"], "csf": ["csf"]]
+params.segmentation_classes = ["csf", "wm", "gm", "dgm", "pdgm", "blood"]
+params.tissue_masks_mapping = ["wm": ["wm", "dgm", "pdgm"], "gm": ["gm"], "csf": ["csf"]]
 
 include { remove_alg_suffixes; add_suffix } from '../functions.nf'
 

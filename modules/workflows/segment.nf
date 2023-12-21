@@ -49,8 +49,7 @@ params.register_d99 = true
 params.register_charm = true
 params.register_sarm = true
 params.register_inia19 = true
-
-params.segmentation_classes = ["csf", "gm", "dgm", "wm", "bstem"]
+params.segmentation_classes = ["csf", "wm", "gm", "dgm", "pdgm", "blood"]
 
 params.tissue_segmentation_root = "${get_data_path()}/maccaca_mulatta/tissue_segmentation"
 params.wm_segmentation_root = "${get_data_path()}/maccaca_mulatta/wm_segmentation"

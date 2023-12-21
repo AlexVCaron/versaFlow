@@ -2,8 +2,8 @@
 
 nextflow.enable.dsl=2
 
-params.segmentation_classes = ["csf", "gm", "dgm", "wm", "bstem"]
-params.atropos_n4_tissues = ["wm", "bstem"]
+params.segmentation_classes = ["csf", "wm", "gm", "dgm", "pdgm", "blood"]
+params.atropos_n4_tissues = ["wm", "dgm", "pdgm"]
 params.atropos_prior_weight = 0.2
 params.atropos_mrf_weight = 0.3
 params.atropos_mrf_neighborhood = 1
