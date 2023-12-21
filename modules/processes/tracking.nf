@@ -101,6 +101,7 @@ process PFT_tracking {
             --sfthres $params.pft_sfthres \
             --sfthres_init $params.pft_sfthres_init \
             --min_length $params.pft_min_tract_length \
+            --max_length $params.pft_max_tract_length \
             --particles $n_particles \
             --back $back_length \
             --forward $params.pft_forward_tracking_length \$compress \
