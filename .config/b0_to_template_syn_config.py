@@ -35,10 +35,10 @@ c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-5,
+    "conv_eps": 1e-6,
     "conv_max_iter": [100, 50, 20, 10, 10],
     "conv_win": 10,
-    "grad_step": 0.2,
+    "grad_step": 0.1,
     "var_penality": 3,
     "var_total": 0,
     "klass": "mrHARDI.traits.ants.AntsSyN",
