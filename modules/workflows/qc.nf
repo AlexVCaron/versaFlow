@@ -154,16 +154,17 @@ workflow dti_qc_wkf {
                 rgb: it[1].simpleName =~ /dti_rgb/
                     return [it[0], "dti_rgb"] + it[1..-1]
                 residuals: it[1].simpleName =~ /dti_residuals/
-                    return [it[0], "dti_residuals"] + it[1..-1]
+                    return [it[0],  "dti_residuals"] + it[1..-1]
             }
 
         dti_peaks_splitting_channel = t1_channel
+            .join(masks_3t_splitting_channel.wm_mask)
             .join(dti_peaks_channel)
-            .map{ [it[0], it[1], it[1..-1]] }
+            .map{ [it[0], it[1], it[2], it[3..-1]] }
             .transpose()
             .branch{
-                peaks: it[2].simpleName =~ /dti_evecs_v1/
-                    return [it[0], "dti_peaks", it[1]] + it[1..-1]
+                peaks: it[3].simpleName =~ /dti_evecs_v1/
+                    return [it[0], "dti_peaks", it[1]] + it[2..-1]
             }
 
         md_to_shot_channel = dti_metrics_splitting_channel.md
@@ -192,7 +193,7 @@ workflow dti_qc_wkf {
 
         peaks_to_shot_channel = dti_peaks_splitting_channel.peaks
             //.join(masks_3t_to_ovelays_channel)
-            .map{ it[0..-2] + [[], [], [], it[-1]] }
+            .map{ it[0..-3] + [[it[-2]], [], [], it[-1]] }
 
         screenshot_dti_metrics(
             md_to_shot_channel
@@ -204,7 +205,7 @@ workflow dti_qc_wkf {
                 .mix(peaks_to_shot_channel),
             [params.qc_screenshot_orientation, params.qc_extra_overlay_opacity],
             [params.qc_gif_slice_gap, false],
-            [params.qc_masks_as_contours, true],
+            [true, true],
             params.qc_image_size,
             [false, false, false]
         )
@@ -253,15 +254,15 @@ workflow fodf_qc_wkf {
             .map{ [it[0], it[1..-1]] }
             .transpose()
             .branch{
-                afd: it[1].simpleName =~ /fodf_metrics_.*_afd(?![st])/
+                afd: it[1].simpleName =~ /fodf_metrics.*_afd(?![st])/
                     return [it[0], "fodf_afd", it[1]]
-                afds: it[1].simpleName =~ /fodf_metrics_.*_afds/
+                afds: it[1].simpleName =~ /fodf_metrics.*_afds/
                     return [it[0], "fodf_afds", it[1]]
-                afdt: it[1].simpleName =~ /fodf_metrics_.*_afdt/
+                afdt: it[1].simpleName =~ /fodf_metrics.*_afdt/
                     return [it[0], "fodf_afdt", it[1]]
-                nufo: it[1].simpleName =~ /fodf_metrics_.*_nufo/
+                nufo: it[1].simpleName =~ /fodf_metrics.*_nufo/
                     return [it[0], "fodf_nufo", it[1]]
-                rgb: it[1].simpleName =~ /fodf_metrics_.*_rgb/
+                rgb: it[1].simpleName =~ /fodf_metrics.*_rgb/
                     return [it[0], "fodf_rgb", it[1]]
             }
 
@@ -294,7 +295,7 @@ workflow fodf_qc_wkf {
             .map{ it + [[], [], [], []] }
 
         peaks_to_shot_channel = fodf_peaks_splitting_channel
-            //.join(masks_3t_to_ovelays_channel)
+            .join(masks_3t_splitting_channel.wm_mask.map{ [it[0], [it[1]]] })
             .map{ [it[0], "fodf_peaks", it[1], [], [], [], it[2]] }
 
         screenshot_fodf_metrics(
@@ -314,7 +315,7 @@ workflow fodf_qc_wkf {
             peaks_to_shot_channel,
             ["coronal", 1.0],
             [params.qc_gif_slice_gap, false],
-            [false, false],
+            [true, false],
             [params.qc_image_size[0].intdiv(3), params.qc_image_size[1]],
             [false, false, false]
         )
@@ -323,7 +324,7 @@ workflow fodf_qc_wkf {
             peaks_to_shot_channel,
             ["sagittal", 1.0],
             [params.qc_gif_slice_gap, false],
-            [false, false],
+            [true, false],
             [2 * params.qc_image_size[0].intdiv(3), params.qc_image_size[1]],
             [false, false, false]
         )

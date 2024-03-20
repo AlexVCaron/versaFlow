@@ -37,19 +37,19 @@ workflow {
 
     parameters = qc_screenshot_parameters_wkf(output_dataloader.atlases)
 
-    // dwi_qc_wkf(
-    //     input_dataloader.dwi,
-    //     output_dataloader.dwi,
-    //     parameters.cc_bounding_box,
-    //     params.qc_screenshot_orientation
-    // )
+    dwi_qc_wkf(
+        input_dataloader.dwi,
+        output_dataloader.dwi,
+        parameters.cc_bounding_box,
+        params.qc_screenshot_orientation
+    )
 
-    // masks_qc_wkf(
-    //     output_dataloader.b0,
-    //     output_dataloader.t1,
-    //     output_dataloader.dwi_mask,
-    //     output_dataloader.t1_mask
-    // )
+    masks_qc_wkf(
+        output_dataloader.b0,
+        output_dataloader.t1,
+        output_dataloader.dwi_mask,
+        output_dataloader.t1_mask
+    )
 
     tissue_segmentation_qc_wkf(
         output_dataloader.t1,
@@ -58,12 +58,12 @@ workflow {
         output_dataloader.segmentation_safe_mask
     )
 
-    // dti_qc_wkf(
-    //     output_dataloader.t1,
-    //     output_dataloader.dti_evecs,
-    //     output_dataloader.dti_scalars,
-    //     output_dataloader.segmentation_mask
-    // )
+    dti_qc_wkf(
+        output_dataloader.t1,
+        output_dataloader.dti_evecs,
+        output_dataloader.dti_scalars,
+        output_dataloader.segmentation_mask
+    )
 
     fodf_qc_wkf(
         output_dataloader.t1,
@@ -175,7 +175,7 @@ workflow load_versaflow_outputs {
         dti_tensors_channel = Channel.fromFilePairs("$versaflow_output_root/**/dti/*_dti_dti.nii.gz", size: 1, maxDepth: 2, flat: true)
             { get_id(it.parent.parent, versaflow_output_root) }
 
-        fodf_scalars_channel = Channel.fromFilePairs("$versaflow_output_root/**/fodf/*_fodf_metrics_{wm,gm}*{afd,afds,afdt,nufo,rgb}.nii.gz", size: -1, maxDepth: 2, flat: true)
+        fodf_scalars_channel = Channel.fromFilePairs("$versaflow_output_root/**/fodf/*_fodf_metrics_{wm,gm,}*{afd,afds,afdt,nufo,rgb}.nii.gz", size: -1, maxDepth: 2, flat: true)
             { get_id(it.parent.parent, versaflow_output_root) }
 
         fodf_response_channel = Channel.fromFilePairs("$versaflow_output_root/**/fodf/*_response.txt", size: 1, maxDepth: 2, flat: true)
@@ -187,10 +187,10 @@ workflow load_versaflow_outputs {
         fodf_coefficients_channel = Channel.fromFilePairs("$versaflow_output_root/**/fodf/*_fodf.nii.gz", size: 1, maxDepth: 2, flat: true)
             { get_id(it.parent.parent, versaflow_output_root) }
 
-        fodf_peaks_channel = Channel.fromFilePairs("$versaflow_output_root/**/fodf/*_fodf_metrics_{wm,gm}*peaks.nii.gz", size: -1, maxDepth: 2, flat: true)
+        fodf_peaks_channel = Channel.fromFilePairs("$versaflow_output_root/**/fodf/*_fodf_metrics_{wm,gm,}*peaks.nii.gz", size: -1, maxDepth: 2, flat: true)
             { get_id(it.parent.parent, versaflow_output_root) }
 
-        fodf_peaks_scalars_channel = Channel.fromFilePairs("$versaflow_output_root/**/fodf/*_fodf_metrics_{wm,gm}*peaks_{indices,values}.nii.gz", size: 2, maxDepth: 2, flat: true)
+        fodf_peaks_scalars_channel = Channel.fromFilePairs("$versaflow_output_root/**/fodf/*_fodf_metrics_{wm,gm,}*peaks_{indices,values}.nii.gz", size: 2, maxDepth: 2, flat: true)
             { get_id(it.parent.parent, versaflow_output_root) }
 
         fodf_scalars_channel = join_tissues(fodf_scalars_channel)

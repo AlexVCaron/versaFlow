@@ -43,7 +43,11 @@
 	"forwardPorts": [3000],
     "workspaceMount": "source=${localWorkspaceFolder},target=/versaFlow,type=bind,consistency=cached",
     "workspaceFolder": "/versaFlow",
-    "updateContentCommand": "bash .devcontainer/update_container.sh"
+    "updateContentCommand": "bash .devcontainer/update_container.sh",
+
+    "mounts": [
+        {"source": "D:\\projects\\bordeau", "target": "${containerWorkspaceFolder}/dist/bordeau", "type": "bind"}
+    ]
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"

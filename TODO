@@ -1,0 +1,6 @@
+
+- Allow GIF in dmriqc_from_screenshot.py (just add gif to the list of extensions that work)
+
+- Fix passage of vol_shape inside the fury screenshot functions (4D when image is RGB, need to [:3])
+
+- Add cmap possibility to overlays
