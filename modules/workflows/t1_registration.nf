@@ -216,7 +216,7 @@ workflow t12b0_registration {
             t1_to_b0_affine.out.t1,
             t1_to_b0_affine.out.dwi_mask,
             t1_to_b0_affine.out.t1_mask,
-            mask_template.out.image,
+            resample_template.out.image,
             resample_template.out.mask,
             resample_dilated_mask.out.image,
             dwi_metadata_channel,

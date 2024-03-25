@@ -46,38 +46,6 @@ c.AntsConfiguration.match_histogram = True
 
 c.AntsConfiguration.passes = [{
     "conv_eps": 1e-6,
-    "conv_max_iter": [400, 100, 50, 20],
-    "conv_win": 10,
-    "grad_step": 0.1,
-    "klass": "mrHARDI.traits.ants.AntsRigid",
-    "metrics": [
-        {
-            "target_index": 0,
-            "moving_index": 0,
-            "args": [
-                1.0,
-                64,
-                "Regular",
-                0.8,
-                True
-            ],
-            "klass": "mrHARDI.traits.ants.MetricMI"
-        }
-    ],
-    "shrinks": [
-        8,
-        4,
-        2,
-        1
-    ],
-    "smoothing": [
-        3.,
-        2.,
-        1.,
-        0
-    ]
-}, {
-    "conv_eps": 1e-6,
     "conv_max_iter": [200, 100, 50, 20],
     "conv_win": 20,
     "grad_step": 0.1,
@@ -88,7 +56,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 1.0,
-                64,
+                128,
                 "Regular",
                 0.8,
                 True

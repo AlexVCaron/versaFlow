@@ -36,7 +36,7 @@ c.AntsConfiguration.match_histogram = True
 
 c.AntsConfiguration.passes = [{
     "conv_eps": 1e-7,
-    "conv_max_iter": [50, 50, 20, 20],
+    "conv_max_iter": [100, 50, 50, 20, 20],
     "conv_win": 10,
     "grad_step": 0.1,
     "var_penality": 3,

@@ -25,11 +25,11 @@ c.N4BiasCorrection.weights = ""
 # N4BiasCorrectionConfiguration(mrHARDIConfigurable) configuration
 c.N4BiasCorrectionConfiguration.bins = 150
 
-c.N4BiasCorrectionConfiguration.filter_width = 0.075
+c.N4BiasCorrectionConfiguration.filter_width = 0.60
 
 c.N4BiasCorrectionConfiguration.spline_order = 3
 
-c.N4BiasCorrectionConfiguration.knot_distance = 16.0
+c.N4BiasCorrectionConfiguration.nvox_between_knots = 16.0
 
 c.N4BiasCorrectionConfiguration.iterations = [100, 100, 50, 30]
 
