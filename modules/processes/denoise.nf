@@ -70,6 +70,7 @@ process nlmeans_denoise {
         mrhardi nlmeans \
             --in $image \
             --out ${image.simpleName}__nlmeans_denoised \
+            --coils 64 \
             --processes $task.cpus $args
         $after_script
         """

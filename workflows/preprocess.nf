@@ -153,6 +153,8 @@ params.resampling_min_resolution = false
 params.force_resampling_resolution = false
 
 // T1 preprocess workflow parameters
+params.preprocess_dwi = true
+params.resample_dwi = true
 params.denoise_t1 = true
 params.nlmeans_t1 = true
 params.t1_intensity_normalization = true
@@ -198,265 +200,218 @@ workflow preprocess_wkf {
         t1_channel = t1_preprocess_wkf.out.t1
         t1_mask_channel = t1_preprocess_wkf.out.mask
 
-        // Fix odd number of slices in phase direction for EPI correction
-        check_odd_dimensions(
-            dwi_channel
-                .join(rev_channel)
-                .join(dwi_mask_channel)
-                .join(collect_paths(meta_channel.join(rev_meta_channel))),
-            "preprocess"
-        )
-
-        rev_bval_bvec_channel = fill_missing_datapoints(
-            check_odd_dimensions.out.rev_bval_bvec,
-            ref_id_channel,
-            1, ["", ""]
-        )
-
-        dwi_channel = check_odd_dimensions.out.dwi
-        rev_channel = fill_missing_datapoints(
-            check_odd_dimensions.out.rev,
-            ref_id_channel,
-            1, [""]
-        ).join(rev_bval_bvec_channel)
-        dwi_mask_channel = fill_missing_datapoints(
-            check_odd_dimensions.out.mask,
-            ref_id_channel,
-            1, [""]
-        )
-
-        checked_meta_channel = exclude_missing_datapoints(
-            check_odd_dimensions.out.metadata
-                .map{ it.flatten() }
-                .map{ [it[0], it[1..-1]] }
-                .transpose(),
-             1, ""
-        ).groupTuple()
-
-        meta_channel = checked_meta_channel
-            .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
-        rev_meta_channel = fill_missing_datapoints(
-            checked_meta_channel
-                .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() },
-            ref_id_channel,
-            1, [""]
-        )
-
-        // Copy input channels for later
-        dwi_channel.tap{ raw_dwi_channel }
-        rev_channel.tap{ raw_rev_channel }
-        t1_channel.tap{ raw_t1_channel }
-        t1_mask_channel.tap{ raw_t1_mask_channel }
-        meta_channel.tap{ raw_meta_channel }
-        rev_meta_channel.tap{ raw_rev_meta_channel }
-
-        // Perform DWI and b0 denoising
-        if ( params.gaussian_noise_correction ) {
-            dwi_denoise_wkf(dwi_channel, dwi_mask_channel, meta_channel, "true")
-            dwi_channel = replace_dwi_file(dwi_channel, dwi_denoise_wkf.out.image)
-            meta_channel = dwi_denoise_wkf.out.metadata
-
-            rev_denoise_wkf(rev_channel, dwi_mask_channel, rev_meta_channel, "false")
-            rev_channel = replace_dwi_file(rev_channel, rev_denoise_wkf.out.image)
-            rev_meta_channel = fill_missing_datapoints(
-                rev_denoise_wkf.out.metadata,
-                ref_id_channel,
-                1, [""]
-            )
-        }
-
-        // Perform DWI and b0 gibbs correction
-        if ( params.gibbs_ringing_correction ) {
-            dwi_gibbs_removal(dwi_channel.map{ it[0..1] }.join(meta_channel), "preprocess", "true")
-            dwi_channel = replace_dwi_file(dwi_channel, dwi_gibbs_removal.out.image)
-            meta_channel = dwi_gibbs_removal.out.metadata
-
-            rev_gibbs_removal(
-                exclude_missing_datapoints(rev_channel.map{ it[0..1] }.join(rev_meta_channel), 1, ""),
-                "preprocess", "false"
-            )
-            rev_channel = replace_dwi_file(
-                rev_channel,
-                fill_missing_datapoints(rev_gibbs_removal.out.image, ref_id_channel, 1, [""])
-            )
-            rev_meta_channel = fill_missing_datapoints(rev_gibbs_removal.out.metadata, ref_id_channel, 1, [""])
-        }
-
-        // Perform DWI signal normalization between b0 volumes
-        if ( params.normalize_inter_b0 ) {
-            normalize_inter_b0(
+        if (params.preprocess_dwi) {
+            // Fix odd number of slices in phase direction for EPI correction
+            check_odd_dimensions(
                 dwi_channel
-                    .map{ it[0..2] }
-                    .join(rev_channel.map{ it[0..2] })
-                    .join(meta_channel)
-                    .join(rev_meta_channel),
-                "preprocess",
-                params.b0_to_b0_normalization_config
+                    .join(rev_channel)
+                    .join(dwi_mask_channel)
+                    .join(collect_paths(meta_channel.join(rev_meta_channel))),
+                "preprocess"
             )
-            dwi_channel = replace_dwi_file(dwi_channel, normalize_inter_b0.out.dwi)
-            meta_channel = normalize_inter_b0.out.dwi_metadata
-            rev_channel = replace_dwi_file(
-                rev_channel,
-                fill_missing_datapoints(normalize_inter_b0.out.rev, ref_id_channel, 1, [""])
+
+            rev_bval_bvec_channel = fill_missing_datapoints(
+                check_odd_dimensions.out.rev_bval_bvec,
+                ref_id_channel,
+                1, ["", ""]
             )
-            rev_meta_channel = fill_missing_datapoints(
-                normalize_inter_b0.out.rev_metadata,
+
+            dwi_channel = check_odd_dimensions.out.dwi
+            rev_channel = fill_missing_datapoints(
+                check_odd_dimensions.out.rev,
+                ref_id_channel,
+                1, [""]
+            ).join(rev_bval_bvec_channel)
+            dwi_mask_channel = fill_missing_datapoints(
+                check_odd_dimensions.out.mask,
                 ref_id_channel,
                 1, [""]
             )
-        }
 
-        // Average consecutive b0 volumes just like for EPI correction
-        squash_wkf(
-            dwi_channel,
-            rev_channel,
-            meta_channel.join(rev_meta_channel),
-            ""
-        )
+            checked_meta_channel = exclude_missing_datapoints(
+                check_odd_dimensions.out.metadata
+                    .map{ it.flatten() }
+                    .map{ [it[0], it[1..-1]] }
+                    .transpose(),
+                1, ""
+            ).groupTuple()
 
-        dwi_channel = squash_wkf.out.dwi
-        rev_channel = squash_wkf.out.rev
+            meta_channel = checked_meta_channel
+                .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
+            rev_meta_channel = fill_missing_datapoints(
+                checked_meta_channel
+                    .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() },
+                ref_id_channel,
+                1, [""]
+            )
 
-        squashed_meta_channel = exclude_missing_datapoints(
-            squash_wkf.out.metadata
-                .map{ it.flatten() }
-                .map{ [it[0], it[1..-1]] }
-                .transpose(),
-             1, ""
-        ).groupTuple()
+            // Copy input channels for later
+            dwi_channel.tap{ raw_dwi_channel }
+            rev_channel.tap{ raw_rev_channel }
+            t1_channel.tap{ raw_t1_channel }
+            t1_mask_channel.tap{ raw_t1_mask_channel }
+            meta_channel.tap{ raw_meta_channel }
+            rev_meta_channel.tap{ raw_rev_meta_channel }
 
-        meta_channel = squashed_meta_channel
-            .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
+            // Perform DWI and b0 denoising
+            if ( params.gaussian_noise_correction ) {
+                dwi_denoise_wkf(dwi_channel, dwi_mask_channel, meta_channel, "true")
+                dwi_channel = replace_dwi_file(dwi_channel, dwi_denoise_wkf.out.image)
+                meta_channel = dwi_denoise_wkf.out.metadata
 
-        rev_meta_channel = fill_missing_datapoints(
-            squashed_meta_channel
-                .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() },
-            ref_id_channel,
-            1, [""]
-        )
+                rev_denoise_wkf(rev_channel, dwi_mask_channel, rev_meta_channel, "false")
+                rev_channel = replace_dwi_file(rev_channel, rev_denoise_wkf.out.image)
+                rev_meta_channel = fill_missing_datapoints(
+                    rev_denoise_wkf.out.metadata,
+                    ref_id_channel,
+                    1, [""]
+                )
+            }
 
-        // Extract mean b0
-        dwi_b0(
-            dwi_channel
-                .map{ it[0..2] }
-                .join(meta_channel.map{ [it[0], it[1..-1]] }),
-            "preprocess",
-            "false",
-            params.extract_mean_b0_base_config
-        )
+            // Perform DWI and b0 gibbs correction
+            if ( params.gibbs_ringing_correction ) {
+                dwi_gibbs_removal(dwi_channel.map{ it[0..1] }.join(meta_channel), "preprocess", "true")
+                dwi_channel = replace_dwi_file(dwi_channel, dwi_gibbs_removal.out.image)
+                meta_channel = dwi_gibbs_removal.out.metadata
 
-        b0_channel = dwi_b0.out.b0
-        b0_metadata_channel = dwi_b0.out.metadata
+                rev_gibbs_removal(
+                    exclude_missing_datapoints(rev_channel.map{ it[0..1] }.join(rev_meta_channel), 1, ""),
+                    "preprocess", "false"
+                )
+                rev_channel = replace_dwi_file(
+                    rev_channel,
+                    fill_missing_datapoints(rev_gibbs_removal.out.image, ref_id_channel, 1, [""])
+                )
+                rev_meta_channel = fill_missing_datapoints(rev_gibbs_removal.out.metadata, ref_id_channel, 1, [""])
+            }
 
-        // EPI correction
-        ec2eddy_channel = ref_id_channel.map{ it + ["", "", []] }
-        epi_corrected_dwi_channel = dwi_channel
-        epi_corrected_meta_channel = meta_channel
-        if ( params.epi_correction ) {
-            ref_rev_id_channel = exclude_missing_datapoints(
-                raw_rev_channel, 1, ""
-            ).map{ [it[0]] }
-            excluded_id_channel = filter_datapoints(
-                raw_rev_channel, { it[1] == "" }
-            ).map{ [it[0]] }
+            // Perform DWI signal normalization between b0 volumes
+            if ( params.normalize_inter_b0 ) {
+                normalize_inter_b0(
+                    dwi_channel
+                        .map{ it[0..2] }
+                        .join(rev_channel.map{ it[0..2] })
+                        .join(meta_channel)
+                        .join(rev_meta_channel),
+                    "preprocess",
+                    params.b0_to_b0_normalization_config
+                )
+                dwi_channel = replace_dwi_file(dwi_channel, normalize_inter_b0.out.dwi)
+                meta_channel = normalize_inter_b0.out.dwi_metadata
+                rev_channel = replace_dwi_file(
+                    rev_channel,
+                    fill_missing_datapoints(normalize_inter_b0.out.rev, ref_id_channel, 1, [""])
+                )
+                rev_meta_channel = fill_missing_datapoints(
+                    normalize_inter_b0.out.rev_metadata,
+                    ref_id_channel,
+                    1, [""]
+                )
+            }
 
-            // Average consecutive b0 volumes to speed up EPI correction
-            squash_for_epi_correction_wkf(
-                ref_rev_id_channel.join(raw_dwi_channel),
-                ref_rev_id_channel.join(raw_rev_channel),
-                ref_rev_id_channel.join(raw_meta_channel).join(raw_rev_meta_channel),
+            // Average consecutive b0 volumes just like for EPI correction
+            squash_wkf(
+                dwi_channel,
+                rev_channel,
+                meta_channel.join(rev_meta_channel),
                 ""
             )
 
-            // Run EPI correction sub-workflow
-            epi_correction_wkf(
-                squash_for_epi_correction_wkf.out.dwi,
-                squash_for_epi_correction_wkf.out.rev,
-                squash_for_epi_correction_wkf.out.metadata.map{ it.flatten() }
-            )        
+            dwi_channel = squash_wkf.out.dwi
+            rev_channel = squash_wkf.out.rev
 
-            ec_input_dwi_channel = rename_ec_input_dwi(
-                collect_paths(epi_correction_wkf.out.corrected_indexes.join(dwi_channel)),
-                "ec_input_dwi"
-            ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+            squashed_meta_channel = exclude_missing_datapoints(
+                squash_wkf.out.metadata
+                    .map{ it.flatten() }
+                    .map{ [it[0], it[1..-1]] }
+                    .transpose(),
+                1, ""
+            ).groupTuple()
 
+            meta_channel = squashed_meta_channel
+                .map{ [it[0], it[1].findAll{ i -> !i.simpleName.contains("_rev") }].flatten() }
 
-            ec_input_rev_channel = rename_ec_input_rev(
-                collect_paths(epi_correction_wkf.out.corrected_indexes.join(rev_channel)),
-                "ec_input_rev"
-            ).map{ it.flatten() }.map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
-
-            ec_input_dwi_meta_channel = rename_ec_input_dwi_meta(
-                epi_correction_wkf.out.in_metadata_w_epi_correction
-                    .map{ [it[0], it[1].find{m -> m.simpleName.contains("_dwi")}, "dwi__ec_input_dwi_metadata"] }
-            ).map{ it.flatten() }
-
-            ec_input_rev_meta_channel = rename_ec_input_rev_meta(
-                epi_correction_wkf.out.in_metadata_w_epi_correction
-                    .map{ [it[0], it[1].find{m -> m.simpleName.contains("_rev")}, "rev__ec_input_rev_metadata"] }
-            ).map{ it.flatten() }
-
-            extract_b0_reference(
-                ec_input_dwi_channel.map{ it[0..2] + [""] },
-                "preprocess", "false", params.extract_mean_b0_base_config
+            rev_meta_channel = fill_missing_datapoints(
+                squashed_meta_channel
+                    .map{ [it[0], it[1].findAll{ i -> i.simpleName.contains("_rev") }].flatten() },
+                ref_id_channel,
+                1, [""]
             )
 
-            b0_reference_for_registration = extract_b0_reference.out.b0
-            apply_transform_epi_rev(
-                ec_input_rev_channel.map{ it[0..1] }
-                    .join(b0_reference_for_registration)
-                    .join(epi_correction_wkf.out.forward_transform)
-                    .join(epi_correction_wkf.out.reverse_transform)
-                    .map{ it[0..-3] + [it[-2] + it[-1]] }
-                    .map{ it + [["true", "false"], "", ""] },
+            // Extract mean b0
+            dwi_b0(
+                dwi_channel
+                    .map{ it[0..2] }
+                    .join(meta_channel.map{ [it[0], it[1..-1]] }),
                 "preprocess",
-                "",
                 "false",
-                "",
-                params.ants_transform_base_config
+                params.extract_mean_b0_base_config
             )
 
-            rev_channel = replace_dwi_file(rev_channel, apply_transform_epi_rev.out.image)
+            b0_channel = dwi_b0.out.b0
+            b0_metadata_channel = dwi_b0.out.metadata
 
-            // Applied estimated susceptibility correction to DWI
-            ec2eddy_channel = Channel.empty()
-            epi_fieldmap_channel = Channel.empty()
-            epi_displacement_field_channel = Channel.empty()
-            if ( params.epi_algorithm == "topup" ) {
-                ec2eddy_channel = epi_correction_wkf.out.param
-                    .join(epi_correction_wkf.out.prefix)
-                    .join(epi_correction_wkf.out.topup.map{ [it[0], it[1..-1]] })
-                
-                // Applied estimated susceptibility correction to DWI
-                apply_topup_wkf(
-                    ec_input_dwi_channel,
-                    apply_transform_epi_rev.out.image,
-                    ec2eddy_channel,
-                    ec_input_dwi_meta_channel
-                        .join(ec_input_rev_meta_channel)
-                        .map{ [it[0], it[1..-1]] },
+            // EPI correction
+            ec2eddy_channel = ref_id_channel.map{ it + ["", "", []] }
+            epi_corrected_dwi_channel = dwi_channel
+            epi_corrected_meta_channel = meta_channel
+            if ( params.epi_correction ) {
+                ref_rev_id_channel = exclude_missing_datapoints(
+                    raw_rev_channel, 1, ""
+                ).map{ [it[0]] }
+                excluded_id_channel = filter_datapoints(
+                    raw_rev_channel, { it[1] == "" }
+                ).map{ [it[0]] }
+
+                // Average consecutive b0 volumes to speed up EPI correction
+                squash_for_epi_correction_wkf(
+                    ref_rev_id_channel.join(raw_dwi_channel),
+                    ref_rev_id_channel.join(raw_rev_channel),
+                    ref_rev_id_channel.join(raw_meta_channel).join(raw_rev_meta_channel),
                     ""
                 )
 
-                epi_corrected_dwi_channel = rename_epi_corrected_dwi(
-                    collect_paths(apply_topup_wkf.out.dwi),
-                    "topup_corrected"
-                ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
-                epi_corrected_meta_channel = rename_epi_corrected_meta(
-                    collect_paths(apply_topup_wkf.out.metadata),
-                    "topup_corrected_metadata"
-                ).map{ it.flatten() }
-            }
-            else {
-                epi_displacement_field_channel = epi_correction_wkf.out.field
-                epi_fieldmap_channel = epi_correction_wkf.out.fieldmap
+                // Run EPI correction sub-workflow
+                epi_correction_wkf(
+                    squash_for_epi_correction_wkf.out.dwi,
+                    squash_for_epi_correction_wkf.out.rev,
+                    squash_for_epi_correction_wkf.out.metadata.map{ it.flatten() }
+                )        
 
-                apply_transform_epi_field(
-                    epi_displacement_field_channel
+                ec_input_dwi_channel = rename_ec_input_dwi(
+                    collect_paths(epi_correction_wkf.out.corrected_indexes.join(dwi_channel)),
+                    "ec_input_dwi"
+                ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+
+
+                ec_input_rev_channel = rename_ec_input_rev(
+                    collect_paths(epi_correction_wkf.out.corrected_indexes.join(rev_channel)),
+                    "ec_input_rev"
+                ).map{ it.flatten() }.map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
+
+                ec_input_dwi_meta_channel = rename_ec_input_dwi_meta(
+                    epi_correction_wkf.out.in_metadata_w_epi_correction
+                        .map{ [it[0], it[1].find{m -> m.simpleName.contains("_dwi")}, "dwi__ec_input_dwi_metadata"] }
+                ).map{ it.flatten() }
+
+                ec_input_rev_meta_channel = rename_ec_input_rev_meta(
+                    epi_correction_wkf.out.in_metadata_w_epi_correction
+                        .map{ [it[0], it[1].find{m -> m.simpleName.contains("_rev")}, "rev__ec_input_rev_metadata"] }
+                ).map{ it.flatten() }
+
+                extract_b0_reference(
+                    ec_input_dwi_channel.map{ it[0..2] + [""] },
+                    "preprocess", "false", params.extract_mean_b0_base_config
+                )
+
+                b0_reference_for_registration = extract_b0_reference.out.b0
+                apply_transform_epi_rev(
+                    ec_input_rev_channel.map{ it[0..1] }
                         .join(b0_reference_for_registration)
                         .join(epi_correction_wkf.out.forward_transform)
-                        .map{ it[0..-2] + [it[-1]] }
-                        .map{ it + [["true"], "", ""] },
+                        .join(epi_correction_wkf.out.reverse_transform)
+                        .map{ it[0..-3] + [it[-2] + it[-1]] }
+                        .map{ it + [["true", "false"], "", ""] },
                     "preprocess",
                     "",
                     "false",
@@ -464,302 +419,360 @@ workflow preprocess_wkf {
                     params.ants_transform_base_config
                 )
 
-                apply_epi_field_wkf(
-                    ec_input_dwi_channel.map{ it[0..1] },
-                    apply_transform_epi_rev.out.image,
-                    apply_transform_epi_field.out.image,
-                    ec_input_dwi_meta_channel
-                        .map{ [it[0], it[1]] },
-                    ""
+                rev_channel = replace_dwi_file(rev_channel, apply_transform_epi_rev.out.image)
+
+                // Applied estimated susceptibility correction to DWI
+                ec2eddy_channel = Channel.empty()
+                epi_fieldmap_channel = Channel.empty()
+                epi_displacement_field_channel = Channel.empty()
+                if ( params.epi_algorithm == "topup" ) {
+                    ec2eddy_channel = epi_correction_wkf.out.param
+                        .join(epi_correction_wkf.out.prefix)
+                        .join(epi_correction_wkf.out.topup.map{ [it[0], it[1..-1]] })
+                    
+                    // Applied estimated susceptibility correction to DWI
+                    apply_topup_wkf(
+                        ec_input_dwi_channel,
+                        apply_transform_epi_rev.out.image,
+                        ec2eddy_channel,
+                        ec_input_dwi_meta_channel
+                            .join(ec_input_rev_meta_channel)
+                            .map{ [it[0], it[1..-1]] },
+                        ""
+                    )
+
+                    epi_corrected_dwi_channel = rename_epi_corrected_dwi(
+                        collect_paths(apply_topup_wkf.out.dwi),
+                        "topup_corrected"
+                    ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+                    epi_corrected_meta_channel = rename_epi_corrected_meta(
+                        collect_paths(apply_topup_wkf.out.metadata),
+                        "topup_corrected_metadata"
+                    ).map{ it.flatten() }
+                }
+                else {
+                    epi_displacement_field_channel = epi_correction_wkf.out.field
+                    epi_fieldmap_channel = epi_correction_wkf.out.fieldmap
+
+                    apply_transform_epi_field(
+                        epi_displacement_field_channel
+                            .join(b0_reference_for_registration)
+                            .join(epi_correction_wkf.out.forward_transform)
+                            .map{ it[0..-2] + [it[-1]] }
+                            .map{ it + [["true"], "", ""] },
+                        "preprocess",
+                        "",
+                        "false",
+                        "",
+                        params.ants_transform_base_config
+                    )
+
+                    apply_epi_field_wkf(
+                        ec_input_dwi_channel.map{ it[0..1] },
+                        apply_transform_epi_rev.out.image,
+                        apply_transform_epi_field.out.image,
+                        ec_input_dwi_meta_channel
+                            .map{ [it[0], it[1]] },
+                        ""
+                    )
+
+                    epi_corrected_dwi_channel = rename_epi_corrected_dwi(
+                        collect_paths(replace_dwi_file(ec_input_dwi_channel, apply_epi_field_wkf.out.dwi)),
+                        "epi_corrected"
+                    ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+                    epi_corrected_meta_channel = rename_epi_corrected_meta(
+                        collect_paths(ec_input_dwi_meta_channel),
+                        "epi_corrected_metadata"
+                    ).map{ it.flatten() }
+                }
+
+                epi_displacement_field_channel = fill_missing_datapoints(
+                    epi_displacement_field_channel,
+                    ref_id_channel,
+                    1, [""]
+                )
+                epi_fieldmap_channel = fill_missing_datapoints(
+                    epi_fieldmap_channel,
+                    ref_id_channel,
+                    1, [""]
                 )
 
-                epi_corrected_dwi_channel = rename_epi_corrected_dwi(
-                    collect_paths(replace_dwi_file(ec_input_dwi_channel, apply_epi_field_wkf.out.dwi)),
-                    "epi_corrected"
-                ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
-                epi_corrected_meta_channel = rename_epi_corrected_meta(
-                    collect_paths(ec_input_dwi_meta_channel),
-                    "epi_corrected_metadata"
-                ).map{ it.flatten() }
+                ec2eddy_channel = fill_missing_datapoints(
+                    ec2eddy_channel,
+                    ref_id_channel,
+                    1, ["", "", []]
+                )
+
+                epi_corrected_dwi_channel = excluded_id_channel
+                    .join(dwi_channel)
+                    .mix(epi_corrected_dwi_channel)
+                epi_corrected_meta_channel = excluded_id_channel
+                    .join(meta_channel)
+                    .mix(epi_corrected_meta_channel)
+
+                // Get average susceptibility corrected b0
+                extract_epi_corrected_b0(
+                    epi_corrected_dwi_channel
+                        .map{ it[0..2] }
+                        .join(collect_paths(epi_corrected_meta_channel)),
+                    "preprocess",
+                    "true",
+                    params.extract_mean_b0_base_config
+                )
+
+                b0_channel = excluded_id_channel
+                    .join(b0_channel)
+                    .mix(extract_epi_corrected_b0.out.b0)
+                b0_metadata_channel = excluded_id_channel
+                    .join(b0_metadata_channel)
+                    .mix(extract_epi_corrected_b0.out.metadata)
+
+                if ( !params.eddy_correction ) {
+                    dwi_channel = epi_corrected_dwi_channel
+                    meta_channel = epi_corrected_meta_channel
+                }
+
+                // Apply susceptibility corrections to raw images (for comparison)
+                if ( params.raw_to_processed_space ) {
+                    raw_dwi_channel = rename_transformed_raw_dwi(
+                        collect_paths(raw_dwi_channel),
+                        "raw"
+                    ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+                    raw_rev_channel = rename_transformed_raw_rev(
+                        collect_paths(raw_rev_channel).filter{ it[1] },
+                        "raw"
+                    )
+                    raw_rev_channel = raw_rev_channel
+                        .map{ it.flatten() }
+                        .map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
+
+                    raw_meta_channel = excluded_id_channel.join(raw_meta_channel)
+                        .mix(
+                            rename_transformed_raw_metadata(
+                                collect_paths(ec_input_dwi_meta_channel).filter{ it[1] },
+                                "raw_metadata"
+                            ).map{ it.flatten() }
+                        )
+
+                    raw_rev_meta_channel = excluded_id_channel.join(raw_meta_channel)
+                        .mix(
+                            rename_transformed_raw_rev_metadata(
+                                collect_paths(ec_input_rev_meta_channel),
+                                "raw_metadata"
+                            ).map{ it.flatten() }
+                        )
+
+                    if ( params.epi_algorithm == "topup" ) {
+                        raw_apply_topup_wkf(
+                            epi_correction_wkf.out.corrected_indexes.join(raw_dwi_channel),
+                            epi_correction_wkf.out.corrected_indexes
+                                .join(raw_rev_channel)
+                                .map{ it[0..1] },
+                            ec2eddy_channel,
+                            collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
+                            "raw"
+                        )
+
+                        raw_dwi_channel = excluded_id_channel
+                            .join(raw_dwi_channel)
+                            .mix(raw_apply_topup_wkf.out.dwi)
+
+                        raw_meta_channel = excluded_id_channel
+                            .join(raw_meta_channel)
+                            .mix(raw_apply_topup_wkf.out.metadata)
+                    }
+                    else {
+                        raw_apply_epi_field_wkf(
+                            epi_correction_wkf.out.corrected_indexes.join(raw_dwi_channel),
+                            epi_correction_wkf.out.corrected_indexes
+                                .join(raw_rev_channel)
+                                .map{ it[0..1] },
+                            epi_displacement_field_channel,
+                            collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
+                            "raw"
+                        )
+
+                        raw_dwi_channel = excluded_id_channel
+                            .join(raw_dwi_channel)
+                            .mix(raw_apply_epi_field_wkf.out.dwi)
+
+                        raw_meta_channel = excluded_id_channel
+                            .join(raw_meta_channel)
+                            .mix(raw_apply_epi_field_wkf.out.metadata)
+                    }
+                }
             }
 
-            epi_displacement_field_channel = fill_missing_datapoints(
-                epi_displacement_field_channel,
-                ref_id_channel,
-                1, [""]
-            )
-            epi_fieldmap_channel = fill_missing_datapoints(
-                epi_fieldmap_channel,
-                ref_id_channel,
-                1, [""]
-            )
+            empty_dwi_mask_id_channel = filter_datapoints(
+                dwi_mask_channel,
+                { it[1] == "" }
+            ).map{ [it[0]] }
+            dwi_mask_channel = exclude_missing_datapoints(dwi_mask_channel, 1, "")
 
-            ec2eddy_channel = fill_missing_datapoints(
-                ec2eddy_channel,
-                ref_id_channel,
-                1, ["", "", []]
-            )
-
-            epi_corrected_dwi_channel = excluded_id_channel
-                .join(dwi_channel)
-                .mix(epi_corrected_dwi_channel)
-            epi_corrected_meta_channel = excluded_id_channel
-                .join(meta_channel)
-                .mix(epi_corrected_meta_channel)
-
-            // Get average susceptibility corrected b0
-            extract_epi_corrected_b0(
-                epi_corrected_dwi_channel
-                    .map{ it[0..2] }
-                    .join(collect_paths(epi_corrected_meta_channel)),
+            // Compute brain mask for the DWI (when missing)
+            bet_mask(
+                empty_dwi_mask_id_channel.join(b0_channel),
                 "preprocess",
-                "true",
-                params.extract_mean_b0_base_config
+                "${!params.dwi_mask_from_t1_mask}",
+                "dwi_mask"
             )
+            dwi_mask_channel = dwi_mask_channel.mix(bet_mask.out.mask)
 
-            b0_channel = excluded_id_channel
-                .join(b0_channel)
-                .mix(extract_epi_corrected_b0.out.b0)
-            b0_metadata_channel = excluded_id_channel
-                .join(b0_metadata_channel)
-                .mix(extract_epi_corrected_b0.out.metadata)
+            // Get better mask for the DWI from the T1 (when missing and if present)
+            if ( params.dwi_mask_from_t1_mask ) {
+                existing_t1_mask_id_channel = exclude_missing_datapoints(
+                    t1_mask_channel,
+                    1, ""
+                ).map{ [it[0]] }
+                absent_t1_mask_id_channel = filter_datapoints(
+                    t1_mask_channel,
+                    { it[1] == "" }
+                ).map{ [it[0]] }
 
-            if ( !params.eddy_correction ) {
-                dwi_channel = epi_corrected_dwi_channel
-                meta_channel = epi_corrected_meta_channel
+                n4_denoise_t1_to_b0_wkf(
+                    existing_t1_mask_id_channel.join(epi_corrected_dwi_channel.map{ it[0..1] }),
+                    existing_t1_mask_id_channel.join(b0_channel),
+                    existing_t1_mask_id_channel.join(dwi_mask_channel),
+                    existing_t1_mask_id_channel.join(epi_corrected_meta_channel),
+                    params.dwi_n4_normalization_quick_config,
+                    false
+                )
+
+                t1_mask_to_b0(
+                    replace_dwi_file(epi_corrected_dwi_channel, n4_denoise_t1_to_b0_wkf.out.image),
+                    existing_t1_mask_id_channel.join(t1_channel),
+                    existing_t1_mask_id_channel.join(t1_mask_channel),
+                    "false"
+                )
+
+                t1_mask_convert_datatype(
+                    t1_mask_to_b0.out.mask,
+                    "uint8", "preprocess",
+                    !params.register_t1_to_dwi,
+                    "dwi_mask", ""
+                )
+
+                dwi_mask_channel = t1_mask_convert_datatype.out.image
+                    .mix(absent_t1_mask_id_channel.join(dwi_mask_channel))
             }
 
-            // Apply susceptibility corrections to raw images (for comparison)
-            if ( params.raw_to_processed_space ) {
-                raw_dwi_channel = rename_transformed_raw_dwi(
-                    collect_paths(raw_dwi_channel),
-                    "raw"
+            // Perform Eddy currents and motion correction on the DWI
+            if ( params.eddy_correction ) {
+                dwi_channel = rename_dwi_for_eddy(
+                    collect_paths(dwi_channel),
+                    "to_eddy"
                 ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
-                raw_rev_channel = rename_transformed_raw_rev(
-                    collect_paths(raw_rev_channel).filter{ it[1] },
-                    "raw"
+
+                rev_channel = rename_rev_for_eddy(
+                    collect_paths(rev_channel).filter{ it[1] },
+                    "to_eddy"
                 )
-                raw_rev_channel = raw_rev_channel
+                rev_channel = rev_channel
                     .map{ it.flatten() }
                     .map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
 
-                raw_meta_channel = excluded_id_channel.join(raw_meta_channel)
-                    .mix(
-                        rename_transformed_raw_metadata(
-                            collect_paths(ec_input_dwi_meta_channel).filter{ it[1] },
-                            "raw_metadata"
-                        ).map{ it.flatten() }
-                    )
+                rev_channel = fill_missing_datapoints(
+                    rev_channel,
+                    ref_id_channel,
+                    1, ["", "", ""]
+                )
 
-                raw_rev_meta_channel = excluded_id_channel.join(raw_meta_channel)
-                    .mix(
-                        rename_transformed_raw_rev_metadata(
-                            collect_paths(ec_input_rev_meta_channel),
-                            "raw_metadata"
-                        ).map{ it.flatten() }
-                    )
+                meta_channel = rename_dwi_metadata_for_eddy(
+                    collect_paths(meta_channel).filter{ it[1] },
+                    "to_eddy_metadata"
+                ).map{ it.flatten() }
 
-                if ( params.epi_algorithm == "topup" ) {
-                    raw_apply_topup_wkf(
-                        epi_correction_wkf.out.corrected_indexes.join(raw_dwi_channel),
-                        epi_correction_wkf.out.corrected_indexes
-                            .join(raw_rev_channel)
-                            .map{ it[0..1] },
-                        ec2eddy_channel,
-                        collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
-                        "raw"
-                    )
+                rev_meta_channel = rename_rev_metadata_for_eddy(
+                    collect_paths(rev_meta_channel).filter{ it[1] },
+                    "to_eddy_metadata"
+                ).map{ it.flatten() }
 
-                    raw_dwi_channel = excluded_id_channel
-                        .join(raw_dwi_channel)
-                        .mix(raw_apply_topup_wkf.out.dwi)
+                rev_meta_channel = fill_missing_datapoints(
+                    rev_meta_channel,
+                    ref_id_channel,
+                    1, [""]
+                )
 
-                    raw_meta_channel = excluded_id_channel
-                        .join(raw_meta_channel)
-                        .mix(raw_apply_topup_wkf.out.metadata)
-                }
-                else {
-                    raw_apply_epi_field_wkf(
-                        epi_correction_wkf.out.corrected_indexes.join(raw_dwi_channel),
-                        epi_correction_wkf.out.corrected_indexes
-                            .join(raw_rev_channel)
-                            .map{ it[0..1] },
-                        epi_displacement_field_channel,
-                        collect_paths(raw_meta_channel.join(raw_rev_meta_channel)),
-                        "raw"
-                    )
+                // Run Eddy sub-workflow
+                eddy_wkf(
+                    dwi_channel,
+                    dwi_mask_channel,
+                    ec2eddy_channel,
+                    epi_fieldmap_channel,
+                    epi_displacement_field_channel,
+                    rev_channel,
+                    meta_channel.join(rev_meta_channel)
+                )
 
-                    raw_dwi_channel = excluded_id_channel
-                        .join(raw_dwi_channel)
-                        .mix(raw_apply_epi_field_wkf.out.dwi)
-
-                    raw_meta_channel = excluded_id_channel
-                        .join(raw_meta_channel)
-                        .mix(raw_apply_epi_field_wkf.out.metadata)
-                }
+                dwi_channel = eddy_wkf.out.dwi
+                    .join(eddy_wkf.out.bval)
+                    .join(eddy_wkf.out.bvec)
+                meta_channel = eddy_wkf.out.metadata
             }
-        }
 
-        empty_dwi_mask_id_channel = filter_datapoints(
-            dwi_mask_channel,
-            { it[1] == "" }
-        ).map{ [it[0]] }
-        dwi_mask_channel = exclude_missing_datapoints(dwi_mask_channel, 1, "")
+            // Perform intensity normalization on the DWI
+            if ( params.dwi_intensity_normalization ) {
+                // Run N4 sub-workflow
+                n4_denoise_wkf(
+                    dwi_channel.map{ it[0..1] },
+                    b0_channel,
+                    dwi_mask_channel,
+                    meta_channel,
+                    params.dwi_n4_normalization_config,
+                    true
+                )
 
-        // Compute brain mask for the DWI (when missing)
-        bet_mask(
-            empty_dwi_mask_id_channel.join(b0_channel),
-            "preprocess",
-            "${!params.dwi_mask_from_t1_mask}",
-            "dwi_mask"
-        )
-        dwi_mask_channel = dwi_mask_channel.mix(bet_mask.out.mask)
+                dwi_channel = replace_dwi_file(dwi_channel, n4_denoise_wkf.out.image)
+                meta_channel = n4_denoise_wkf.out.metadata
+            }
 
-        // Get better mask for the DWI from the T1 (when missing and if present)
-        if ( params.dwi_mask_from_t1_mask ) {
-            existing_t1_mask_id_channel = exclude_missing_datapoints(
-                t1_mask_channel,
-                1, ""
-            ).map{ [it[0]] }
             absent_t1_mask_id_channel = filter_datapoints(
                 t1_mask_channel,
                 { it[1] == "" }
             ).map{ [it[0]] }
+            existing_t1_mask_id_channel = exclude_missing_datapoints(
+                t1_mask_channel,
+                1, ""
+            ).map{ [it[0]] }
 
-            n4_denoise_t1_to_b0_wkf(
-                existing_t1_mask_id_channel.join(epi_corrected_dwi_channel.map{ it[0..1] }),
-                existing_t1_mask_id_channel.join(b0_channel),
-                existing_t1_mask_id_channel.join(dwi_mask_channel),
-                existing_t1_mask_id_channel.join(epi_corrected_meta_channel),
-                params.dwi_n4_normalization_quick_config,
-                false
+            // Get DWI mask in T1 space (for missing T1 masks)
+            dwi_mask_registration_wkf(
+                absent_t1_mask_id_channel.join(t1_channel).map{ [it[0], [it[1]]] },
+                absent_t1_mask_id_channel.join(b0_channel).map{ [it[0], [it[1]]] },
+                absent_t1_mask_id_channel.join(dwi_mask_channel),
+                null,
+                null,
+                absent_t1_mask_id_channel
+                    .join(b0_metadata_channel)
+                    .map{ it[0..1] + [""] },
+                "",
+                false, "", "",
+                params.b02t1_mask_registration_config,
+                null
             )
 
-            t1_mask_to_b0(
-                replace_dwi_file(epi_corrected_dwi_channel, n4_denoise_t1_to_b0_wkf.out.image),
-                existing_t1_mask_id_channel.join(t1_channel),
-                existing_t1_mask_id_channel.join(t1_mask_channel),
-                "false"
-            )
-
-            t1_mask_convert_datatype(
-                t1_mask_to_b0.out.mask,
+            dwi_mask_convert_datatype(
+                dwi_mask_registration_wkf.out.image,
                 "uint8", "preprocess",
-                !params.register_t1_to_dwi,
-                "dwi_mask", ""
+                true,
+                "t1_mask", ""
             )
 
-            dwi_mask_channel = t1_mask_convert_datatype.out.image
-                .mix(absent_t1_mask_id_channel.join(dwi_mask_channel))
+            t1_mask_channel = existing_t1_mask_id_channel
+                .join(t1_mask_channel)
+                .mix(dwi_mask_convert_datatype.out.image)
+            raw_t1_mask_channel = t1_mask_channel
+            raw_dwi_mask_channel = dwi_mask_channel
         }
-
-        // Perform Eddy currents and motion correction on the DWI
-        if ( params.eddy_correction ) {
-            dwi_channel = rename_dwi_for_eddy(
-                collect_paths(dwi_channel),
-                "to_eddy"
-            ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
-
-            rev_channel = rename_rev_for_eddy(
-                collect_paths(rev_channel).filter{ it[1] },
-                "to_eddy"
-            )
-            rev_channel = rev_channel
-                .map{ it.flatten() }
-                .map{ it.size() == 4 ? [it[0], it[3], it[1], it[2]] : it + ["", ""] }
-
-            rev_channel = fill_missing_datapoints(
-                rev_channel,
-                ref_id_channel,
-                1, ["", "", ""]
-            )
-
-            meta_channel = rename_dwi_metadata_for_eddy(
-                collect_paths(meta_channel).filter{ it[1] },
-                "to_eddy_metadata"
-            ).map{ it.flatten() }
-
-            rev_meta_channel = rename_rev_metadata_for_eddy(
-                collect_paths(rev_meta_channel).filter{ it[1] },
-                "to_eddy_metadata"
-            ).map{ it.flatten() }
-
-            rev_meta_channel = fill_missing_datapoints(
-                rev_meta_channel,
-                ref_id_channel,
-                1, [""]
-            )
-
-            // Run Eddy sub-workflow
-            eddy_wkf(
-                dwi_channel,
-                dwi_mask_channel,
-                ec2eddy_channel,
-                epi_fieldmap_channel,
-                epi_displacement_field_channel,
-                rev_channel,
-                meta_channel.join(rev_meta_channel)
-            )
-
-            dwi_channel = eddy_wkf.out.dwi
-                .join(eddy_wkf.out.bval)
-                .join(eddy_wkf.out.bvec)
-            meta_channel = eddy_wkf.out.metadata
+        else {
+            // Copy input channels for later
+            dwi_channel.tap{ raw_dwi_channel }
+            rev_channel.tap{ raw_rev_channel }
+            t1_channel.tap{ raw_t1_channel }
+            t1_mask_channel.tap{ raw_t1_mask_channel }
+            meta_channel.tap{ raw_meta_channel }
+            rev_meta_channel.tap{ raw_rev_meta_channel }
         }
-
-        // Perform intensity normalization on the DWI
-        if ( params.dwi_intensity_normalization ) {
-            // Run N4 sub-workflow
-            n4_denoise_wkf(
-                dwi_channel.map{ it[0..1] },
-                b0_channel,
-                dwi_mask_channel,
-                meta_channel,
-                params.dwi_n4_normalization_config,
-                true
-            )
-
-            dwi_channel = replace_dwi_file(dwi_channel, n4_denoise_wkf.out.image)
-            meta_channel = n4_denoise_wkf.out.metadata
-        }
-
-        absent_t1_mask_id_channel = filter_datapoints(
-            t1_mask_channel,
-            { it[1] == "" }
-        ).map{ [it[0]] }
-        existing_t1_mask_id_channel = exclude_missing_datapoints(
-            t1_mask_channel,
-            1, ""
-        ).map{ [it[0]] }
-
-        // Get DWI mask in T1 space (for missing T1 masks)
-        dwi_mask_registration_wkf(
-            absent_t1_mask_id_channel.join(t1_channel).map{ [it[0], [it[1]]] },
-            absent_t1_mask_id_channel.join(b0_channel).map{ [it[0], [it[1]]] },
-            absent_t1_mask_id_channel.join(dwi_mask_channel),
-            null,
-            null,
-            absent_t1_mask_id_channel
-                .join(b0_metadata_channel)
-                .map{ it[0..1] + [""] },
-            "",
-            false, "", "",
-            params.b02t1_mask_registration_config,
-            null
-        )
-
-        dwi_mask_convert_datatype(
-            dwi_mask_registration_wkf.out.image,
-            "uint8", "preprocess",
-            true,
-            "t1_mask", ""
-        )
-
-        t1_mask_channel = existing_t1_mask_id_channel
-            .join(t1_mask_channel)
-            .mix(dwi_mask_convert_datatype.out.image)
-        raw_t1_mask_channel = t1_mask_channel
-        raw_dwi_mask_channel = dwi_mask_channel
 
         // Compute best resampling reference
         resampling_reference(
@@ -774,16 +787,22 @@ workflow preprocess_wkf {
         pvf_to_resample_channel = pvf_channel.filter{ !it[1].isEmpty() }
 
         // Resample all volumes
-        resample_dwi(
-            dwi_channel
-                .map{ it[0..1] }
-                .join(reference_channel)
-                .join(dwi_mask_channel)
-                .join(meta_channel),
-            "preprocess", "lin",
-            true, true,
-            "dwi_mask", ""
-        )
+        if (params.resample_dwi) {
+            resample_dwi(
+                dwi_channel
+                    .map{ it[0..1] }
+                    .join(reference_channel)
+                    .join(dwi_mask_channel)
+                    .join(meta_channel),
+                "preprocess", "lin",
+                true, true,
+                "dwi_mask", ""
+            )
+
+            dwi_channel = replace_dwi_file(dwi_channel, resample_dwi.out.image)
+            dwi_mask_channel = resample_dwi.out.mask
+            meta_channel = resample_dwi.out.metadata
+        }
 
         resample_t1(
             t1_channel
@@ -826,9 +845,6 @@ workflow preprocess_wkf {
             "", "segmentation"
         )
 
-        dwi_channel = replace_dwi_file(dwi_channel, resample_dwi.out.image)
-        dwi_mask_channel = resample_dwi.out.mask
-        meta_channel = resample_dwi.out.metadata
         t1_channel = resample_t1.out.image
         t1_mask_channel = resample_t1.out.mask
 
@@ -839,16 +855,21 @@ workflow preprocess_wkf {
             .mix(pvf_channel.filter{ it[1].isEmpty() })
 
         if ( params.raw_to_processed_space ) {
-            resample_raw_dwi(
-                raw_dwi_channel
-                    .map{ it[0..1] }
-                    .join(reference_channel)
-                    .join(raw_dwi_mask_channel)
-                    .join(raw_meta_channel),
-                "preprocess", "lin",
-                true, true,
-                "dwi_mask", "raw"
-            )
+            if (params.resample_dwi) {
+                resample_raw_dwi(
+                    raw_dwi_channel
+                        .map{ it[0..1] }
+                        .join(reference_channel)
+                        .join(raw_dwi_mask_channel)
+                        .join(raw_meta_channel),
+                    "preprocess", "lin",
+                    true, true,
+                    "dwi_mask", "raw"
+                )
+                raw_dwi_channel = replace_dwi_file(raw_dwi_channel, resample_raw_dwi.out.image)
+                raw_meta_channel = resample_raw_dwi.out.metadata
+                raw_dwi_mask_channel = resample_raw_dwi.out.mask
+            }
 
             resample_raw_t1(
                 raw_t1_channel
@@ -860,11 +881,8 @@ workflow preprocess_wkf {
                 "t1_mask", "raw"
             )
 
-            raw_dwi_channel = replace_dwi_file(raw_dwi_channel, resample_raw_dwi.out.image)
-            raw_meta_channel = resample_raw_dwi.out.metadata
             raw_t1_channel = resample_raw_t1.out.image
             raw_t1_mask_channel = resample_raw_t1.out.mask
-            raw_dwi_mask_channel = resample_raw_dwi.out.mask
         }
 
         // Get tissue masks from PVF
