@@ -35,10 +35,10 @@ c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-8,
-    "conv_max_iter": [100, 100, 70, 50, 20],
+    "conv_eps": 1e-7,
+    "conv_max_iter": [200, 200, 140, 100, 40],
     "conv_win": 10,
-    "grad_step": 0.1,
+    "grad_step": 0.05,
     "var_penality": 3,
     "var_total": 0,
     "klass": "mrHARDI.traits.ants.AntsSyN",
@@ -48,7 +48,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 0.75,
-                64,
+                128,
                 "Regular",
                 1.
             ],
@@ -59,7 +59,7 @@ c.AntsConfiguration.passes = [{
             "moving_index": 0,
             "args": [
                 0.25,
-                4,
+                8,
                 "Regular",
                 1.
             ],

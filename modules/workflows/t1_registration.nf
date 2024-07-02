@@ -72,9 +72,9 @@ include {
 } from '../processes/utils.nf'
 include {
     resampling_reference;
-    scilpy_resample_to_reference as resample_template;
-    scilpy_resample_to_reference as resample_dilated_mask;
-    scilpy_resample_to_reference as resample_whole_mask
+    scilpy_resample as resample_template;
+    scilpy_resample as resample_dilated_mask;
+    scilpy_resample as resample_whole_mask
 } from '../processes/upsample.nf'
 include {
     get_data_path;
@@ -145,10 +145,7 @@ workflow t12b0_registration {
         }
         else {
             resampling_reference(
-                dwi_channel
-                    .map{ it[0..1] }
-                    .join(t1_channel)
-                    .join(template_channel)
+                t1_channel
                     .map{ [it[0], it[1..-1]] },
                 "preprocess",
                 params.resampling_subdivision,
@@ -160,32 +157,27 @@ workflow t12b0_registration {
 
         resample_template(
             template_channel
-                .join(registration_reference)
-                .join(template_mask_channel)
-                .map{ it + [""] },
+                .map{ it + ["", "", ""] },
             "preprocess",
-            "lin",
-            false,
+            "lin", "", "",
             false,
             "", ""
         )
         resample_dilated_mask(
             template_dilated_mask_channel
-                .join(registration_reference)
-                .map{ it + ["", ""] },
+                .map{ it + ["", ""] }
+                .join(resample_template.out.image),
             "preprocess",
-            "nn",
-            false,
+            "nn", "0", "NearestNeighbor",
             false,
             "", ""
         )
         resample_whole_mask(
             template_whole_mask_channel
-                .join(registration_reference)
-                .map{ it + ["", ""] },
+                .map{ it + ["", ""] }
+                .join(resample_template.out.image),
             "preprocess",
-            "nn",
-            false,
+            "nn", "0", "NearestNeighbor",
             false,
             "", ""
         )

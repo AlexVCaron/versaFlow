@@ -81,13 +81,14 @@ include {
     normalize_inter_b0
 } from '../modules/processes/denoise.nf'
 include {
-    scilpy_resample_to_reference as resample_wm;
-    scilpy_resample_to_reference as resample_gm;
-    scilpy_resample_to_reference as resample_csf;
-    scilpy_resample_to_reference as resample_t1;
-    scilpy_resample_to_reference as resample_dwi;
-    scilpy_resample_to_reference as resample_raw_dwi;
-    scilpy_resample_to_reference as resample_raw_t1;
+    scilpy_resample as resample_wm;
+    scilpy_resample as resample_gm;
+    scilpy_resample as resample_csf;
+    scilpy_resample as resample_t1;
+    scilpy_resample as resample_dwi;
+    scilpy_resample as resample_raw_dwi;
+    scilpy_resample as resample_raw_t1;
+    scilpy_resample as resample_t1_mask;
     resampling_reference
 } from '../modules/processes/upsample.nf'
 include {
@@ -776,7 +777,7 @@ workflow preprocess_wkf {
 
         // Compute best resampling reference
         resampling_reference(
-            collect_paths(dwi_channel.map{ it[0..1] }.join(t1_channel)),
+            collect_paths(t1_channel),
             "preprocess",
             params.resample_data ? params.resampling_subdivision : "1",
             params.resample_data ? params.resampling_min_resolution : "",
@@ -806,47 +807,51 @@ workflow preprocess_wkf {
 
         resample_t1(
             t1_channel
-                .join(reference_channel)
-                .join(t1_mask_channel)
-                .map{ it + [""] },
-            "preprocess", "lin",
-            true, true,
-            "t1_mask", ""
+                .map{ it + ["", "", ""] },
+            "preprocess", "lin", "", "",
+            false,
+            "", ""
+        )
+
+        resample_t1_mask(
+            t1_mask_channel
+                .map{ it + ["", ""] }
+                .join(resample_t1.out.image),
+            "preprocess", "nn", "0", "NearestNeighbor",
+            false,
+            "", ""
         )
 
         resample_wm(
             pvf_to_resample_channel
                 .map{ [it[0], it[1][0]] }
-                .join(reference_channel)
-                .join(t1_mask_channel)
-                .map{ it + [""] },
-            "preprocess", "nn",
-            true, false,
+                .map{ it + ["", ""] }
+                .join(resample_t1.out.image),
+            "preprocess", "nn", "0", "NearestNeighbor",
+            true,
             "", "segmentation"
         )
         resample_gm(
             pvf_to_resample_channel
                 .map{ [it[0], it[1][1]] }
-                .join(reference_channel)
-                .join(t1_mask_channel)
-                .map{ it + [""] },
-            "preprocess", "nn",
-            true, false,
+                .map{ it + ["", ""] }
+                .join(resample_t1.out.image),
+            "preprocess", "nn", "0", "NearestNeighbor",
+            true,
             "", "segmentation"
         )
         resample_csf(
             pvf_to_resample_channel
                 .map{ [it[0], it[1][2]] }
-                .join(reference_channel)
-                .join(t1_mask_channel)
-                .map{ it + [""] },
-            "preprocess", "nn",
-            true, false,
+                .map{ it + ["", ""] }
+                .join(resample_t1.out.image),
+            "preprocess", "nn", "0", "NearestNeighbor",
+            true,
             "", "segmentation"
         )
 
         t1_channel = resample_t1.out.image
-        t1_mask_channel = resample_t1.out.mask
+        t1_mask_channel = resample_t1_mask.out.image
 
         pvf_channel = resample_wm.out.image
             .join(resample_gm.out.image)
@@ -1259,22 +1264,25 @@ workflow preprocess_wkf {
             params.extract_mean_b0_base_config
         )
 
-        validate_gradients_wkf(dwi_channel, dwi_mask_channel)
+        if ( params.preprocess_dwi ) {
+            validate_gradients_wkf(dwi_channel, dwi_mask_channel)
+            dwi_channel = rename_processed_dwi(
+                collect_paths(validate_gradients_wkf.out.dwi),
+                "dwi_preprocessed"
+            ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
+
+            meta_channel = rename_processed_dwi_metadata(
+                collect_paths(meta_channel),
+                "dwi_preprocessed_metadata"
+            ).map{ it.flatten() }
+            dwi_mask_channel = rename_processed_dwi_mask(
+                collect_paths(dwi_mask_channel),
+                "mask_preprocessed"
+            ).map{ it.flatten() }
+        }
+
         mask_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", true)
         t1_channel = mask_t1.out.image
-
-        dwi_channel = rename_processed_dwi(
-            collect_paths(validate_gradients_wkf.out.dwi),
-            "dwi_preprocessed"
-        ).map{ [it[0], it[1][2], it[1][0], it[1][1]] }
-        meta_channel = rename_processed_dwi_metadata(
-            collect_paths(meta_channel),
-            "dwi_preprocessed_metadata"
-        ).map{ it.flatten() }
-        dwi_mask_channel = rename_processed_dwi_mask(
-            collect_paths(dwi_mask_channel),
-            "mask_preprocessed"
-        ).map{ it.flatten() }
 
         wm_segmentation_channel = Channel.empty()
         if ( params.generate_wm_segmentation ) {

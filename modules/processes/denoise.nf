@@ -60,7 +60,7 @@ process nlmeans_denoise {
         tuple val(sid), path("${image.simpleName}__nlmeans_denoised_metadata.*"), optional: true, emit: metadata
     script:
         def args = ""
-        if ( !mask.empty() ) args += "--mask $mask"
+        // if ( !mask.empty() ) args += "--mask $mask"
         def after_script = ""
         if ( !metadata.empty() ) after_script += "cp $metadata ${image.simpleName}__nlmeans_denoised_metadata.py"
         """
@@ -107,68 +107,90 @@ process ants_gaussian_denoise {
 }
 
 process n4_denoise {
-    label "N4_CORRECTION"
-    label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
-    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
-    publishDir "${params.output_root}/${sid}", saveAs: {
-        f -> ("$publish" == "true") ? f.contains("metadata") || f.contains("bias_field") ? null 
-                                                                                         : remove_alg_suffixes(f)
-                                    : null
-    }, mode: params.publish_mode, overwrite: true
+label "N4_CORRECTION"
+// label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
+cpus 20
 
-    input:
-        tuple val(sid), path(image), file(anat), file(mask), file(metadata)
-        val(caller_name)
-        val(publish)
-        path(config)
-    output:
-        tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
-        tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
-        tuple val(sid), path("${image.simpleName}_n4_bias_field.nii.gz"), emit: bias_field
-    script:
-        def before_denoise =""
-        def after_denoise = ""
-        def args = ""
-        if ( anat.empty() ) {
-            args += "--in $image"
-            after_denoise += "mv n4denoise_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
-        }
-        else {
-            args += "--in $anat --apply $image"
-            after_denoise += "mv tmp_n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
-        }
+publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+publishDir "${params.output_root}/${sid}", saveAs: {
+    f -> ("$publish" == "true") ? f.contains("metadata") || f.contains("bias_field") ? null 
+                                                                                        : remove_alg_suffixes(f)
+                                : null
+}, mode: params.publish_mode, overwrite: true
 
-        if ( !metadata.empty() ) {
-            after_denoise += "mv n4denoise_metadata.py ${image.simpleName}__n4denoised_metadata.py\n"
-            args += " --metadata $metadata"
-        }
-        after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz\n"
+input:
+    tuple val(sid), path(image), file(anat), file(mask), file(metadata)
+    val(caller_name)
+    val(publish)
+    path(config)
+output:
+    tuple val(sid), path("${image.simpleName}__n4denoised.nii.gz"), emit: image
+    tuple val(sid), path("${image.simpleName}__n4denoised_metadata.*"), optional: true, emit: metadata
+    tuple val(sid), path("${image.simpleName}_n4_bias_field.nii.gz"), emit: bias_field
+script:
+def before_denoise =""
+def after_denoise = ""
+def args = ""
+def in_img = "$image"
+if ( anat.empty() ) {
+    after_denoise += "mv n4denoise_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
+}
+else {
+    args += "--apply $image"
+    in_img = "$anat"
+    after_denoise += "mv tmp_n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
+}
 
-        if ( !mask.empty() ) {
-            args += " --mask mask_for_n4.nii.gz"
-            if ( !anat.empty() ) {
-                before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $anat -t identity -i $mask -o mask_for_n4.nii.gz\n"
-                before_denoise += "scil_image_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
-            }
-            else {
-                before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $image -t identity -i $mask -o mask_for_n4.nii.gz\n"
-                before_denoise += "scil_image_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
-            }
-        }
+if ( !metadata.empty() ) {
+    after_denoise += "mv n4denoise_metadata.py ${image.simpleName}__n4denoised_metadata.py\n"
+    args += " --metadata $metadata"
+}
 
-        """
-        export OMP_NUM_THREADS=$task.cpus
-        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
-        export OPENBLAS_NUM_THREADS=1
-        export ANTS_RANDOM_SEED=$params.random_seed
+if ( !mask.empty() ) {
+    // args += " --mask mask_for_n4.nii.gz"
+    if ( !anat.empty() ) {
+        before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $anat -t identity -i $mask -o mask_for_n4.nii.gz\n"
+        before_denoise += "scil_image_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
+    }
+    else {
+        before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $image -t identity -i $mask -o mask_for_n4.nii.gz\n"
+        before_denoise += "scil_image_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
+    }
+}
 
-        $before_denoise
-        mrhardi n4 $args \
-            --out n4denoise \
-            --config $config
-        $after_denoise
-        """
+// after_denoise += "scil_apply_bias_field_on_dwi.py $image ${image.simpleName}_n4_bias_field.nii.gz n4denoised.nii.gz -f\n"
+after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz\n"
+
+"""
+export OMP_NUM_THREADS=$task.cpus
+export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
+export OPENBLAS_NUM_THREADS=1
+export ANTS_RANDOM_SEED=$params.random_seed
+
+$before_denoise
+
+python3 - << ENDSCRIPT
+
+import nibabel as nib
+import numpy as np
+
+img = nib.load("$in_img")
+mask = nib.load("mask_for_n4.nii.gz")
+m = img.get_fdata()[mask.get_fdata().astype(bool)].max()
+with open("max.txt", "w+") as f:
+    f.write(f"{np.ceil(m).astype(int):d}\\n")
+
+ENDSCRIPT
+
+ImageMath 3 input.nii.gz RescaleImage $in_img 1 \$(cat max.txt)
+
+mrhardi n4 --in input.nii.gz $args \
+    --out n4denoise \
+    --config $config
+$after_denoise
+"""
+
 }
 
 process apply_n4_bias_field {

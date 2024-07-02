@@ -31,19 +31,46 @@ process ants_register {
         tuple val(sid), path("${moving[0].simpleName}__registration_warped_metadata.*"), optional: true, emit: metadata
     script:
         def mask_arg = ""
+        def before_cmd = ""
+        def after_cmd = ""
+        def tg = []
+        def mv = []
         if ( !mask.iterator().inject(false) { c, i -> c || i.empty() } ) {
             mask_arg = "--mask ${mask.iterator().collect{ it.name }.join(',')}"
         }
-
+        if ( mask.size() == 2 ) {
+            def i = 0
+            before_cmd += "cp ${file(reference).name} reference.nii.gz\n"
+            before_cmd += "scil_volume_crop.py ${mask[0]} m.nii.gz --output_bbox bbox.nii.gz -f\n"
+            for (f in target) {
+                before_cmd += "scil_volume_crop.py $f target${i}.nii.gz --input_bbox bbox.nii.gz -f\n"
+                tg += ["target${i}.nii.gz"]
+                i += 1
+            }
+            before_cmd += "scil_volume_crop.py ${mask[1]} m.nii.gz --output_bbox bbox.nii.gz -f\n"
+            i = 0
+            for (f in moving) {
+                before_cmd += "scil_volume_crop.py $f moving${i}.nii.gz --input_bbox bbox.nii.gz -f\n"
+                mv += ["moving${i}.nii.gz"]
+                i += 1
+            }
+            after_cmd += "cp reference.nii.gz ${moving[0].simpleName}__registration_ref.nii.gz\n"
+        }
+        else {
+            tg = target
+            mv = moving
+        }
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
 
+        $before_cmd
+
         mrhardi ants_registration \
-            --moving ${moving.join(",")} \
-            --target ${target.join(",")} \
+            --moving ${mv.join(",")} \
+            --target ${tg.join(",")} \
             --out ${moving[0].simpleName}__registration $mask_arg \
             ${params.verbose_outputs ? "--verbose" : ""} \
             --config $config
@@ -88,7 +115,9 @@ process ants_register {
                 break
             fi
         done
-            
+
+        $after_cmd
+
         """
 }
 
