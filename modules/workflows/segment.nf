@@ -153,6 +153,7 @@ workflow segment_nmt_wkf {
             atropos.out.vol_fractions
                 .map{ [it[0], it[1].sort{ a, b -> params.segmentation_classes.findIndexOf{ i -> a.simpleName.contains("_$i") } <=> params.segmentation_classes.findIndexOf{ i -> b.simpleName.contains("_$i") } }] }
                 .join(mask_channel),
+            params.segmentation_classes,
             "segmentation",
             "segmentation"
         )

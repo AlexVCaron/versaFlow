@@ -16,7 +16,8 @@ include {
     extract_b0 as dwi_b0;
     extract_b0 as extract_epi_corrected_b0;
     extract_b0 as extract_b0_preprocessed;
-    extract_b0 as extract_b0_reference
+    extract_b0 as extract_b0_reference;
+    extract_b0 as extract_b0_identity
 } from '../modules/processes/preprocess.nf'
 include {
     scil_compute_dti_fa
@@ -41,7 +42,17 @@ include {
     ants_transform as ants_transform_raw_t1_mask;
     ants_transform as apply_transform_epi_dwi;
     ants_transform as apply_transform_epi_rev;
-    ants_transform as apply_transform_epi_field
+    ants_transform as apply_transform_epi_field;
+    identity;
+    identity as identity_t1;
+    identity as identity_t1_mask;
+    identity as identity_safe_wm_mask;
+    identity as identity_wm;
+    identity as identity_wm_mask;
+    identity as identity_gm;
+    identity as identity_gm_mask;
+    identity as identity_csf;
+    identity as identity_csf_mask
 } from '../modules/processes/register.nf'
 include {
     convert_float_to_integer as convert_wm_segmentation;
@@ -86,6 +97,7 @@ include {
     scilpy_resample as resample_csf;
     scilpy_resample as resample_t1;
     scilpy_resample as resample_dwi;
+    scilpy_resample as resample_dwi_mask;
     scilpy_resample as resample_raw_dwi;
     scilpy_resample as resample_raw_t1;
     scilpy_resample as resample_t1_mask;
@@ -153,9 +165,11 @@ params.resampling_subdivision = 2
 params.resampling_min_resolution = false
 params.force_resampling_resolution = false
 
-// T1 preprocess workflow parameters
+// Preprocess workflow parameters
 params.preprocess_dwi = true
+params.preprocess_t1 = true
 params.resample_dwi = true
+params.resample_t1 = true
 params.denoise_t1 = true
 params.nlmeans_t1 = true
 params.t1_intensity_normalization = true
@@ -197,9 +211,11 @@ workflow preprocess_wkf {
         ).map{ [it[0]] }
 
         // T1 preprocessing
-        t1_preprocess_wkf(t1_channel, t1_mask_channel)
-        t1_channel = t1_preprocess_wkf.out.t1
-        t1_mask_channel = t1_preprocess_wkf.out.mask
+        if ( params.preprocess_t1 ) {
+            t1_preprocess_wkf(t1_channel, t1_mask_channel)
+            t1_channel = t1_preprocess_wkf.out.t1
+            t1_mask_channel = t1_preprocess_wkf.out.mask
+        }
 
         if (params.preprocess_dwi) {
             // Fix odd number of slices in phase direction for EPI correction
@@ -621,40 +637,55 @@ workflow preprocess_wkf {
 
             // Get better mask for the DWI from the T1 (when missing and if present)
             if ( params.dwi_mask_from_t1_mask ) {
-                existing_t1_mask_id_channel = exclude_missing_datapoints(
-                    t1_mask_channel,
-                    1, ""
-                ).map{ [it[0]] }
-                absent_t1_mask_id_channel = filter_datapoints(
-                    t1_mask_channel,
-                    { it[1] == "" }
-                ).map{ [it[0]] }
+                if ( params.register_t1_to_dwi ){
+                    existing_t1_mask_id_channel = exclude_missing_datapoints(
+                        t1_mask_channel,
+                        1, ""
+                    ).map{ [it[0]] }
+                    absent_t1_mask_id_channel = filter_datapoints(
+                        t1_mask_channel,
+                        { it[1] == "" }
+                    ).map{ [it[0]] }
 
-                n4_denoise_t1_to_b0_wkf(
-                    existing_t1_mask_id_channel.join(epi_corrected_dwi_channel.map{ it[0..1] }),
-                    existing_t1_mask_id_channel.join(b0_channel),
-                    existing_t1_mask_id_channel.join(dwi_mask_channel),
-                    existing_t1_mask_id_channel.join(epi_corrected_meta_channel),
-                    params.dwi_n4_normalization_quick_config,
-                    false
-                )
+                    n4_denoise_t1_to_b0_wkf(
+                        existing_t1_mask_id_channel.join(epi_corrected_dwi_channel.map{ it[0..1] }),
+                        existing_t1_mask_id_channel.join(b0_channel),
+                        existing_t1_mask_id_channel.join(dwi_mask_channel),
+                        existing_t1_mask_id_channel.join(epi_corrected_meta_channel),
+                        params.dwi_n4_normalization_quick_config,
+                        false
+                    )
 
-                t1_mask_to_b0(
-                    replace_dwi_file(epi_corrected_dwi_channel, n4_denoise_t1_to_b0_wkf.out.image),
-                    existing_t1_mask_id_channel.join(t1_channel),
-                    existing_t1_mask_id_channel.join(t1_mask_channel),
-                    "false"
-                )
+                    t1_mask_to_b0(
+                        replace_dwi_file(epi_corrected_dwi_channel, n4_denoise_t1_to_b0_wkf.out.image),
+                        existing_t1_mask_id_channel.join(t1_channel),
+                        existing_t1_mask_id_channel.join(t1_mask_channel),
+                        "false"
+                    )
 
-                t1_mask_convert_datatype(
-                    t1_mask_to_b0.out.mask,
-                    "uint8", "preprocess",
-                    !params.register_t1_to_dwi,
-                    "dwi_mask", ""
-                )
+                    t1_mask_convert_datatype(
+                        t1_mask_to_b0.out.mask,
+                        "uint8", "preprocess",
+                        !params.register_t1_to_dwi,
+                        "dwi_mask", ""
+                    )
 
-                dwi_mask_channel = t1_mask_convert_datatype.out.image
-                    .mix(absent_t1_mask_id_channel.join(dwi_mask_channel))
+                    dwi_mask_channel = t1_mask_convert_datatype.out.image
+                        .mix(absent_t1_mask_id_channel.join(dwi_mask_channel))
+                }
+                else
+                {
+                    identity(
+                        t1_mask_channel
+                            .join(b0_channel)
+                            .map{ it + [""] },
+                        "preprocess",
+                        "", false, "dwi_mask",
+                        0, "uchar", "NearestNeighbor",
+                        params.ants_transform_base_config
+                    )
+                    dwi_mask_channel = identity.out.image
+                }
             }
 
             // Perform Eddy currents and motion correction on the DWI
@@ -791,73 +822,82 @@ workflow preprocess_wkf {
         if (params.resample_dwi) {
             resample_dwi(
                 dwi_channel
-                    .map{ it[0..1] }
-                    .join(reference_channel)
-                    .join(dwi_mask_channel)
-                    .join(meta_channel),
-                "preprocess", "lin",
-                true, true,
-                "dwi_mask", ""
+                    .map{ it[0..1] + [""] }
+                    .join(meta_channel)
+                    .map{ it + [""] },
+                "preprocess", "lin", 3, "",
+                false, "", ""
             )
 
             dwi_channel = replace_dwi_file(dwi_channel, resample_dwi.out.image)
-            dwi_mask_channel = resample_dwi.out.mask
             meta_channel = resample_dwi.out.metadata
+
+            if ( params.dwi_mask_from_t1_mask ){
+                resample_dwi_mask(
+                    dwi_mask_channel
+                        .map{ it + ["", "", ""] },
+                    "preprocess", "lin", "", "NearestNeighbor",
+                    false, "", ""
+                )
+                dwi_mask_channel = resample_dwi_mask.out.image
+            }
         }
 
-        resample_t1(
-            t1_channel
-                .map{ it + ["", "", ""] },
-            "preprocess", "lin", "", "",
-            false,
-            "", ""
-        )
+        if ( params.resample_t1 ) {
+            resample_t1(
+                t1_channel
+                    .map{ it + ["", "", ""] },
+                "preprocess", "lin", "", "",
+                false,
+                "", ""
+            )
 
-        resample_t1_mask(
-            t1_mask_channel
-                .map{ it + ["", ""] }
-                .join(resample_t1.out.image),
-            "preprocess", "nn", "0", "NearestNeighbor",
-            false,
-            "", ""
-        )
+            resample_t1_mask(
+                t1_mask_channel
+                    .map{ it + ["", ""] }
+                    .join(resample_t1.out.image),
+                "preprocess", "nn", "0", "NearestNeighbor",
+                false,
+                "", ""
+            )
 
-        resample_wm(
-            pvf_to_resample_channel
-                .map{ [it[0], it[1][0]] }
-                .map{ it + ["", ""] }
-                .join(resample_t1.out.image),
-            "preprocess", "nn", "0", "NearestNeighbor",
-            true,
-            "", "segmentation"
-        )
-        resample_gm(
-            pvf_to_resample_channel
-                .map{ [it[0], it[1][1]] }
-                .map{ it + ["", ""] }
-                .join(resample_t1.out.image),
-            "preprocess", "nn", "0", "NearestNeighbor",
-            true,
-            "", "segmentation"
-        )
-        resample_csf(
-            pvf_to_resample_channel
-                .map{ [it[0], it[1][2]] }
-                .map{ it + ["", ""] }
-                .join(resample_t1.out.image),
-            "preprocess", "nn", "0", "NearestNeighbor",
-            true,
-            "", "segmentation"
-        )
+            resample_wm(
+                pvf_to_resample_channel
+                    .map{ [it[0], it[1][0]] }
+                    .map{ it + ["", ""] }
+                    .join(resample_t1.out.image),
+                "preprocess", "nn", "0", "NearestNeighbor",
+                true,
+                "", "segmentation"
+            )
+            resample_gm(
+                pvf_to_resample_channel
+                    .map{ [it[0], it[1][1]] }
+                    .map{ it + ["", ""] }
+                    .join(resample_t1.out.image),
+                "preprocess", "nn", "0", "NearestNeighbor",
+                true,
+                "", "segmentation"
+            )
+            resample_csf(
+                pvf_to_resample_channel
+                    .map{ [it[0], it[1][2]] }
+                    .map{ it + ["", ""] }
+                    .join(resample_t1.out.image),
+                "preprocess", "nn", "0", "NearestNeighbor",
+                true,
+                "", "segmentation"
+            )
 
-        t1_channel = resample_t1.out.image
-        t1_mask_channel = resample_t1_mask.out.image
+            t1_channel = resample_t1.out.image
+            t1_mask_channel = resample_t1_mask.out.image
 
-        pvf_channel = resample_wm.out.image
-            .join(resample_gm.out.image)
-            .join(resample_csf.out.image)
-            .map{ [it[0], it[1..-1]] }
-            .mix(pvf_channel.filter{ it[1].isEmpty() })
+            pvf_channel = resample_wm.out.image
+                .join(resample_gm.out.image)
+                .join(resample_csf.out.image)
+                .map{ [it[0], it[1..-1]] }
+                .mix(pvf_channel.filter{ it[1].isEmpty() })
+        }
 
         if ( params.raw_to_processed_space ) {
             if (params.resample_dwi) {
@@ -894,7 +934,8 @@ workflow preprocess_wkf {
         pvf_to_mask(
              pvf_channel
                 .filter{ !it[1].isEmpty() }
-                .join(dwi_mask_channel),
+                .join(t1_mask_channel),
+            params.segmentation_classes,
             "preprocess",
             "segmentation"
         )
@@ -1049,6 +1090,130 @@ workflow preprocess_wkf {
                 raw_t1_mask_channel = ants_transform_raw_t1_mask.out.image
             }
         }
+        else
+        {
+            extract_b0_identity(
+                dwi_channel
+                    .map{ it[0..2] }
+                    .join(meta_channel),
+                "preprocess", "false",
+                params.extract_mean_b0_base_config
+            )
+            identity_t1(
+                t1_channel
+                    .join(extract_b0_identity.out.b0)
+                    .map{ it + [""] },
+                "preprocess",
+                "", false, "t1",
+                0, "float", "Linear",
+                params.ants_transform_base_config
+            )
+            identity_t1_mask(
+                t1_mask_channel
+                    .join(extract_b0_identity.out.b0)
+                    .map{ it + [""] },
+                "preprocess",
+                "", false, "t1_mask",
+                0, "uchar", "NearestNeighbor",
+                params.ants_transform_base_config
+            )
+            identity_wm(
+                pvf_channel
+                    .filter{ it[1] }
+                    .map{ [it[0], it[1][0]] }
+                    .join(extract_b0_identity.out.b0)
+                    .map{ it + [""] },
+                "preprocess",
+                "", false, "wm",
+                0, "float", "Linear",
+                params.ants_transform_base_config
+            )
+            identity_safe_wm_mask(
+                safe_wm_mask_channel
+                    .filter{ it[1] }
+                    .join(extract_b0_identity.out.b0)
+                    .map{ it + [""] },
+                "preprocess",
+                "", false, "wm_mask",
+                0, "uchar", "NearestNeighbor",
+                params.ants_transform_base_config
+            )
+            identity_wm_mask(
+                tissue_mask_channel
+                    .filter{ it[1] }
+                    .map{ [it[0], it[1][0]] }
+                    .join(extract_b0_identity.out.b0)
+                    .map{ it + [""] },
+                "preprocess",
+                "", false, "wm_mask",
+                0, "uchar", "NearestNeighbor",
+                params.ants_transform_base_config
+            )
+            identity_gm(
+                pvf_channel
+                    .filter{ it[1] }
+                    .map{ [it[0], it[1][1]] }
+                    .join(extract_b0_identity.out.b0)
+                    .map{ it + [""] },
+                "preprocess",
+                "", false, "gm",
+                0, "float", "Linear",
+                params.ants_transform_base_config
+            )
+            identity_gm_mask(
+                tissue_mask_channel
+                    .filter{ it[1] }
+                    .map{ [it[0], it[1][1]] }
+                    .join(extract_b0_identity.out.b0)
+                    .map{ it + [""] },
+                "preprocess",
+                "", false, "gm_mask",
+                0, "uchar", "NearestNeighbor",
+                params.ants_transform_base_config
+            )
+            identity_csf(
+                pvf_channel
+                    .filter{ it[1] }
+                    .map{ [it[0], it[1][2]] }
+                    .join(extract_b0_identity.out.b0)
+                    .map{ it + [""] },
+                "preprocess",
+                "", false, "csf",
+                0, "float", "Linear",
+                params.ants_transform_base_config
+            )
+            identity_csf_mask(
+                tissue_mask_channel
+                    .filter{ it[1] }
+                    .map{ [it[0], it[1][2]] }
+                    .join(extract_b0_identity.out.b0)
+                    .map{ it + [""] },
+                "preprocess",
+                "", false, "csf_mask",
+                0, "uchar", "NearestNeighbor",
+                params.ants_transform_base_config
+            )
+
+            t1_channel = identity_t1.out.image
+            t1_mask_channel = identity_t1_mask.out.image
+
+            pvf_channel = collect_paths(
+                identity_wm.out.image
+                    .join(identity_gm.out.image)
+                    .join(identity_csf.out.image)
+            ).mix(pvf_channel.filter{ it[1].isEmpty() })
+
+            tissue_mask_channel = collect_paths(
+                identity_wm_mask.out.image
+                    .join(identity_gm_mask.out.image)
+                    .join(identity_csf_mask.out.image)
+            ).mix(pvf_channel.filter{ it[1].isEmpty() })
+
+            safe_wm_mask_channel = pvf_channel
+                .filter{ it[1].isEmpty() }
+                .map{ [it[0], ""] }
+                .mix(identity_safe_wm_mask.out.image)
+        }
 
         // Generate tissue segmentation from T1
         d99_atlas_channel = Channel.empty()
@@ -1116,7 +1281,7 @@ workflow preprocess_wkf {
 
         crop_wm(
             pvf_to_crop_channel
-                .map{ [it[0], it[1][2]] }
+                .map{ [it[0], it[1][0]] }
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },
@@ -1132,7 +1297,7 @@ workflow preprocess_wkf {
         )
         crop_csf(
             pvf_to_crop_channel
-                .map{ [it[0], it[1][0]] }
+                .map{ [it[0], it[1][2]] }
                 .join(t1_mask_channel)
                 .join(t1_bbox_channel)
                 .map{ it + [""] },

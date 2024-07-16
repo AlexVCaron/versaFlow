@@ -14,7 +14,7 @@ c.AntsRegistration.log_format = "[%(name)s]%(highlevel)s %(message)s"
 
 c.AntsRegistration.log_level = 30
 
-c.AntsRegistration.init_with_ants_ai = True
+c.AntsRegistration.init_with_ants_ai = False
 
 c.AntsRegistration.base_config_file = ""
 
@@ -42,7 +42,7 @@ c.AntsConfiguration.klass = "mrHARDI.config.ants.AntsConfiguration"
 c.AntsConfiguration.match_histogram = False
 
 c.AntsConfiguration.passes = [{
-    "conv_eps": 1e-07,
+    "conv_eps": 1e-7,
     "conv_max_iter": [500, 300, 150, 50],
     "conv_win": 10,
     "grad_step": 0.1,
@@ -73,7 +73,7 @@ c.AntsConfiguration.passes = [{
         0
     ]
 }, {
-    "conv_eps": 1e-07,
+    "conv_eps": 1e-7,
     "conv_max_iter": [300, 150, 100, 50],
     "conv_win": 10,
     "grad_step": 0.1,

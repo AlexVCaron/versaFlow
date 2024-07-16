@@ -184,6 +184,37 @@ process ants_transform {
         """
 }
 
+process identity {
+    label "FAST"
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode, overwrite: true
+
+    input:
+        tuple val(sid), path(img), path(ref), file(metadata)
+        val(caller_name)
+        val(additional_publish_path)
+        val(publish)
+        val(publish_suffix)
+        val(intype)
+        val(outype)
+        val(interp)
+        path(config)
+    output:
+        tuple val(sid), path("${img.simpleName}__transformed.nii.gz"), emit: image
+        tuple val(sid), path("${img.simpleName}__transformed.bvec"), optional: true, emit: bvec
+        tuple val(sid), path("${img.simpleName}__transformed_metadata.*"), optional: true, emit: metadata
+    script:
+        """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
+        export ANTS_RANDOM_SEED=$params.random_seed
+        antsApplyTransforms -e $intype -u $outype -n $interp -t identity -i $img -r $ref -o ${img.simpleName}__transformed.nii.gz
+        """
+}
+
 process align_to_closest {
     label "ALIGN"
     input:
