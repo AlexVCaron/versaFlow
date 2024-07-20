@@ -421,22 +421,22 @@ workflow preprocess_wkf {
                     "preprocess", "false", params.extract_mean_b0_base_config
                 )
 
-                b0_reference_for_registration = extract_b0_reference.out.b0
-                apply_transform_epi_rev(
-                    ec_input_rev_channel.map{ it[0..1] }
-                        .join(b0_reference_for_registration)
-                        .join(epi_correction_wkf.out.forward_transform)
-                        .join(epi_correction_wkf.out.reverse_transform)
-                        .map{ it[0..-3] + [it[-2] + it[-1]] }
-                        .map{ it + [["true", "false"], "", ""] },
-                    "preprocess",
-                    "",
-                    "false",
-                    "",
-                    params.ants_transform_base_config
-                )
+                // b0_reference_for_registration = extract_b0_reference.out.b0
+                // apply_transform_epi_rev(
+                //     ec_input_rev_channel.map{ it[0..1] }
+                //         .join(b0_reference_for_registration)
+                //         .join(epi_correction_wkf.out.forward_transform)
+                //         .join(epi_correction_wkf.out.reverse_transform)
+                //         .map{ it[0..-3] + [it[-2] + it[-1]] }
+                //         .map{ it + [["true", "false"], "", ""] },
+                //     "preprocess",
+                //     "",
+                //     "false",
+                //     "",
+                //     params.ants_transform_base_config
+                // )
 
-                rev_channel = replace_dwi_file(rev_channel, apply_transform_epi_rev.out.image)
+                // rev_channel = replace_dwi_file(rev_channel, apply_transform_epi_rev.out.image)
 
                 // Applied estimated susceptibility correction to DWI
                 ec2eddy_channel = Channel.empty()
@@ -450,7 +450,7 @@ workflow preprocess_wkf {
                     // Applied estimated susceptibility correction to DWI
                     apply_topup_wkf(
                         ec_input_dwi_channel,
-                        apply_transform_epi_rev.out.image,
+                        rev_channel.map{ it[0..1] },
                         ec2eddy_channel,
                         ec_input_dwi_meta_channel
                             .join(ec_input_rev_meta_channel)
@@ -471,23 +471,10 @@ workflow preprocess_wkf {
                     epi_displacement_field_channel = epi_correction_wkf.out.field
                     epi_fieldmap_channel = epi_correction_wkf.out.fieldmap
 
-                    apply_transform_epi_field(
-                        epi_displacement_field_channel
-                            .join(b0_reference_for_registration)
-                            .join(epi_correction_wkf.out.forward_transform)
-                            .map{ it[0..-2] + [it[-1]] }
-                            .map{ it + [["true"], "", ""] },
-                        "preprocess",
-                        "",
-                        "false",
-                        "",
-                        params.ants_transform_base_config
-                    )
-
                     apply_epi_field_wkf(
                         ec_input_dwi_channel.map{ it[0..1] },
-                        apply_transform_epi_rev.out.image,
-                        apply_transform_epi_field.out.image,
+                        rev_channel.map{ it[0..1] },
+                        epi_correction_wkf.out.field,
                         ec_input_dwi_meta_channel
                             .map{ [it[0], it[1]] },
                         ""
