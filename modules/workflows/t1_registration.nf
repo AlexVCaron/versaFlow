@@ -678,24 +678,27 @@ workflow t1_mask_to_b0 {
         bet_mask(extract_target_b0.out.b0, "preprocess", "false", "")
         dwi_mask_channel = bet_mask.out.mask
 
-        mask_target_b0(extract_target_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
+        //mask_target_b0(extract_target_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         compute_target_pdavg(dwi_channel.map{ it[0..2] }.map{ it + ["", ""] }, "preprocess", "false")
-        mask_target_pdavg(compute_target_pdavg.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
+        //mask_target_pdavg(compute_target_pdavg.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
 
-        mask_moving_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
+        //mask_moving_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
 
-        target_channel = mask_target_b0.out.image
-            .join(mask_target_pdavg.out.image)
+        target_channel = extract_target_b0.out.b0
+            .join(compute_target_pdavg.out.image)
             .map{ [it[0], it[1..-1]] }
-        moving_channel = mask_moving_t1.out.image
+        moving_channel = t1_channel
             .map{ [it[0], [it[1]]] }
+        mask_channel = bet_mask.out.mask
+            .join(t1_mask_channel)
+            .map{ [it[0], it[1..-1]] }
 
         t1_to_b0_registration_wkf(
             target_channel,
             moving_channel,
             null,
-            null,
+            mask_channel,
             null,
             null,
             "",
