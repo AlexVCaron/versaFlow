@@ -29,15 +29,15 @@ c.N4BiasCorrectionConfiguration.filter_width = 0.60
 
 c.N4BiasCorrectionConfiguration.spline_order = 3
 
-c.N4BiasCorrectionConfiguration.nvox_between_knots = 10.0
+c.N4BiasCorrectionConfiguration.nvox_between_knots = 5.0
 
-c.N4BiasCorrectionConfiguration.iterations = [300, 300, 300, 150, 70]
+c.N4BiasCorrectionConfiguration.iterations = [300, 300, 150, 70]
 
 c.N4BiasCorrectionConfiguration.noise = 0.01
 
 c.N4BiasCorrectionConfiguration.rescale = True
 
-c.N4BiasCorrectionConfiguration.shrink = 2
+c.N4BiasCorrectionConfiguration.shrink = 4
 
 c.N4BiasCorrectionConfiguration.threshold = 1E-8
 
