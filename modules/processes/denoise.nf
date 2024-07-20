@@ -109,8 +109,7 @@ process ants_gaussian_denoise {
 process n4_denoise {
 
 label "N4_CORRECTION"
-// label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
-cpus 20
+label params.conservative_resources ? "res_conservative_cpu" : "res_max_cpu"
 
 publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
 publishDir "${params.output_root}/${sid}", saveAs: {
@@ -170,22 +169,7 @@ export ANTS_RANDOM_SEED=$params.random_seed
 
 $before_denoise
 
-python3 - << ENDSCRIPT
-
-import nibabel as nib
-import numpy as np
-
-img = nib.load("$in_img")
-mask = nib.load("mask_for_n4.nii.gz")
-m = img.get_fdata()[mask.get_fdata().astype(bool)].max()
-with open("max.txt", "w+") as f:
-    f.write(f"{np.ceil(m).astype(int):d}\\n")
-
-ENDSCRIPT
-
-ImageMath 3 input.nii.gz RescaleImage $in_img 1 \$(cat max.txt)
-
-mrhardi n4 --in input.nii.gz $args \
+mrhardi n4 --in $in_img $args \
     --out n4denoise \
     --config $config
 $after_denoise
