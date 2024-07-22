@@ -637,7 +637,7 @@ workflow preprocess_wkf {
                     n4_denoise_t1_to_b0_wkf(
                         existing_t1_mask_id_channel.join(epi_corrected_dwi_channel.map{ it[0..1] }),
                         existing_t1_mask_id_channel.join(b0_channel),
-                        existing_t1_mask_id_channel.join(dwi_mask_channel),
+                        Channel.empty(),
                         existing_t1_mask_id_channel.join(epi_corrected_meta_channel),
                         params.dwi_n4_normalization_quick_config,
                         false
@@ -735,7 +735,7 @@ workflow preprocess_wkf {
                 n4_denoise_wkf(
                     dwi_channel.map{ it[0..1] },
                     b0_channel,
-                    dwi_mask_channel,
+                    Channel.empty(),
                     meta_channel,
                     params.dwi_n4_normalization_config,
                     true

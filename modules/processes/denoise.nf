@@ -131,13 +131,13 @@ script:
 def before_denoise =""
 def after_denoise = ""
 def args = ""
-def in_img = "$image"
 if ( anat.empty() ) {
+    before_denoise += "fslmaths $image -thr 0 image4n4.nii.gz\n"
     after_denoise += "mv n4denoise_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
 }
 else {
     args += "--apply $image"
-    in_img = "$anat"
+    before_denoise += "fslmaths $anat -thr 0 image4n4.nii.gz\n"
     after_denoise += "mv tmp_n4denoised_bias_field.nii.gz ${image.simpleName}_n4_bias_field.nii.gz\n"
 }
 
@@ -169,7 +169,7 @@ export ANTS_RANDOM_SEED=$params.random_seed
 
 $before_denoise
 
-mrhardi n4 --in $in_img $args \
+mrhardi n4 --in image4n4.nii.gz $args \
     --out n4denoise \
     --config $config
 $after_denoise
