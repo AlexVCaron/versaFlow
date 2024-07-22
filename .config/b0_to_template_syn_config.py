@@ -45,9 +45,9 @@ c.AntsConfiguration.passes = [{
     "metrics": [
         {
             "target_index": 0,
-            "moving_index": 1,
+            "moving_index": 0,
             "args": [
-                0.75,
+                0.65,
                 64,
                 "Regular",
                 1.
@@ -56,9 +56,21 @@ c.AntsConfiguration.passes = [{
         },
         {
             "target_index": 0,
+            "moving_index": 1,
+            "args": [
+                0.15,
+                64,
+                "Regular",
+                1.,
+                True
+            ],
+            "klass": "mrHARDI.traits.ants.MetricMI"
+        },
+        {
+            "target_index": 0,
             "moving_index": 2,
             "args": [
-                0.25,
+                0.20,
                 4,
                 "Regular",
                 1.
