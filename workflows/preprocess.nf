@@ -766,6 +766,7 @@ workflow preprocess_wkf {
                     .map{ it[0..1] + [""] },
                 "",
                 false, "", "",
+                true,
                 params.b02t1_mask_registration_config,
                 null
             )

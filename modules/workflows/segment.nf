@@ -139,6 +139,7 @@ workflow segment_nmt_wkf {
                 "segmentation",
                 false,
                 "", "",
+                false,
                 params.segmentation_registration_config,
                 params.ants_transform_segmentation_config
             )
@@ -341,6 +342,7 @@ workflow segment_wm_wkf {
             "segmentation",
             true,
             "", "",
+            false,
             params.segmentation_registration_config,
             params.ants_transform_segmentation_config
         )

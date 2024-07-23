@@ -49,10 +49,21 @@ c.AntsConfiguration.passes = [{
     "klass": "mrHARDI.traits.ants.AntsRigid",
     "metrics": [
         {
+            "target_index": 0,
+            "moving_index": 0,
+            "args": [
+                0.75,
+                128,
+                "Regular",
+                1.0
+            ],
+            "klass": "mrHARDI.traits.ants.MetricMI"
+        },
+        {
             "target_index": 1,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.25,
                 128,
                 "Regular",
                 1.0,
@@ -81,10 +92,21 @@ c.AntsConfiguration.passes = [{
     "klass": "mrHARDI.traits.ants.AntsAffine",
     "metrics": [
         {
+            "target_index": 0,
+            "moving_index": 0,
+            "args": [
+                0.75,
+                128,
+                "Regular",
+                1.0
+            ],
+            "klass": "mrHARDI.traits.ants.MetricMI"
+        },
+        {
             "target_index": 1,
             "moving_index": 0,
             "args": [
-                1.0,
+                0.25,
                 128,
                 "Regular",
                 1.0,

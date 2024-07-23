@@ -83,6 +83,7 @@ workflow registration_wkf {
         publish
         publish_suffix
         trans_publish_suffix
+        register_without_masks
         registration_parameters
         transformation_parameters
     main:
@@ -96,6 +97,7 @@ workflow registration_wkf {
         into_register = join_optional(into_register, mask_channel)
         ants_register(
             join_optional(into_register, reg_metadata),
+            register_without_masks,
             "preprocess",
             additional_publish_path,
             publish, publish_suffix,

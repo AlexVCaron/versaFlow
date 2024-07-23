@@ -86,7 +86,8 @@ include {
     rename_sequentially as reorder_template_to_b0;
     rename_sequentially as reorder_b0_to_template;
     rename_sequentially as reorder_t1_to_b0;
-    rename_sequentially as reorder_b0_to_t1
+    rename_sequentially as reorder_b0_to_t1;
+    change_name as rename_reference_mask;
 } from "../processes/io.nf"
 
 params.use_quick = false
@@ -382,6 +383,7 @@ workflow t1_to_b0_affine {
             false,
             "",
             "",
+            true,
             t1_affine_config,
             params.ants_transform_mask_config
         )
@@ -397,6 +399,7 @@ workflow t1_to_b0_affine {
             false,
             "",
             "",
+            true,
             b0_affine_config,
             params.ants_transform_mask_config
         )
@@ -531,16 +534,19 @@ workflow t1_to_b0_syn {
             false,
             "",
             "",
+            false,
             t1_syn_config,
             params.ants_transform_mask_config
         )
+
+        dwi_mask_channel = rename_reference_mask(dilated_reference_mask_channel, "dwi_mask")
 
         b0_to_reference_syn(
             reference_fixed_channel,
             b0_moving_channel,
             dwi_mask_channel,
             dilated_reference_mask_channel
-                .join(difference_masks.out.mask)
+                .join(dwi_mask_channel)
                 .map{ [it[0], it[1..-1]] },
             null,
             null,
@@ -548,6 +554,7 @@ workflow t1_to_b0_syn {
             false,
             "",
             "",
+            true,
             b0_syn_config,
             params.ants_transform_mask_config
         )
@@ -578,6 +585,7 @@ workflow t1_to_b0_syn {
             false,
             "",
             "",
+            true,
             t1_to_b0_syn_config,
             params.ants_transform_mask_config
         )
@@ -705,6 +713,7 @@ workflow t1_mask_to_b0 {
             false,
             "",
             "",
+            true,
             params.t1_to_b0_registration_config,
             ""
         )

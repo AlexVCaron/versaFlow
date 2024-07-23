@@ -18,6 +18,7 @@ process ants_register {
 
     input:
         tuple val(sid), path(moving), path(target), val(reference), file(mask), file(metadata)
+        val(register_without_masks)
         val(caller_name)
         val(additional_publish_path)
         val(publish)
@@ -35,7 +36,8 @@ process ants_register {
         def after_cmd = ""
         def tg = []
         def mv = []
-        if ( !mask.iterator().inject(false) { c, i -> c || i.empty() } ) {
+        def has_masks = mask.iterator().inject(false) { c, i -> c || i.empty() }
+        if ( !(register_without_masks && has_masks) ) {
             mask_arg = "--mask ${mask.iterator().collect{ it.name }.join(',')}"
         }
         if ( mask.size() == 2 ) {
