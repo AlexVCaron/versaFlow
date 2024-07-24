@@ -152,6 +152,7 @@ include {
 params.gaussian_noise_correction = true
 params.gibbs_ringing_correction = true
 params.dwi_mask_from_t1_mask = true
+params.dwi_use_native_t1_mask = false
 params.epi_correction = true
 params.epi_algorithm = "topup"
 params.eddy_correction = true
@@ -624,7 +625,20 @@ workflow preprocess_wkf {
 
             // Get better mask for the DWI from the T1 (when missing and if present)
             if ( params.dwi_mask_from_t1_mask ) {
-                if ( params.register_t1_to_dwi ){
+                if ( params.dwi_use_native_t1_mask )
+                {
+                    identity(
+                        t1_mask_channel
+                            .join(b0_channel)
+                            .map{ it + [""] },
+                        "preprocess",
+                        "", false, "dwi_mask",
+                        0, "uchar", "NearestNeighbor",
+                        params.ants_transform_base_config
+                    )
+                    dwi_mask_channel = identity.out.image
+                }
+                else if ( !params.register_t1_to_dwi ) {
                     existing_t1_mask_id_channel = exclude_missing_datapoints(
                         t1_mask_channel,
                         1, ""
@@ -659,19 +673,6 @@ workflow preprocess_wkf {
 
                     dwi_mask_channel = t1_mask_convert_datatype.out.image
                         .mix(absent_t1_mask_id_channel.join(dwi_mask_channel))
-                }
-                else
-                {
-                    identity(
-                        t1_mask_channel
-                            .join(b0_channel)
-                            .map{ it + [""] },
-                        "preprocess",
-                        "", false, "dwi_mask",
-                        0, "uchar", "NearestNeighbor",
-                        params.ants_transform_base_config
-                    )
-                    dwi_mask_channel = identity.out.image
                 }
             }
 
