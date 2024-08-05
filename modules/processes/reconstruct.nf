@@ -256,7 +256,7 @@ process scilpy_csd {
         mrhardi sh_order --bvals $bval --bvecs $bvec --out sh_order.txt $args
         scil_compute_ssst_fodf.py $dwi $bval $bvec $response ${sid}_fodf.nii.gz \
             --mask mask4scil.nii.gz \
-            --force_b0_threshold \
+            --skip_b0_check \
             --sh_order \$(cat sh_order.txt) \
             --processes $task.cpus
         """
@@ -294,7 +294,7 @@ process scilpy_msmt_csd {
             --vf ${sid}_vf.nii.gz \
             --vf_rgb ${sid}_vf_rgb.nii.gz \
             --mask mask4scil.nii.gz \
-            --force_b0_threshold \
+            --skip_b0_check \
             --sh_order \$(cat sh_order.txt) \
             --processes $task.cpus
         """

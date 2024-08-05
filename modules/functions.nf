@@ -205,7 +205,7 @@ def is_path_list ( pth ) {
 
 def collect_paths ( data_channel ) {
     return data_channel.map{
-        [it[0], (it.size() > 2 ? it[1..-1] : [it[1]] ).findAll{ it }]
+        [it[0], (it.size() > 2 ? it[1..-1] : [it[1]].flatten() ).findAll{ it }]
     }
 }
 

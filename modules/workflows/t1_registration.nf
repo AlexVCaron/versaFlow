@@ -72,9 +72,9 @@ include {
 } from '../processes/utils.nf'
 include {
     resampling_reference;
-    scilpy_resample_to_reference as resample_template;
-    scilpy_resample_to_reference as resample_dilated_mask;
-    scilpy_resample_to_reference as resample_whole_mask
+    scilpy_resample as resample_template;
+    scilpy_resample as resample_dilated_mask;
+    scilpy_resample as resample_whole_mask
 } from '../processes/upsample.nf'
 include {
     get_data_path;
@@ -86,7 +86,8 @@ include {
     rename_sequentially as reorder_template_to_b0;
     rename_sequentially as reorder_b0_to_template;
     rename_sequentially as reorder_t1_to_b0;
-    rename_sequentially as reorder_b0_to_t1
+    rename_sequentially as reorder_b0_to_t1;
+    change_name as rename_reference_mask;
 } from "../processes/io.nf"
 
 params.use_quick = false
@@ -145,10 +146,7 @@ workflow t12b0_registration {
         }
         else {
             resampling_reference(
-                dwi_channel
-                    .map{ it[0..1] }
-                    .join(t1_channel)
-                    .join(template_channel)
+                t1_channel
                     .map{ [it[0], it[1..-1]] },
                 "preprocess",
                 params.resampling_subdivision,
@@ -160,32 +158,27 @@ workflow t12b0_registration {
 
         resample_template(
             template_channel
-                .join(registration_reference)
-                .join(template_mask_channel)
-                .map{ it + [""] },
+                .map{ it + ["", "", ""] },
             "preprocess",
-            "lin",
-            false,
+            "lin", "", "",
             false,
             "", ""
         )
         resample_dilated_mask(
             template_dilated_mask_channel
-                .join(registration_reference)
-                .map{ it + ["", ""] },
+                .map{ it + ["", ""] }
+                .join(resample_template.out.image),
             "preprocess",
-            "nn",
-            false,
+            "nn", "0", "NearestNeighbor",
             false,
             "", ""
         )
         resample_whole_mask(
             template_whole_mask_channel
-                .join(registration_reference)
-                .map{ it + ["", ""] },
+                .map{ it + ["", ""] }
+                .join(resample_template.out.image),
             "preprocess",
-            "nn",
-            false,
+            "nn", "0", "NearestNeighbor",
             false,
             "", ""
         )
@@ -390,6 +383,7 @@ workflow t1_to_b0_affine {
             false,
             "",
             "",
+            true,
             t1_affine_config,
             params.ants_transform_mask_config
         )
@@ -405,6 +399,7 @@ workflow t1_to_b0_affine {
             false,
             "",
             "",
+            true,
             b0_affine_config,
             params.ants_transform_mask_config
         )
@@ -539,16 +534,19 @@ workflow t1_to_b0_syn {
             false,
             "",
             "",
+            false,
             t1_syn_config,
             params.ants_transform_mask_config
         )
+
+        dwi_mask_channel = rename_reference_mask(dilated_reference_mask_channel, "dwi_mask")
 
         b0_to_reference_syn(
             reference_fixed_channel,
             b0_moving_channel,
             dwi_mask_channel,
             dilated_reference_mask_channel
-                .join(difference_masks.out.mask)
+                .join(dwi_mask_channel)
                 .map{ [it[0], it[1..-1]] },
             null,
             null,
@@ -556,6 +554,7 @@ workflow t1_to_b0_syn {
             false,
             "",
             "",
+            true,
             b0_syn_config,
             params.ants_transform_mask_config
         )
@@ -586,6 +585,7 @@ workflow t1_to_b0_syn {
             false,
             "",
             "",
+            true,
             t1_to_b0_syn_config,
             params.ants_transform_mask_config
         )
@@ -686,30 +686,34 @@ workflow t1_mask_to_b0 {
         bet_mask(extract_target_b0.out.b0, "preprocess", "false", "")
         dwi_mask_channel = bet_mask.out.mask
 
-        mask_target_b0(extract_target_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
+        //mask_target_b0(extract_target_b0.out.b0.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
 
         compute_target_pdavg(dwi_channel.map{ it[0..2] }.map{ it + ["", ""] }, "preprocess", "false")
-        mask_target_pdavg(compute_target_pdavg.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
+        //mask_target_pdavg(compute_target_pdavg.out.image.join(dwi_mask_channel).map{ it + [""] }, "preprocess", "false")
 
-        mask_moving_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
+        //mask_moving_t1(t1_channel.join(t1_mask_channel).map{ it + [""] }, "preprocess", "false")
 
-        target_channel = mask_target_b0.out.image
-            .join(mask_target_pdavg.out.image)
+        target_channel = extract_target_b0.out.b0
+            .join(compute_target_pdavg.out.image)
             .map{ [it[0], it[1..-1]] }
-        moving_channel = mask_moving_t1.out.image
+        moving_channel = t1_channel
             .map{ [it[0], [it[1]]] }
+        mask_channel = bet_mask.out.mask
+            .join(t1_mask_channel)
+            .map{ [it[0], it[1..-1]] }
 
         t1_to_b0_registration_wkf(
             target_channel,
             moving_channel,
             null,
-            null,
+            mask_channel,
             null,
             null,
             "",
             false,
             "",
             "",
+            true,
             params.t1_to_b0_registration_config,
             ""
         )
