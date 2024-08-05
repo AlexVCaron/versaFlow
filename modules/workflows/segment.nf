@@ -23,15 +23,16 @@ include {
 include {
     resampling_reference;
     resampling_reference as resampling_reference_fa;
-    scilpy_resample_to_reference as resample_template;
-    scilpy_resample_to_reference as resample_segmentation;
-    scilpy_resample_to_reference as resample_segmentation_pre_transform;
+    scilpy_resample as resample_template;
+    scilpy_resample as resample_template_mask;
+    scilpy_resample as resample_segmentation;
+    scilpy_resample as resample_segmentation_pre_transform;
     scilpy_resample_to_reference as resample_template_fa;
     scilpy_resample_to_reference as resample_wm_atlas;
-    scilpy_resample_to_reference as resample_d99;
-    scilpy_resample_to_reference as resample_charm;
-    scilpy_resample_to_reference as resample_sarm;
-    scilpy_resample_to_reference as resample_inia19
+    scilpy_resample as resample_d99;
+    scilpy_resample as resample_charm;
+    scilpy_resample as resample_sarm;
+    scilpy_resample as resample_inia19
 } from '../processes/upsample.nf'
 include {
     ants_transform as transform_d99;
@@ -70,11 +71,10 @@ workflow segment_nmt_wkf {
         if ( template_to_t1_transform && template_resampling_reference ) {
             resample_segmentation_pre_transform(
                 segmentation_channel
-                    .join(template_resampling_reference)
-                    .map{ it + ["", ""] },
+                    .map{ it + ["", ""] }
+                    .join(template_resampling_reference),
                 "segmentation",
-                "nn",
-                false,
+                "nn", "0", "NearestNeighbor",
                 false,
                 "", ""
             )
@@ -96,7 +96,7 @@ workflow segment_nmt_wkf {
             template_mask_channel = prepend_sid_template_mask(t1_channel.map{ [it[0], file("${params.tissue_segmentation_root}/tissue_segmentation_mask_whole_no_bv.nii.gz")] })
 
             resampling_reference(
-                t1_channel.join(template_channel).map{ [it[0], it[1..-1]] },
+                t1_channel.map{ [it[0], it[1..-1]] },
                 "segmentation",
                 params.resampling_subdivision,
                 params.resampling_min_resolution,
@@ -104,22 +104,27 @@ workflow segment_nmt_wkf {
             )
             resample_template(
                 template_channel
-                    .join(resampling_reference.out.reference)
-                    .join(template_mask_channel)
-                    .map{ it + [""] },
+                    .map{ it + ["", "", ""] },
                 "segmentation",
-                "lin",
+                "lin", "", "",
                 false,
+                "", ""
+            )
+            resample_template_mask(
+                template_mask_channel
+                    .map{ it + ["", ""] }
+                    .join(resample_template.out.image),
+                "segmentation",
+                "lin", "0", "NearestNeighbor",
                 false,
                 "", ""
             )
             resample_segmentation(
                 segmentation_channel
-                    .join(resampling_reference.out.reference)
-                    .map{ it + ["", ""] },
+                    .map{ it + ["", ""] }
+                    .join(resample_template.out.image),
                 "segmentation",
-                "nn",
-                false,
+                "nn", "0", "NearestNeighbor",
                 false,
                 "", ""
             )
@@ -128,12 +133,13 @@ workflow segment_nmt_wkf {
                 t1_channel.map{ [it[0], [it[1]]] },
                 resample_template.out.image.map{ [it[0], [it[1]]] },
                 resample_segmentation.out.image.map{ [it[0], [it[1]]] },
-                mask_channel.join(resample_template.out.mask).map{ [it[0], [it[1]]] },
+                mask_channel.join(resample_template_mask.out.mask).map{ [it[0], [it[1]]] },
                 null,
                 null,
                 "segmentation",
                 false,
                 "", "",
+                false,
                 params.segmentation_registration_config,
                 params.ants_transform_segmentation_config
             )
@@ -148,6 +154,7 @@ workflow segment_nmt_wkf {
             atropos.out.vol_fractions
                 .map{ [it[0], it[1].sort{ a, b -> params.segmentation_classes.findIndexOf{ i -> a.simpleName.contains("_$i") } <=> params.segmentation_classes.findIndexOf{ i -> b.simpleName.contains("_$i") } }] }
                 .join(mask_channel),
+            params.segmentation_classes,
             "segmentation",
             "segmentation"
         )
@@ -186,11 +193,9 @@ workflow transform_atlases_wkf {
             
             resample_d99(
                 d99_channel
-                    .join(template_resampling_reference)
-                    .map{ it + ["", ""] },
+                    .map{ it + ["", "", ""] },
                 "segmentation",
-                "nn",
-                false,
+                "nn", "", "",
                 false,
                 "", ""
             )
@@ -213,11 +218,9 @@ workflow transform_atlases_wkf {
             
             resample_charm(
                 charm_channel
-                    .join(template_resampling_reference)
-                    .map{ it + ["", ""] },
+                    .map{ it + ["", "", ""] },
                 "segmentation",
-                "nn",
-                false,
+                "nn", "", "",
                 false,
                 "", ""
             )
@@ -240,11 +243,9 @@ workflow transform_atlases_wkf {
             
             resample_sarm(
                 sarm_channel
-                    .join(template_resampling_reference)
-                    .map{ it + ["", ""] },
+                    .map{ it + ["", "", ""] },
                 "segmentation",
-                "nn",
-                false,
+                "nn", "", "",
                 false,
                 "", ""
             )
@@ -267,11 +268,9 @@ workflow transform_atlases_wkf {
             
             resample_inia19(
                 inia19_channel
-                    .join(template_resampling_reference)
-                    .map{ it + ["", ""] },
+                    .map{ it + ["", "", ""] },
                 "segmentation",
-                "nn",
-                false,
+                "nn", "", "",
                 false,
                 "", ""
             )
@@ -343,6 +342,7 @@ workflow segment_wm_wkf {
             "segmentation",
             true,
             "", "",
+            false,
             params.segmentation_registration_config,
             params.ants_transform_segmentation_config
         )

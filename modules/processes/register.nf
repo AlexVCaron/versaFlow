@@ -18,6 +18,7 @@ process ants_register {
 
     input:
         tuple val(sid), path(moving), path(target), val(reference), file(mask), file(metadata)
+        val(register_without_masks)
         val(caller_name)
         val(additional_publish_path)
         val(publish)
@@ -31,19 +32,47 @@ process ants_register {
         tuple val(sid), path("${moving[0].simpleName}__registration_warped_metadata.*"), optional: true, emit: metadata
     script:
         def mask_arg = ""
-        if ( !mask.iterator().inject(false) { c, i -> c || i.empty() } ) {
+        def before_cmd = ""
+        def after_cmd = ""
+        def tg = []
+        def mv = []
+        def has_masks = mask.iterator().inject(false) { c, i -> c || i.empty() }
+        if ( !(register_without_masks && has_masks) ) {
             mask_arg = "--mask ${mask.iterator().collect{ it.name }.join(',')}"
         }
-
+        if ( mask.size() == 2 ) {
+            def i = 0
+            before_cmd += "cp ${file(reference).name} reference.nii.gz\n"
+            before_cmd += "scil_volume_crop.py ${mask[0]} m.nii.gz --output_bbox bbox.nii.gz -f\n"
+            for (f in target) {
+                before_cmd += "scil_volume_crop.py $f target${i}.nii.gz --input_bbox bbox.nii.gz -f\n"
+                tg += ["target${i}.nii.gz"]
+                i += 1
+            }
+            before_cmd += "scil_volume_crop.py ${mask[1]} m.nii.gz --output_bbox bbox.nii.gz -f\n"
+            i = 0
+            for (f in moving) {
+                before_cmd += "scil_volume_crop.py $f moving${i}.nii.gz --input_bbox bbox.nii.gz -f\n"
+                mv += ["moving${i}.nii.gz"]
+                i += 1
+            }
+            after_cmd += "cp reference.nii.gz ${moving[0].simpleName}__registration_ref.nii.gz\n"
+        }
+        else {
+            tg = target
+            mv = moving
+        }
         """
         export OMP_NUM_THREADS=$task.cpus
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
 
+        $before_cmd
+
         mrhardi ants_registration \
-            --moving ${moving.join(",")} \
-            --target ${target.join(",")} \
+            --moving ${mv.join(",")} \
+            --target ${tg.join(",")} \
             --out ${moving[0].simpleName}__registration $mask_arg \
             ${params.verbose_outputs ? "--verbose" : ""} \
             --config $config
@@ -88,7 +117,9 @@ process ants_register {
                 break
             fi
         done
-            
+
+        $after_cmd
+
         """
 }
 
@@ -152,6 +183,37 @@ process ants_transform {
         export OPENBLAS_NUM_THREADS=1
         export ANTS_RANDOM_SEED=$params.random_seed
         mrhardi ants_transform $args --out ${img.simpleName}__transformed --config $config
+        """
+}
+
+process identity {
+    label "FAST"
+    label "res_single_cpu"
+
+    publishDir "${params.output_root}/all/${sid}/$caller_name/${task.process.replaceAll(":", "/")}", mode: "$params.publish_all_mode", enabled: params.publish_all, overwrite: true
+    publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> ("$publish" == "true") ? f.contains("metadata") ? null : publish_suffix ? "${sid}_${publish_suffix}.nii.gz" : remove_alg_suffixes(f) : null }, mode: params.publish_mode, overwrite: true
+
+    input:
+        tuple val(sid), path(img), path(ref), file(metadata)
+        val(caller_name)
+        val(additional_publish_path)
+        val(publish)
+        val(publish_suffix)
+        val(intype)
+        val(outype)
+        val(interp)
+        path(config)
+    output:
+        tuple val(sid), path("${img.simpleName}__transformed.nii.gz"), emit: image
+        tuple val(sid), path("${img.simpleName}__transformed.bvec"), optional: true, emit: bvec
+        tuple val(sid), path("${img.simpleName}__transformed_metadata.*"), optional: true, emit: metadata
+    script:
+        """
+        export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
+        export OMP_NUM_THREADS=1
+        export OPENBLAS_NUM_THREADS=1
+        export ANTS_RANDOM_SEED=$params.random_seed
+        antsApplyTransforms -e $intype -u $outype -n $interp -t identity -i $img -r $ref -o ${img.simpleName}__transformed.nii.gz
         """
 }
 

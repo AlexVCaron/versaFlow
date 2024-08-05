@@ -17,9 +17,11 @@ process scilpy_resample {
     publishDir "${["${params.output_root}/${sid}", additional_publish_path].findAll({ it }).join("/")}", saveAs: { f -> f.contains("metadata") ? null : f.contains("${mask.simpleName}") ? ("$publish_mask" == "true") ? mask_prefix ? "${sid}_${mask_prefix}.nii.gz" : remove_alg_suffixes(f) : null : remove_alg_suffixes(f) }, mode: params.publish_mode, overwrite: true
 
     input:
-        tuple val(sid), path(image), file(mask), file(metadata)
+        tuple val(sid), path(image), file(mask), file(metadata), file(reference)
         val(caller_name)
         val(interpolation)
+        val(antstype)
+        val(antsinterp)
         val(publish_mask)
         val(mask_prefix)
         val(additional_publish_path)
@@ -35,6 +37,9 @@ process scilpy_resample {
         }
         if ( !metadata.empty() )
             after_script += "mrhardi metadata --in ${image.getSimpleName()}__resampled.nii.gz --update_affine --metadata $metadata\n"
+        if ( !reference.empty() ) {
+            after_script += "antsApplyTransforms -v -d 3 -e $antstype -n $antsinterp -r $reference -i ${image.simpleName}__resampled.nii.gz -o ${image.simpleName}__resampled.nii.gz -t identity\n"
+        }
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
@@ -71,7 +76,7 @@ process scilpy_resample_to_reference {
     script:
         def after_script = ""
         if ( !mask.empty() ) {
-            after_script += "scil_resample_volume.py $mask mask_resampled.nii.gz --ref $reference --interp nn\n"
+            after_script += "scil_resample_volume.py $mask mask_resampled.nii.gz --ref $reference --interp nn --enforce_dimensions\n"
             after_script += "scil_image_math.py floor mask_resampled.nii.gz ${mask.getSimpleName()}__resampled.nii.gz --data_type uint8 -f\n"
         }
         if ( !metadata.empty() )
@@ -80,7 +85,7 @@ process scilpy_resample_to_reference {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_resample_volume.py $image resampled.nii.gz --ref $reference --interp $interpolation
+        scil_resample_volume.py $image resampled.nii.gz --ref $reference --interp $interpolation --enforce_dimensions
         fslmaths resampled.nii.gz -thr 0 ${image.simpleName}__resampled.nii.gz
         if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}__resampled.nii.gz)" ]
         then

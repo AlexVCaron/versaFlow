@@ -28,74 +28,74 @@ c.TopupConfiguration.interpolation = "spline"
 c.TopupConfiguration.klass = "mrHARDI.config.topup.TopupConfiguration"
 
 c.TopupConfiguration.passes = [{
-    "warp_resolution": 8.8,
-    "subsampling": 2,
-    "blur_fwhm": 3.5,
-    "n_iter": 100,
+    "warp_resolution": 25.1,
+    "subsampling": 4,
+    "blur_fwhm": 10,
+    "n_iter": 10,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 5E-3
 }, {
-    "warp_resolution": 7.1,
-    "subsampling": 2,
-    "blur_fwhm": 2.6,
-    "n_iter": 100,
+    "warp_resolution": 20.3,
+    "subsampling": 4,
+    "blur_fwhm": 7.4,
+    "n_iter": 10,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 1e-3
 }, {
-    "warp_resolution": 6.2,
-    "subsampling": 2,
-    "blur_fwhm": 1.8,
-    "n_iter": 100,
+    "warp_resolution": 17.7,
+    "subsampling": 4,
+    "blur_fwhm": 5.1,
+    "n_iter": 10,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 1e-4
 }, {
-    "warp_resolution": 5.3,
-    "subsampling": 2,
-    "blur_fwhm": 1.3,
-    "n_iter": 100,
+    "warp_resolution": 15.1,
+    "subsampling": 4,
+    "blur_fwhm": 3.7,
+    "n_iter": 10,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 1.5e-5
 }, {
-    "warp_resolution": 4.4,
+    "warp_resolution": 12.6,
     "subsampling": 2,
-    "blur_fwhm": 1.3,
-    "n_iter": 100,
+    "blur_fwhm": 3.7,
+    "n_iter": 15,
     "estimate_motion": 1,
     "minimizer": 0,
     "w_reg": 5e-6
 }, {
-    "warp_resolution": 2.7,
-    "subsampling": 1,
-    "blur_fwhm": 0.9,
-    "n_iter": 100,
+    "warp_resolution": 7.7,
+    "subsampling": 2,
+    "blur_fwhm": 2.6,
+    "n_iter": 15,
     "estimate_motion": 0,
     "minimizer": 1,
     "w_reg": 5e-7
 }, {
-    "warp_resolution": 1.7,
-    "subsampling": 1,
-    "blur_fwhm": 0.4,
-    "n_iter": 150,
+    "warp_resolution": 6.1,
+    "subsampling": 2,
+    "blur_fwhm": 1.1,
+    "n_iter": 20,
     "estimate_motion": 0,
     "minimizer": 1,
     "w_reg": 5e-8
 }, {
-    "warp_resolution": 1.7,
+    "warp_resolution": 6.1,
     "subsampling": 1,
     "blur_fwhm": 0.,
-    "n_iter": 200,
+    "n_iter": 20,
     "estimate_motion": 0,
     "minimizer": 1,
     "w_reg": 5e-10
 }, {
-    "warp_resolution": 1.5,
+    "warp_resolution": 6.1,
     "subsampling": 1,
     "blur_fwhm": 0.,
-    "n_iter": 400,
+    "n_iter": 40,
     "estimate_motion": 0,
     "minimizer": 1,
     "w_reg": 1e-11
@@ -105,7 +105,7 @@ c.TopupConfiguration.precision = "double"
 
 c.TopupConfiguration.reg_model = "bending_energy"
 
-c.TopupConfiguration.scale_intensities = False
+c.TopupConfiguration.scale_intensities = True
 
 c.TopupConfiguration.spl_order = "cubic"
 

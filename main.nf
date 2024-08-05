@@ -3,6 +3,10 @@
 nextflow.enable.dsl=2
 
 params.help = false
+params.preprocess_images = true
+params.reconstruct_diffusion = true
+params.measure_diffusion = true
+params.pft_tracking = true
 
 //include { print_channel } from "./modules/debug.nf" // For debugging purpose only
 include { load_dataset } from "./workflows/io.nf"
@@ -18,34 +22,40 @@ workflow {
         display_run_info()
         dataloader = load_dataset()
 
-        preprocess_wkf(
-            dataloader.dwi,
-            dataloader.rev,
-            dataloader.anat,
-            dataloader.pvf,
-            dataloader.metadata,
-            dataloader.rev_metadata,
-            dataloader.dwi_mask,
-            dataloader.anat_mask
-        )
+        if ( params.preprocess_images ) {
+            preprocess_wkf(
+                dataloader.dwi,
+                dataloader.rev,
+                dataloader.anat,
+                dataloader.pvf,
+                dataloader.metadata,
+                dataloader.rev_metadata,
+                dataloader.dwi_mask,
+                dataloader.anat_mask
+            )
+        }
 
-        reconstruct_wkf(
-            preprocess_wkf.out.dwi,
-            preprocess_wkf.out.mask,
-            preprocess_wkf.out.tissue_masks,
-            preprocess_wkf.out.safe_wm_mask,
-            preprocess_wkf.out.metadata
-        )
+        if ( params.reconstruct_diffusion || params.measure_diffusion || params.pft_tracking ) {
+            reconstruct_wkf(
+                preprocess_wkf.out.dwi,
+                preprocess_wkf.out.mask,
+                preprocess_wkf.out.tissue_masks,
+                preprocess_wkf.out.safe_wm_mask,
+                preprocess_wkf.out.metadata
+            )
+        }
 
-        measure_wkf(
-            preprocess_wkf.out.dwi,
-            preprocess_wkf.out.mask,
-            preprocess_wkf.out.tissue_masks,
-            reconstruct_wkf.out.csd,
-            reconstruct_wkf.out.diamond,
-            reconstruct_wkf.out.diamond_summary,
-            preprocess_wkf.out.metadata
-        )
+        if ( params.measure_diffusion || params.pft_tracking ) {
+            measure_wkf(
+                preprocess_wkf.out.dwi,
+                preprocess_wkf.out.mask,
+                preprocess_wkf.out.tissue_masks,
+                reconstruct_wkf.out.csd,
+                reconstruct_wkf.out.diamond,
+                reconstruct_wkf.out.diamond_summary,
+                preprocess_wkf.out.metadata
+            )
+        }
 
         if ( params.pft_tracking ) {
             tracking_wkf(reconstruct_wkf.out.csd, preprocess_wkf.out.pvf)

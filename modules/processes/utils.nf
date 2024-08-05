@@ -277,8 +277,8 @@ process check_dwi_conformity {
         """
 }
 
-def get_tissue_file (tissue_class, image_list) {
-    return image_list[params.segmentation_classes.indexOf(tissue_class)]
+def get_tissue_file (tissue_class, image_list, classes) {
+    return image_list[classes.indexOf(tissue_class)]
 }
 
 def pvf_space_to_masks ( sid, brain_mask ) {
@@ -327,6 +327,7 @@ process pvf_to_mask {
 
     input:
         tuple val(sid), path(pvf_images), path(brain_mask)
+        val(classes)
         val(caller_name)
         val(additional_publish_path)
     output:
@@ -335,8 +336,8 @@ process pvf_to_mask {
         tuple val(sid), path("${sid}_3t_{${params.tissue_masks_mapping.collect{ it.key }.join(',')}}_pvf.nii.gz"), emit: pvf_3t
     script:
         def map_initializer = params.tissue_masks_mapping.collect{ 
-            it.value.size() == 1 ? "cp ${get_tissue_file(it.value[0], pvf_images)} ${sid}_3t_${it.key}_pvf.nii.gz"
-                                 : "scil_image_math.py addition ${it.value.collect{ i -> get_tissue_file(i, pvf_images) }.join(' ')} ${sid}_3t_${it.key}_pvf.nii.gz --data_type float32 -f"
+            it.value.size() == 1 ? "cp ${get_tissue_file(it.value[0], pvf_images, classes)} ${sid}_3t_${it.key}_pvf.nii.gz"
+                                 : "scil_image_math.py addition ${it.value.collect{ i -> get_tissue_file(i, pvf_images, classes) }.join(' ')} ${sid}_3t_${it.key}_pvf.nii.gz --data_type float32 -f"
         }
         def safe_wm_initializer = params.tissue_masks_mapping.collect{ 
             compute_safe_maps(sid, it.key, dilation_factor = it.key == "csf" ? params.safe_csf_mask_dilation : it.key == "gm" ? params.safe_gm_mask_dilation : false)
@@ -744,7 +745,7 @@ process validate_gradients {
         tuple val(sid), path("${bvec.simpleName}__validated.bvec"), emit: bvecs
     script:
         def args = ""
-        if ( !mask.empty() ) args += " --mask $mask"
+        // if ( !mask.empty() ) args += " --mask $mask"
         if ( !peaks_vals.empty() ) args += " --peaks_vals $peaks_vals"
         """
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1

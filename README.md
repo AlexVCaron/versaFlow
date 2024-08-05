@@ -27,24 +27,20 @@ Frontiers in Neuroinformatics, 10.3389/fninf.2023.1191200, doi.org/10.3389/fninf
 To run the pipeline, the following tools must be installed :
 
 - [Nextflow](https://www.nextflow.io/docs/latest/getstarted.html) (we recommend installing the last available release of version 21)
-- [Singularity](https://docs.sylabs.io/guides/3.0/user-guide/installation.html) 3.7.1 or higher, or [Docker](https://docs.docker.com/engine/install/)
+- [Apptainer](https://apptainer.org/docs/admin/main/installation.html) 1.3.2 or higher, or [Docker](https://docs.docker.com/engine/install/) (we recommend [Docker Desktop](https://docs.docker.com/desktop/))
 
 ## Dependencies
 
-All dependencies required to run the pipeline have been packaged in singularity 
+All dependencies required to run the pipeline have been packaged in apptainer 
 and docker images. The `latest` versions come pre-packaged with the CUDA runtime 
 and require a Nvidia GPU to execute. For usage on a machine without a Nvidia GPU, 
 use the images tagged `nogpu`.
 
 - Docker : [Docker Hub](https://hub.docker.com/r/avcaron/versa)
   - `docker pull avcaron/versa:latest`
-- Singularity :
-  - Singularity images are no longer produced in house. To build your singularity, 
-    use a docker tag and the following command : `singularity build <image.sif> docker://avcaron/versa:<tag>`.
-  - Old versions of the singularity images can still be access through the ORAS 
-    container registry :
-    - Nvidia GPU  : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:latest`
-    - Without GPU : `singularity pull oras://mrhardi.azurecr.io/mrHARDI/mrhardi:nogpu`
+- Apptainer : apptainer images must be built locally, using the following command :
+  - `apptainer build <image.sif> docker://avcaron/versa:latest .`
+
 
 # Data input format
 
@@ -153,7 +149,7 @@ nextflow run \
 Additional parameters to this command can be supplied, such as :
 
 - Running with docker image : `-with-docker <docker image>`
-- Running with singularity image : `-with-singularity <singularity image>`
+- Running with apptainer image : `-with-apptainer <apptainer image>`
 - Changing output directory : `--output_root <output folder>`
 - Display help and usage : `--help`
 

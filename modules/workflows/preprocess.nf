@@ -83,6 +83,7 @@ workflow registration_wkf {
         publish
         publish_suffix
         trans_publish_suffix
+        register_without_masks
         registration_parameters
         transformation_parameters
     main:
@@ -96,6 +97,7 @@ workflow registration_wkf {
         into_register = join_optional(into_register, mask_channel)
         ants_register(
             join_optional(into_register, reg_metadata),
+            register_without_masks,
             "preprocess",
             additional_publish_path,
             publish, publish_suffix,
@@ -185,17 +187,6 @@ workflow epi_correction_wkf {
             .join(rev_b0_metadata)
             .map{ [it[0], it[1..-1]] }
 
-        ec_align_b0_wkf(
-            b0_channel,
-            reverse_b0_channel,
-            b0_metadata,
-            rev_b0_metadata
-        )
-
-        b0_channel = ec_align_b0_wkf.out.b0
-        reverse_b0_channel = ec_align_b0_wkf.out.rev_b0
-        b0_meta_with_reverse_channel = ec_align_b0_wkf.out.metadata
-
         acq_channel = dwi_with_reverse_channel
             .map{ [it[0], [it[2]]] }
             .join(existing_rev.map{ [it[0], [it[2]]] })
@@ -216,7 +207,7 @@ workflow epi_correction_wkf {
 
         metadata_channel = ec_concatenate_b0.out.metadata
             .join(meta_with_reverse_channel)
-            .join(b0_meta_with_reverse_channel)
+            .join(b0_metadata.map{ [it[0], it[1..-1]] })
             .map{ [it[0], [it[1]] + it[2] + it[3]] }
 
         generate_b0_bval(
@@ -296,9 +287,6 @@ workflow epi_correction_wkf {
         excluded_dwi_metadata = excluded_indexes
             .join(metadata_channel)
             .map{ it[0..1] }
-        forward_transform = ec_align_b0_wkf.out.b0_transform
-        reverse_transform = ec_align_b0_wkf.out.rev_transform
-        transform_reference = ec_align_b0_wkf.out.reference
 }
 
 workflow ec_align_b0_wkf {
