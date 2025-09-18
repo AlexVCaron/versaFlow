@@ -210,7 +210,7 @@ process tournier2descoteaux_odf {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
-        scil_convert_sh_basis.py $odfs ${odfs.simpleName}_desc07_odf.nii.gz tournier07
+        scil_sh_convert.py $odfs ${odfs.simpleName}_desc07_odf.nii.gz tournier07
         """
 }
 
@@ -232,7 +232,7 @@ process convert_float_to_integer {
         tuple val(sid), path("${image.simpleName}__uint8.nii.gz"), emit: image
     script:
         """
-        scil_image_math.py floor $image ${image.simpleName}__${datatype}.nii.gz -f --data_type $datatype
+        scil_volume_math.py floor $image ${image.simpleName}__${datatype}.nii.gz -f --data_type $datatype
         """
 }
 
@@ -311,9 +311,9 @@ END_SCRIPT
 def compute_safe_maps (sid, tissue_class, dilation_factor) {
     def commands = []
 
-    commands +="scil_image_math.py lower_threshold_eq ${sid}_3t_${tissue_class}_pvf.nii.gz $params.min_pvf_threshold ${tissue_class}_safe_map.nii.gz --data_type uint8 -f"
+    commands +="scil_volume_math.py lower_threshold_eq ${sid}_3t_${tissue_class}_pvf.nii.gz $params.min_pvf_threshold ${tissue_class}_safe_map.nii.gz --data_type uint8 -f"
     if ( dilation_factor )
-        commands += "scil_image_math.py dilation ${tissue_class}_safe_map.nii.gz $dilation_factor ${tissue_class}_safe_map.nii.gz --data_type uint8 -f"
+        commands += "scil_volume_math.py dilation ${tissue_class}_safe_map.nii.gz $dilation_factor ${tissue_class}_safe_map.nii.gz --data_type uint8 -f"
 
     return commands.join("\n")
 }
@@ -337,7 +337,7 @@ process pvf_to_mask {
     script:
         def map_initializer = params.tissue_masks_mapping.collect{ 
             it.value.size() == 1 ? "cp ${get_tissue_file(it.value[0], pvf_images, classes)} ${sid}_3t_${it.key}_pvf.nii.gz"
-                                 : "scil_image_math.py addition ${it.value.collect{ i -> get_tissue_file(i, pvf_images, classes) }.join(' ')} ${sid}_3t_${it.key}_pvf.nii.gz --data_type float32 -f"
+                                 : "scil_volume_math.py addition ${it.value.collect{ i -> get_tissue_file(i, pvf_images, classes) }.join(' ')} ${sid}_3t_${it.key}_pvf.nii.gz --data_type float32 -f"
         }
         def safe_wm_initializer = params.tissue_masks_mapping.collect{ 
             compute_safe_maps(sid, it.key, dilation_factor = it.key == "csf" ? params.safe_csf_mask_dilation : it.key == "gm" ? params.safe_gm_mask_dilation : false)
@@ -349,9 +349,9 @@ process pvf_to_mask {
 
         ${safe_wm_initializer.join("\n")}
 
-        scil_image_math.py difference ${sid}_wm_mask.nii.gz csf_safe_map.nii.gz ${sid}_safe_wm_mask.nii.gz
-        scil_image_math.py difference ${sid}_safe_wm_mask.nii.gz gm_safe_map.nii.gz ${sid}_safe_wm_mask.nii.gz -f
-        scil_image_math.py intersection ${sid}_safe_wm_mask.nii.gz $brain_mask ${sid}_safe_wm_mask.nii.gz -f
+        scil_volume_math.py difference ${sid}_wm_mask.nii.gz csf_safe_map.nii.gz ${sid}_safe_wm_mask.nii.gz
+        scil_volume_math.py difference ${sid}_safe_wm_mask.nii.gz gm_safe_map.nii.gz ${sid}_safe_wm_mask.nii.gz -f
+        scil_volume_math.py intersection ${sid}_safe_wm_mask.nii.gz $brain_mask ${sid}_safe_wm_mask.nii.gz -f
         """
 }
 
@@ -370,7 +370,7 @@ process crop_image {
         val(additional_publish_path)
     output:
         tuple val(sid), path("${image.simpleName}__cropped.nii.gz"), emit: image
-        tuple val(sid), path("${image.simpleName}__bbox.pkl"), emit: bbox, optional: true
+        tuple val(sid), path("${image.simpleName}__bbox.json"), emit: bbox, optional: true
         tuple val(sid), path("${mask.simpleName}__cropped.nii.gz"), emit: mask, optional: true
         tuple val(sid), path("${image.simpleName}__cropped_metadata.py"), emit: metadata, optional: true
     script:
@@ -384,7 +384,7 @@ process crop_image {
             after_script += ["mrhardi fit2box --in ${image.simpleName}__cropped.nii.gz --out ${image.simpleName}__cropped.nii.gz --pbox $bounding_box"]
         }
         else
-            args += "--output_bbox ${image.simpleName}__bbox.pkl"
+            args += "--output_bbox ${image.simpleName}__bbox.json"
 
         if ( !mask.empty() ) {
             before_script = "mrhardi apply_mask --in $image --mask $mask --out masked_image.nii.gz"
@@ -396,12 +396,12 @@ process crop_image {
                 img_script += " --pbox $bounding_box"
             }
             else {
-                mask_script += " --pbox ${image.simpleName}__bbox.pkl"
-                img_script += " --pbox ${image.simpleName}__bbox.pkl"
+                mask_script += " --pbox ${image.simpleName}__bbox.json"
+                img_script += " --pbox ${image.simpleName}__bbox.json"
             }
             after_script += [img_script]
             after_script += [mask_script]
-            after_script += ["scil_image_math.py floor ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
+            after_script += ["scil_volume_math.py floor ${mask.simpleName}__cropped.nii.gz ${mask.simpleName}__cropped.nii.gz --data_type uint8 -f"]
         }
 
         if ( metadata instanceof nextflow.util.BlankSeparatedList ? !metadata.isEmpty() : !metadata.empty() )
@@ -412,7 +412,7 @@ process crop_image {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         $before_script
-        scil_crop_volume.py $img ${image.simpleName}__cropped.nii.gz $args
+        scil_volume_crop.py $img ${image.simpleName}__cropped.nii.gz $args
         ${after_script.join('\n')}
         if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}__cropped.nii.gz)" ]
         then
@@ -432,7 +432,7 @@ process fit_bounding_box {
         tuple val(sid), path(image), path(reference), path(bounding_box)
         val(caller_name)
     output:
-        tuple val(sid), path("${image.simpleName}__bbox.pkl"), emit: bbox, optional: true
+        tuple val(sid), path("${image.simpleName}__bbox.json"), emit: bbox, optional: true
     script:
         """
         mrhardi fitbox --in $image --ref $reference --pbox $bounding_box --out ${image.simpleName}__bbox
@@ -522,7 +522,7 @@ process dilate_mask {
         tuple val(sid), path("${mask.simpleName}__dilated.nii.gz"), emit: mask
     script:
         """
-        scil_image_math.py dilation $mask $dilation_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
+        scil_volume_math.py dilation $mask $dilation_factor ${mask.simpleName}__dilated.nii.gz --data_type uint8
         """
 }
 
@@ -540,7 +540,7 @@ process erode_mask {
         tuple val(sid), path("${mask.simpleName}__eroded.nii.gz"), emit: mask
     script:
         """
-        scil_image_math.py erosion $mask $erosion_factor ${mask.simpleName}__eroded.nii.gz --data_type uint8
+        scil_volume_math.py erosion $mask $erosion_factor ${mask.simpleName}__eroded.nii.gz --data_type uint8
         """
 }
 
@@ -557,7 +557,7 @@ process invert_mask {
         tuple val(sid), path("${mask.simpleName}__inverted.nii.gz"), emit: mask
     script:
         """
-        scil_image_math.py invert $mask ${mask.simpleName}__inverted.nii.gz --data_type uint8
+        scil_volume_math.py invert $mask ${mask.simpleName}__inverted.nii.gz --data_type uint8
         """
 }
 
@@ -574,7 +574,7 @@ process intersect_masks {
         tuple val(sid), path("${mask1.simpleName}__intersection.nii.gz"), emit: mask
     script:
         """
-        scil_image_math.py intersection $mask1 $mask2 ${mask1.simpleName}__intersection.nii.gz --data_type uint8
+        scil_volume_math.py intersection $mask1 $mask2 ${mask1.simpleName}__intersection.nii.gz --data_type uint8
         """
 }
 
@@ -591,7 +591,7 @@ process difference_masks {
         tuple val(sid), path("${mask1.simpleName}__difference.nii.gz"), emit: mask
     script:
         """
-        scil_image_math.py difference $mask1 $mask2 ${mask1.simpleName}__difference.nii.gz --data_type uint8
+        scil_volume_math.py difference $mask1 $mask2 ${mask1.simpleName}__difference.nii.gz --data_type uint8
         """
 }
 
@@ -610,8 +610,8 @@ process clean_mask_borders {
         tuple val(sid), path("${mask.simpleName}__clean_borders.nii.gz"), emit: mask
     script:
         """
-        scil_image_math.py opening $mask $factor ${mask.simpleName}__clean_borders.nii.gz --data_type uint8 -f
-        scil_image_math.py closing ${mask.simpleName}__clean_borders.nii.gz $factor ${mask.simpleName}__clean_borders.nii.gz --data_type uint8 -f
+        scil_volume_math.py opening $mask $factor ${mask.simpleName}__clean_borders.nii.gz --data_type uint8 -f
+        scil_volume_math.py closing ${mask.simpleName}__clean_borders.nii.gz $factor ${mask.simpleName}__clean_borders.nii.gz --data_type uint8 -f
         """
 }
 
@@ -634,7 +634,7 @@ process segmentation_to_binary {
     script:
         """
         mrhardi seg2mask --in $segmentation --values 1,2,3,4 --labels csf,gm,dgm,wm --out ${segmentation.simpleName}
-        scil_image_math.py addition ${segmentation.simpleName}_gm.nii.gz ${segmentation.simpleName}_dgm.nii.gz ${segmentation.simpleName}_all_gm.nii.gz --data_type uint8 -f
+        scil_volume_math.py addition ${segmentation.simpleName}_gm.nii.gz ${segmentation.simpleName}_dgm.nii.gz ${segmentation.simpleName}_all_gm.nii.gz --data_type uint8 -f
         """
 }
 
@@ -751,7 +751,7 @@ process validate_gradients {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_validate_and_correct_bvecs.py $bvec $peaks $fa ${bvec.simpleName}__validated.bvec --fa_th $params.validate_bvecs_fa_thr -f $args
+        scil_gradients_validate_correct.py $bvec $peaks $fa ${bvec.simpleName}__validated.bvec --fa_th $params.validate_bvecs_fa_thr -f $args
         """
 }
 
@@ -796,7 +796,7 @@ process upper_threshold_image {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_image_math.py lower_threshold_eq \
+        scil_volume_math.py lower_threshold_eq \
             $image $threshold \
             ${image.simpleName}__thr_${threshold}.nii.gz \
             --data_type uint8

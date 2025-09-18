@@ -181,11 +181,11 @@ def separate_b0_from_dwi( data_channel ) {
     return [exclude_missing_datapoints(data_channel, 2, ""), filter_datapoints(data_channel, { it[2] == "" })]
 }
 
-LIBRARY_ROOT_NAME = "versaFlow"
+LIBRARY_ROOT_NAME = "versaflow"
 
 def get_data_path () {
     def current_dir = file("$projectDir")
-    while ( current_dir.name != LIBRARY_ROOT_NAME ) {
+    while ( current_dir.name.toLowerCase() != LIBRARY_ROOT_NAME ) {
         current_dir = current_dir.parent
     }
     return "$current_dir/.data"
@@ -193,7 +193,7 @@ def get_data_path () {
 
 def get_config_path () {
     def current_dir = file("$projectDir")
-    while ( current_dir.name != LIBRARY_ROOT_NAME ) {
+    while ( current_dir.name.toLowerCase() != LIBRARY_ROOT_NAME ) {
         current_dir = current_dir.parent
     }
     return "$current_dir/.config"

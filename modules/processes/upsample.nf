@@ -32,8 +32,8 @@ process scilpy_resample {
     script:
         def after_script = ""
         if ( !mask.empty() ) {
-            after_script += "scil_resample_volume.py $mask mask_resampled.nii.gz --ref ${image.simpleName}__resampled.nii.gz --interp nn\n"
-            after_script += "scil_image_math.py floor mask_resampled.nii.gz ${mask.simpleName}__resampled.nii.gz --data_type uint8 -f\n"
+            after_script += "scil_volume_resample.py $mask mask_resampled.nii.gz --ref ${image.simpleName}__resampled.nii.gz --interp nn\n"
+            after_script += "scil_volume_math.py floor mask_resampled.nii.gz ${mask.simpleName}__resampled.nii.gz --data_type uint8 -f\n"
         }
         if ( !metadata.empty() )
             after_script += "mrhardi metadata --in ${image.getSimpleName()}__resampled.nii.gz --update_affine --metadata $metadata\n"
@@ -44,7 +44,7 @@ process scilpy_resample {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_resample_volume.py $image resampled.nii.gz --voxel_size $params.force_resampling_resolution --interp $interpolation
+        scil_volume_resample.py $image resampled.nii.gz --voxel_size $params.force_resampling_resolution --interp $interpolation
         fslmaths resampled.nii.gz -thr 0 ${image.simpleName}__resampled.nii.gz
         if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}__resampled.nii.gz)" ]
         then
@@ -76,8 +76,8 @@ process scilpy_resample_to_reference {
     script:
         def after_script = ""
         if ( !mask.empty() ) {
-            after_script += "scil_resample_volume.py $mask mask_resampled.nii.gz --ref $reference --interp nn --enforce_dimensions\n"
-            after_script += "scil_image_math.py floor mask_resampled.nii.gz ${mask.getSimpleName()}__resampled.nii.gz --data_type uint8 -f\n"
+            after_script += "scil_volume_resample.py $mask mask_resampled.nii.gz --ref $reference --interp nn --enforce_dimensions\n"
+            after_script += "scil_volume_math.py floor mask_resampled.nii.gz ${mask.getSimpleName()}__resampled.nii.gz --data_type uint8 -f\n"
         }
         if ( !metadata.empty() )
             after_script += "mrhardi metadata --in ${image.getSimpleName()}__resampled.nii.gz --update_affine --metadata $metadata\n"
@@ -85,7 +85,7 @@ process scilpy_resample_to_reference {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_resample_volume.py $image resampled.nii.gz --ref $reference --interp $interpolation --enforce_dimensions
+        scil_volume_resample.py $image resampled.nii.gz --ref $reference --interp $interpolation --enforce_dimensions
         fslmaths resampled.nii.gz -thr 0 ${image.simpleName}__resampled.nii.gz
         if [ "\$(mrinfo -datatype $image)" != "\$(mrinfo -datatype ${image.simpleName}__resampled.nii.gz)" ]
         then

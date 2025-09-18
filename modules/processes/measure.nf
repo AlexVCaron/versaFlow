@@ -64,7 +64,7 @@ process scil_compute_dti_fa {
         def before = ""
         if ( !mask.empty() ) {
             args += " --mask $mask"
-            before += "scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f\n"
+            before += "scil_volume_math.py round $mask mask4scil.nii.gz --data_type uint8 -f\n"
         }
 
         if ( params.max_dti_bvalue ) {
@@ -82,7 +82,7 @@ process scil_compute_dti_fa {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         $before
-        scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
+        scil_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
         """
 }
 
@@ -116,7 +116,7 @@ process scil_compute_dti_fa_np {
         def before = ""
         if ( !mask.empty() ) {
             args += " --mask $mask"
-            before += "scil_image_math.py round $mask mask4scil.nii.gz --data_type uint8 -f\n"
+            before += "scil_volume_math.py round $mask mask4scil.nii.gz --data_type uint8 -f\n"
         }
 
         if ( params.max_dti_bvalue ) {
@@ -134,7 +134,7 @@ process scil_compute_dti_fa_np {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
         $before
-        scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
+        scil_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec -f --not_all $args
         """
 }
 
@@ -182,9 +182,9 @@ process scil_dti_and_metrics {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
+        scil_volume_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         $before
-        scil_compute_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec --mask mask4scil.nii.gz -f --not_all $args
+        scil_dti_metrics.py dwi_for_dti.nii.gz dwi_for_dti.bval dwi_for_dti.bvec --mask mask4scil.nii.gz -f --not_all $args
         """
 }
 
@@ -234,7 +234,7 @@ process odf_metrics {
         if ( params.ventricles_center )
             args += " --center ${ params.ventricles_center.join(' ') }"
         """
-        scil_compute_fodf_max_in_ventricles.py $csf_f $fa $md \
+        scil_fodf_max_in_ventricles.py $csf_f $fa $md \
             --max_value_output ${sid}_ventricles_fodf_max.txt \
             --sh_basis descoteaux07 \
             --fa_t $params.max_fa_ventricle \
@@ -246,7 +246,7 @@ process odf_metrics {
         wm_abs_threshold=\$(echo $params.fodf_wm_max_absolute_factor*\$(cat ${sid}_ventricles_fodf_max.txt)|bc)
         gm_abs_threshold=\$(echo $params.fodf_gm_max_absolute_factor*\$(cat ${sid}_ventricles_fodf_max.txt)|bc)
 
-        scil_compute_fodf_metrics.py $wm_odfs \
+        scil_fodf_metrics.py $wm_odfs \
             --rt $params.fodf_wm_relative_thr \
             --at \${wm_abs_threshold} \
             --sh_basis $basis \
@@ -261,7 +261,7 @@ process odf_metrics {
             --peak_indices ${sid}_fodf_metrics_wm_peaks_indices.nii.gz \
             --processes $task.cpus
 
-        scil_compute_fodf_metrics.py $gm_f \
+        scil_fodf_metrics.py $gm_f \
             --rt $params.fodf_gm_relative_thr \
             --at \${gm_abs_threshold} \
             --sh_basis $basis \

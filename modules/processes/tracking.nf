@@ -51,7 +51,7 @@ process PFT_maps {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_compute_maps_for_particle_filter_tracking.py \
+        scil_tracking_pft_maps.py \
             $wm_vf $gm_vf $csf_vf \
             --include ${sid}_map_include.nii.gz \
             --exclude ${sid}_map_exclude.nii.gz \
@@ -91,7 +91,7 @@ process PFT_tracking {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_compute_pft.py $fodf $seeding_mask $map_include $map_exclude \
+        scil_tracking_pft.py $fodf $seeding_mask $map_include $map_exclude \
             tmp.trk \
             --algo $algo \
             --${seeding_strategy} $n_seeds \
@@ -105,10 +105,8 @@ process PFT_tracking {
             --particles $n_particles \
             --back $back_length \
             --forward $params.pft_forward_tracking_length \$compress \
-            --sh_basis descoteaux07 \
-            --sphere symmetric724 \
-            --subdivide_sphere 2
-        scil_remove_invalid_streamlines.py tmp.trk\
+            --sh_basis descoteaux07
+        scil_tractogram_remove_invalid.py tmp.trk\
             ${sid}_pft_${algo}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${mask_type}_step_${step_length}_theta_${theta}_np_${n_particles}_back_${back_length}_tracking.trk \
             --remove_single_point
         """
@@ -145,7 +143,7 @@ process Local_prob_tracking_opencl {
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
 
-        scil_compute_local_tracking.py $fodf $seeding_mask $tracking_mask \
+        scil_tracking_local.py $fodf $seeding_mask $tracking_mask \
             tmp.trk \
             --step $step_length \
             --theta $theta \
@@ -156,7 +154,7 @@ process Local_prob_tracking_opencl {
             --seed $seed \
             --use_gpu \
             --batch_size $params.local_tracking_gpu_batch_size
-        scil_remove_invalid_streamlines.py tmp.trk \
+        scil_tractogram_remove_invalid.py tmp.trk \
             ${sid}_local_gpu_prob_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk \
             --remove_single_point
         """
@@ -192,7 +190,7 @@ process Local_tracking {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_compute_local_tracking.py $fodf $seeding_mask $tracking_mask \
+        scil_tracking_local.py $fodf $seeding_mask $tracking_mask \
             tmp.trk \
             --algo $algo \
             --${seeding_strategy} $n_seeds \
@@ -204,8 +202,8 @@ process Local_tracking {
             --max_length $params.local_max_len \$compress \
             --sh_basis descoteaux07 \
             --sphere symmetric724 \
-            --subdivide_sphere $sphere_sub
-        scil_remove_invalid_streamlines.py tmp.trk \
+            --sub_sphere $sphere_sub
+        scil_tractogram_remove_invalid.py tmp.trk \
             ${sid}_local_${algo}_in_${tracking_mask_type}_seed_${seed}_${seeding_strategy}${n_seeds}_in_${seeding_mask_type}_step_${step_length}_theta_${theta}_tracking.trk \
             --remove_single_point
         """
@@ -263,7 +261,7 @@ process Commit {
         if ( !tracking_mask.empty() ) opt_params += " --in_tracking_mask $tracking_mask"
         if ( params.commit_perpendicular_diffusivity ) opt_params += " --perp_diff ${asArray(params.commit_perpendicular_diffusivity).join(" ")}"
         """
-        scil_run_commit.py $tractogram $dwi $bval $bvec results \
+        scil_tractogram_commit.py $tractogram $dwi $bval $bvec results \
             --b_thr $params.b0_threshold \
             --nbr_dir $params.commit_frf_n_directions \
             --nbr_iter $params.commit_n_iterations \

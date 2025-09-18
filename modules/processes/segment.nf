@@ -62,7 +62,7 @@ process atropos {
         def fractions_rename = []
         def tissue_label = params.segmentation_classes.indexOf("csf") + 1
         def prior_filename = "${segmentation.simpleName}_0${tissue_label}.nii.gz"
-        def blurring_lines = ["scil_image_math.py blur $prior_filename $params.csf_blur_factor $prior_filename --data_type float32 -f"]
+        def blurring_lines = ["scil_volume_math.py blur $prior_filename $params.csf_blur_factor $prior_filename --data_type float32 -f"]
         def dist_priors = ["-l ${tissue_label}[$params.csf_distance_lambda,$params.csf_distance_probability]"]
         def i = 1
         for (cl in params.segmentation_classes) {
@@ -70,7 +70,7 @@ process atropos {
                 tissue_label = params.segmentation_classes.indexOf(cl) + 1
                 prior_filename = "${segmentation.simpleName}_0${tissue_label}.nii.gz"
                 dist_priors += ["-l ${tissue_label}[$params.default_distance_lambda,$params.default_distance_probability]"]
-                blurring_lines += ["scil_image_math.py blur $prior_filename $params.default_blur_factor $prior_filename --data_type float32 -f"]
+                blurring_lines += ["scil_volume_math.py blur $prior_filename $params.default_blur_factor $prior_filename --data_type float32 -f"]
             }
 
             fractions_rename += ["mv ${sid}_SegmentationPosteriors0${i}.nii.gz ${sid}_${cl}_pvf.nii.gz"]

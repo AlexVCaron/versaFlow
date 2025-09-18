@@ -150,15 +150,15 @@ if ( !mask.empty() ) {
     // args += " --mask mask_for_n4.nii.gz"
     if ( !anat.empty() ) {
         before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $anat -t identity -i $mask -o mask_for_n4.nii.gz\n"
-        before_denoise += "scil_image_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
+        before_denoise += "scil_volume_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
     }
     else {
         before_denoise += "antsApplyTransforms -n NearestNeighbor -e 0 -r $image -t identity -i $mask -o mask_for_n4.nii.gz\n"
-        before_denoise += "scil_image_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
+        before_denoise += "scil_volume_math.py convert mask_for_n4.nii.gz mask_for_n4.nii.gz -f --data_type uint8\n"
     }
 }
 
-// after_denoise += "scil_apply_bias_field_on_dwi.py $image ${image.simpleName}_n4_bias_field.nii.gz n4denoised.nii.gz -f\n"
+// after_denoise += "scil_dwi_apply_bias_field.py $image ${image.simpleName}_n4_bias_field.nii.gz n4denoised.nii.gz -f\n"
 after_denoise += "fslmaths n4denoise.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz\n"
 
 """
@@ -202,7 +202,7 @@ process apply_n4_bias_field {
             args += " --mask $mask"
 
         """
-        scil_apply_bias_field_on_dwi.py $image $bias_field n4denoised.nii.gz -f $args
+        scil_dwi_apply_bias_field.py $image $bias_field n4denoised.nii.gz -f $args
         fslmaths n4denoised.nii.gz -thr 0 ${image.simpleName}__n4denoised.nii.gz
         $after_denoise
         """    
@@ -426,7 +426,8 @@ process eddy {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
         fslmaths $dwi -thr 0 eddy_in_image.nii.gz
-        ./$eddy_script $args eddy_corrected $kwargs
+        sed '\$ s/\$/ '"--nthr=$task.cpus/" <$eddy_script > script.sh
+        bash script.sh $args eddy_corrected $kwargs
         $after_eddy
         mv eddy_corrected.eddy_rotated_bvecs ${dwi.simpleName}__eddy_corrected.bvec
         cp $bval ${dwi.simpleName}__eddy_corrected.bval

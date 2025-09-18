@@ -182,9 +182,9 @@ process scilpy_response {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
+        scil_volume_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         $before_frf
-        scil_compute_ssst_frf.py dwi_frf_shells.nii.gz dwi_frf_shells.bval dwi_frf_shells.bvec ${sid}_response.txt \
+        scil_frf_ssst.py dwi_frf_shells.nii.gz dwi_frf_shells.bval dwi_frf_shells.bvec ${sid}_response.txt \
             --mask mask4scil.nii.gz \
             --fa $params.frf_fa \
             --min_fa $params.frf_min_fa \
@@ -216,8 +216,8 @@ process scilpy_msmt_response {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1
         export OMP_NUM_THREADS=1
         export OPENBLAS_NUM_THREADS=1
-        scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
-        scil_compute_msmt_frf.py $dwi $bval $bvec \
+        scil_volume_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
+        scil_frf_msmt.py $dwi $bval $bvec \
             ${sid}_wm_response.txt \
             ${sid}_gm_response.txt \
             ${sid}_csf_response.txt \
@@ -252,9 +252,9 @@ process scilpy_csd {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
-        scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
+        scil_volume_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         mrhardi sh_order --bvals $bval --bvecs $bvec --out sh_order.txt $args
-        scil_compute_ssst_fodf.py $dwi $bval $bvec $response ${sid}_fodf.nii.gz \
+        scil_fodf_ssst.py $dwi $bval $bvec $response ${sid}_fodf.nii.gz \
             --mask mask4scil.nii.gz \
             --skip_b0_check \
             --sh_order \$(cat sh_order.txt) \
@@ -285,9 +285,9 @@ process scilpy_msmt_csd {
         export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=$task.cpus
         export OMP_NUM_THREADS=$task.cpus
         export OPENBLAS_NUM_THREADS=1
-        scil_image_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
+        scil_volume_math.py floor $mask mask4scil.nii.gz --data_type uint8 -f
         mrhardi sh_order --bvals $bval --bvecs $bvec --msmt --out sh_order.txt $args
-        scil_compute_msmt_fodf.py $dwi $bval $bvec $wm_response $gm_response $csf_response \
+        scil_fodf_msmt.py $dwi $bval $bvec $wm_response $gm_response $csf_response \
             --wm_out_fODF ${sid}_wm_fodf.nii.gz \
             --gm_out_fODF ${sid}_gm_fodf.nii.gz \
             --csf_out_fODF ${sid}_csf_fodf.nii.gz \

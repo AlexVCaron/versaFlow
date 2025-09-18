@@ -26,7 +26,7 @@ process compute_powder_average {
             after_script += "cp $metadata ${dwi.simpleName}_pd_avg_metadata.py"
         }
         """
-        scil_compute_powder_average.py $dwi $bval ${dwi.simpleName}_pd_avg.nii.gz ${mask.empty() ? "" : "--mask $mask"}
+        scil_dwi_powder_average.py $dwi $bval ${dwi.simpleName}_pd_avg.nii.gz ${mask.empty() ? "" : "--mask $mask"}
         $after_script
         """
 
