@@ -105,6 +105,7 @@ include {
 } from '../modules/processes/upsample.nf'
 include {
     registration_wkf as dwi_mask_registration_wkf;
+    registration_wkf as t1_to_b0_affine_for_mask;
     dwi_denoise_wkf;
     dwi_denoise_wkf as rev_denoise_wkf;
     n4_denoise_wkf;
@@ -187,6 +188,7 @@ params.dwi_n4_normalization_config = file("${get_config_path()}/dwi_n4_normaliza
 params.dwi_n4_normalization_quick_config = file("${get_config_path()}/dwi_n4_normalization_quick_config.py")
 params.t1_n4_normalization_config = file("${get_config_path()}/t1_n4_normalization_config.py")
 params.b0_to_b0_normalization_config = file("${get_config_path()}/b0_to_b0_normalization_config.py")
+params.t1_to_b0_registration_config = file("${get_config_path()}/t1_to_b0_registration_affine_config.py")
 
 
 workflow preprocess_wkf {
@@ -769,7 +771,7 @@ workflow preprocess_wkf {
                 false, "", "",
                 true,
                 params.b02t1_mask_registration_config,
-                null
+                params.ants_transform_mask_config
             )
 
             dwi_mask_convert_datatype(

@@ -234,6 +234,18 @@ process odf_metrics {
         if ( params.ventricles_center )
             args += " --center ${ params.ventricles_center.join(' ') }"
         """
+        # Create short script to flip z component of peaks as they are flipped by the fodf script
+        cat > flip_z.py << EOL
+import numpy as np
+import nibabel as nib
+import sys
+
+img = nib.load(sys.argv[1])
+data = img.get_fdata()
+data[...,2::3] *= -1
+nib.save(nib.Nifti1Image(data, img.affine, img.header), sys.argv[1])
+EOL
+
         scil_fodf_max_in_ventricles.py $csf_f $fa $md \
             --max_value_output ${sid}_ventricles_fodf_max.txt \
             --sh_basis descoteaux07 \
@@ -261,6 +273,8 @@ process odf_metrics {
             --peak_indices ${sid}_fodf_metrics_wm_peaks_indices.nii.gz \
             --processes $task.cpus
 
+        python flip_z.py ${sid}_fodf_metrics_wm_peaks.nii.gz
+
         scil_fodf_metrics.py $gm_f \
             --rt $params.fodf_gm_relative_thr \
             --at \${gm_abs_threshold} \
@@ -275,6 +289,8 @@ process odf_metrics {
             --peak_values ${sid}_fodf_metrics_gm_peaks_values.nii.gz \
             --peak_indices ${sid}_fodf_metrics_gm_peaks_indices.nii.gz \
             --processes $task.cpus
+
+        python flip_z.py ${sid}_fodf_metrics_gm_peaks.nii.gz
         """
 }
 
